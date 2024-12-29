@@ -1,7 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
-module PExpr where
+{-# OPTIONS_GHC -Wno-noncanonical-monad-instances #-}
+module PExpr (
+    PExpr(..),
+) where
 
 import Number
+
+import Control.Monad
 
 import Data.List
 
@@ -117,3 +122,20 @@ instance Num (PExpr s) where
 
     abs = undefined
     signum = undefined
+
+instance Functor PExpr where
+    fmap = liftM
+
+instance Applicative PExpr where
+    pure = return
+    (<*>) = ap
+
+instance Monad PExpr where
+    return x = Fun x []
+    Number x >>= _ = Number x
+    Mul xs >>= f = Mul $ map (>>= f) xs
+    Add xs >>= f = Add $ map (>>= f) xs
+    Pow x y >>= f = Pow (x >>= f) (y >>= f)
+    Fun s xs >>= f = f s >>= \s' -> Fun s' (map (>>= f) xs)
+
+
