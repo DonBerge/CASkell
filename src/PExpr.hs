@@ -2,20 +2,21 @@
 {-# OPTIONS_GHC -Wno-noncanonical-monad-instances #-}
 module PExpr (
     PExpr(..),
+    eMap
 ) where
 
 import Number
 
 import Data.List
 
--- Las PExpr se construyen a partir de un conjunto de simbolos y constantes numericas
-data PExpr s = Number Number 
-                | Mul [PExpr s] 
-                | Add [PExpr s] 
-                | Pow (PExpr s) (PExpr s) 
-                | Fun s [PExpr s]
+-- Las PExpre construyen a partir de un conjunto de simbolos y constantes numericas
+data PExpr = Number Number 
+                | Mul [PExpr] 
+                | Add [PExpr] 
+                | Pow PExpr PExpr
+                | Fun String [PExpr]
 
-instance Eq s => Eq (PExpr s) where
+instance Eq PExpr where
     (Number a) == (Number b) = a == b
     (Mul a) == (Mul b) = a == b
     (Add a) == (Add b) = a == b
@@ -23,7 +24,7 @@ instance Eq s => Eq (PExpr s) where
     (Fun a b) == (Fun c d) = a == c && b == d
     _ == _ = False
 
-instance Ord s => Ord (PExpr s) where
+instance Ord PExpr where
 
     -- Constantes
     Number a < Number b = a < b
@@ -68,7 +69,7 @@ paren s = "(" ++ s ++ ")"
 
 
 -- TODO: usar DOC
-instance Show s => Show (PExpr s) where
+instance Show PExpr where
     show (Number x) = show x
     -- show (Symbol x) = unquote $ show x
     show (Mul []) = "1"
@@ -101,7 +102,7 @@ instance Show s => Show (PExpr s) where
     show (Fun f xs) = unquote (show f) ++ "(" ++ intercalate "," (map show xs) ++ ")"
 
 
-instance Num (PExpr s) where
+instance Num PExpr where
     fromInteger x = Number (fromInteger x)
     (Add ps) + (Add qs) = Add $ ps ++ qs
     p + (Add qs) = Add $ p:qs
@@ -121,7 +122,7 @@ instance Num (PExpr s) where
     abs = undefined
     signum = undefined
 
-eMap :: (PExpr s -> PExpr s) -> PExpr s -> PExpr s
+eMap :: (PExpr -> PExpr) -> PExpr -> PExpr
 eMap _ (Number x) = Number x
 eMap f (Mul xs) = Mul (map f xs)
 eMap f (Add xs) = Add (map f xs)

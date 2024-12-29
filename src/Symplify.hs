@@ -13,19 +13,19 @@ import PExpr
 
 import Data.List
 
-numerator :: MonadFail m => PExpr s -> m Integer
+numerator :: MonadFail m => PExpr -> m Integer
 numerator (Number x) = return $ N.numerator x
 numerator _ = fail "numerator: not a number"
 
-denominator :: MonadFail m => PExpr s -> m Integer
+denominator :: MonadFail m => PExpr -> m Integer
 denominator (Number x) = return $ N.denominator x
 denominator _ = fail "numerator: not a number"
 
--- instance Real PExpr s where
+-- instance Real PExpr where
 --     toRational (Number x) = x
 --     toRational _ = error "toRational: not a number"
 
-automaticSymplify :: (Ord s, MonadFail m) => PExpr s -> m (PExpr s)
+automaticSymplify :: MonadFail m => PExpr -> m (PExpr)
 automaticSymplify (Mul xs) = mapM automaticSymplify xs >>= simplifyProduct
 automaticSymplify (Add xs) = mapM automaticSymplify xs >>= simplifySum
 automaticSymplify (Pow x y) = do
@@ -37,20 +37,20 @@ automaticSymplify (Fun f xs) = do
                                     simplifyFunction $ Fun f xs'
 automaticSymplify x = return x
 
-isPositive :: (MonadFail m) => PExpr s -> m Bool
+isPositive :: MonadFail m => PExpr -> m Bool
 isPositive (Number x) = return $ x > 0
 isPositive (Mul xs) = and <$> mapM isPositive xs
 -- isPositive (Exp _) = return True
 isPositive _ = fail "could not assure if the expression is positive"
 
 ------------------------------
-isConstant :: PExpr s -> Bool
+isConstant :: PExpr -> Bool
 isConstant (Number _) = True
 isConstant (Fun _ xs) = all isConstant xs
 -- isConstant Pi = True
 isConstant _ = False
 
-const :: MonadFail m => PExpr s -> m (PExpr s)
+const :: MonadFail m => PExpr -> m (PExpr)
 const (Mul []) = return 1
 const (Mul (x:_))
     | isConstant x = return x
@@ -59,7 +59,7 @@ const u
     | isConstant u = fail "Constants dont have terms"
     | otherwise = return 1
 
-term :: MonadFail m => PExpr s -> m (PExpr s)
+term :: MonadFail m => PExpr -> m (PExpr)
 term (Mul []) = fail "Empty products do not have terms"
 term (Mul (x:xs))
     | isConstant x = return $ Mul xs
@@ -68,20 +68,20 @@ term u
     | isConstant u = fail "Constants dont have terms"
     | otherwise = return $ Mul [u]
 
-base :: PExpr s -> PExpr s
+base :: PExpr -> PExpr
 base (Number _) = error "Base of a number is not defined"
 -- base (Exp _) = Exp 1
 base (Pow x _) = x
 base u = u
 
-exponent :: PExpr s -> PExpr s
+exponent :: PExpr -> PExpr
 exponent (Number _) = error "Exponent of a number is not defined"
 -- exponent (Exp x) = x
 exponent (Pow _ x) = x
 exponent _ = 1
 
 
-dterm :: MonadFail m => PExpr s -> m (PExpr s)
+dterm :: MonadFail m => PExpr -> m (PExpr)
 dterm (Add (x:xs))
     | isConstant x = return $ Add xs
     | otherwise = return $ Add (x:xs)
@@ -89,7 +89,7 @@ dterm u
     | isConstant u = fail "Constants dont have dependent terms"
     | otherwise = return $ Add [u]
 
-iterm :: MonadFail m => PExpr s -> m (PExpr s)
+iterm :: MonadFail m => PExpr -> m (PExpr)
 iterm (Add (x:_))
     | isConstant x = return x
     | otherwise = return 0
@@ -100,11 +100,11 @@ iterm u
 ---------------------------------------------------------------------------------------
 
 
-isInteger :: PExpr s -> Bool
+isInteger :: PExpr -> Bool
 isInteger (Number x) = N.isInteger x
 isInteger _ = False
 
-simplifyPow :: (Ord s, MonadFail m) => PExpr s -> PExpr s -> m (PExpr s)
+simplifyPow :: MonadFail m => PExpr -> PExpr -> m (PExpr)
 -- SPOW-2
 simplifyPow 0 w = do
                     positive <- isPositive w
@@ -123,7 +123,7 @@ simplifyPow v w
         simplifyIntPow (Mul r) n = mapM (`simplifyIntPow` n) r >>= simplifyProduct
         simplifyIntPow x n = return $ Pow x (fromInteger n)
 
-simplifyProduct :: (Ord s, MonadFail m) => [PExpr s] -> m (PExpr s)
+simplifyProduct :: MonadFail m => [PExpr] -> m (PExpr)
 simplifyProduct [] = return 1
 simplifyProduct [x] = return x -- SPRD.3
 simplifyProduct xs
@@ -136,7 +136,7 @@ simplifyProduct xs
                         [u, Add vs] | isConstant u -> Add <$> mapM (simplifyProduct . reverse . (:[u])) vs
                         _ -> return $ Mul xs'
 
-simplifyProductRec :: (Ord s, MonadFail m) => [PExpr s] -> m [PExpr s]
+simplifyProductRec :: MonadFail m => [PExpr] -> m [PExpr]
 --simplifyProductRec = undefined
 -- SPRDREC-2
 simplifyProductRec [] = return []
@@ -167,7 +167,7 @@ simplifyProductRec [u,v]
 simplifyProductRec ((Mul us):vs) = simplifyProductRec vs >>= mergeProducts us
 simplifyProductRec (u:vs) = simplifyProductRec vs >>= mergeProducts [u]
 
-simplifySum :: (Ord s, MonadFail m) => [PExpr s] -> m (PExpr s)
+simplifySum :: MonadFail m => [PExpr] -> m (PExpr)
 simplifySum [] = return 0
 simplifySum [x] = return x
 simplifySum xs = do
@@ -177,7 +177,7 @@ simplifySum xs = do
                         [x] -> return x
                         _ -> return $ Add $ sort xs'
 
-simplifySumRec :: (Ord s, MonadFail m) => [PExpr s] -> m [PExpr s]
+simplifySumRec :: MonadFail m => [PExpr] -> m [PExpr]
 simplifySumRec [] = return []
 simplifySumRec [Add us, Add vs] = mergeSums us vs
 simplifySumRec [Add us, v] = mergeSums us [v]
@@ -225,10 +225,10 @@ mergeOps f (p:ps) (q:qs) = do
                                                 else (q':) <$> mergeOps f (p':ps) qs
                                 _ -> error "mergeOps: unexpected pattern"
 
-mergeProducts :: (Ord s, MonadFail m) => [PExpr s] -> [PExpr s] -> m [PExpr s]
+mergeProducts :: MonadFail m => [PExpr] -> [PExpr] -> m [PExpr]
 mergeProducts = mergeOps simplifyProductRec
 
-mergeSums :: (Ord s, MonadFail m) => [PExpr s] -> [PExpr s] -> m [PExpr s]
+mergeSums :: MonadFail m => [PExpr] -> [PExpr] -> m [PExpr]
 mergeSums = mergeOps simplifySumRec
 
 simplifyFunction :: Monad m => a -> m a
