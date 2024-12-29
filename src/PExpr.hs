@@ -6,8 +6,6 @@ module PExpr (
 
 import Number
 
-import Control.Monad
-
 import Data.List
 
 -- Las PExpr se construyen a partir de un conjunto de simbolos y constantes numericas
@@ -123,19 +121,12 @@ instance Num (PExpr s) where
     abs = undefined
     signum = undefined
 
-instance Functor PExpr where
-    fmap = liftM
+eMap :: (PExpr s -> PExpr s) -> PExpr s -> PExpr s
+eMap _ (Number x) = Number x
+eMap f (Mul xs) = Mul (map f xs)
+eMap f (Add xs) = Add (map f xs)
+eMap f (Pow x y) = Pow (f x) (f y)
+eMap f (Fun s xs) = Fun s $ map f xs
 
-instance Applicative PExpr where
-    pure = return
-    (<*>) = ap
-
-instance Monad PExpr where
-    return x = Fun x []
-    Number x >>= _ = Number x
-    Mul xs >>= f = Mul $ map (>>= f) xs
-    Add xs >>= f = Add $ map (>>= f) xs
-    Pow x y >>= f = Pow (x >>= f) (y >>= f)
-    Fun s xs >>= f = f s >>= \s' -> Fun s' (map (>>= f) xs)
 
 

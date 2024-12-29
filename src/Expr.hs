@@ -100,6 +100,7 @@ instance Fractional Expr where
                     q' <- (unExpr q) >>= (`simplifyPow` (-1))
                     simplifyProduct [p', q']
 
+makeFun :: (Expr' -> Expr') -> Expr -> Expr
 makeFun f x = Expr $ f <$> unExpr x 
 
 instance Floating Expr where
