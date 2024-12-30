@@ -62,7 +62,7 @@ library
     exposed-modules:  Number
                       PExpr
                       Symplify
-                      Trigsimp
+                      TrigSimp
                       Expr
 
     -- Modules included in this library but not exported.

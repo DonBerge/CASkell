@@ -52,8 +52,6 @@ isNegative _ = fail "could not assure if the expression is negative"
 ------------------------------
 isConstant :: PExpr -> Bool
 isConstant (Number _) = True
-isConstant (Fun _ []) = False
-isConstant (Fun _ xs) = all isConstant xs
 -- isConstant Pi = True
 isConstant _ = False
 
@@ -140,8 +138,8 @@ simplifyProduct xs
                     case xs' of -- SPRD.4
                         [] -> return 1
                         [x] -> return x
-                        [u, Add vs] | isConstant u -> Add <$> mapM (simplifyProduct . reverse . (:[u])) vs
-                        _ -> return $ Mul xs'
+                        [u, Add vs] -> Add . sort <$> mapM (simplifyProduct . reverse . (:[u])) vs
+                        _ -> return $ Mul $ sort xs'
 
 simplifyProductRec :: MonadFail m => [PExpr] -> m [PExpr]
 --simplifyProductRec = undefined

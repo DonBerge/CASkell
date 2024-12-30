@@ -2,7 +2,8 @@
 {-# OPTIONS_GHC -Wno-noncanonical-monad-instances #-}
 module PExpr (
     PExpr(..),
-    eMap
+    eMap,
+    showStruct
 ) where
 
 import Number
@@ -136,3 +137,10 @@ eMap f (Mul xs) = Mul (map f xs)
 eMap f (Add xs) = Add (map f xs)
 eMap f (Pow x y) = Pow (f x) (f y)
 eMap f (Fun s xs) = Fun s $ map f xs
+
+showStruct :: PExpr -> String
+showStruct (Number x) = "Number " ++ show x
+showStruct (Mul xs) = "Mul [" ++ intercalate "," (map showStruct xs) ++ "]"
+showStruct (Add xs) = "Add [" ++ intercalate "," (map showStruct xs) ++ "]"
+showStruct (Pow x y) = "Pow (" ++ showStruct x ++ ") (" ++ showStruct y ++ ")"
+showStruct (Fun s xs) = "Fun " ++ show s ++ " [" ++ intercalate "," (map showStruct xs) ++ "]"

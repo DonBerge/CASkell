@@ -30,6 +30,10 @@ instance MonadFail Fail where
     fail _ = Fail Nothing
 
 
+instance Show x => Show (Fail x) where
+    show (Fail Nothing) = "Undefined"
+    show (Fail (Just x)) = show x
+
 type Expr = Fail PExpr
 
 
@@ -95,18 +99,21 @@ instance Num Expr where
     p + q = do
               p' <- p
               q' <- q
-              simplifySum [p', q']
+              Add xs <- return $ p' + q'
+              simplifySum xs
     p * q = do
               p' <- p
               q' <- q
-              simplifyProduct [p', q']
+              Mul xs <- return $ p' * q'
+              simplifyProduct xs
 
     negate p = p >>= simplifyProduct . (:[Number (-1)])
 
     p - q = do
               p' <- p
               q' <- negate q
-              simplifySum [p', q']
+              Add xs <- return $ p' + q'
+              simplifySum xs
 
     abs = undefined
     signum = undefined
@@ -116,7 +123,8 @@ instance Fractional Expr where
     p / q = do
               p' <- p
               q' <- q >>= (`simplifyPow` (-1))
-              simplifyProduct [p', q']
+              Mul xs <- return $ p' * q'
+              simplifyProduct xs
 
 makeFun :: (PExpr -> PExpr) -> Expr -> Expr
 makeFun f x = Fail $ f <$> unFail x 
@@ -143,15 +151,16 @@ instance Floating Expr where
                 q' <- q
                 simplifyPow p' q'
 
+sec :: Expr -> Expr
+sec = makeFun Sec
+
+csc :: Expr -> Expr
+csc = makeFun Csc
 
 cot :: Expr -> Expr
 cot = makeFun Cot
 
 -------
-
-instance Show Expr where
-    show (Fail Nothing) = "Undefined"
-    show (Fail (Just x)) = show x
 
 number :: Rational -> Expr
 number = fromRational
