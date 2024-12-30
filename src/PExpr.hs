@@ -58,6 +58,8 @@ instance Ord PExpr where
 
     u@(Fun _ _) < v = v>=u
 
+    v >= u = not (v < u)
+
     u <= v = u<v || u==v
 
 unquote :: String -> String
@@ -89,6 +91,12 @@ instance Show PExpr where
             parenExpr s@(Add _) = paren $ show s
             parenExpr s@(Mul _) = paren $ show s
             parenExpr s = show s
+    
+    show (Pow x (Number a))
+        | a == 1/2 = "√" ++ "(" ++ show x ++ ")"
+        | a == 1/3 = "∛" ++ "(" ++ show x ++ ")"
+        | a == 1/4 = "∜" ++ "(" ++ show x ++ ")"
+     -- = parenExpr x ++ "^2"
     show (Pow x y) = parenExpr x ++ "^" ++ parenExpr y
         where
             parenExpr (Number s)

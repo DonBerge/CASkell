@@ -19,7 +19,7 @@ epsilon :: Double
 epsilon = 2**(-52)
 
 maxDigits :: Int
-maxDigits = 3
+maxDigits = 15
 
 -- Realiza transformaciones entre los distintos tipos de números si es necesario
 simplify :: Number -> Number

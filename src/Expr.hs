@@ -11,7 +11,7 @@ import Prelude hiding (const, exponent)
 import PExpr
 import Symplify
 
-newtype Fail a = Fail { unFail :: Maybe a }
+newtype Fail a = Fail { unFail :: Maybe a } deriving (Ord, Eq)
 
 instance Functor Fail where
     fmap f (Fail x) = Fail $ f <$> x

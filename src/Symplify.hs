@@ -52,6 +52,7 @@ isNegative _ = fail "could not assure if the expression is negative"
 ------------------------------
 isConstant :: PExpr -> Bool
 isConstant (Number _) = True
+isConstant (Fun _ []) = False
 isConstant (Fun _ xs) = all isConstant xs
 -- isConstant Pi = True
 isConstant _ = False
@@ -159,7 +160,8 @@ simplifyProductRec [u, Number 1] = return [u]
 simplifyProductRec [u,v]
     | v < u = simplifyProductRec [v,u]
     | isConstant u = do
-                        u' <- const v >>= simplifyProduct . (:[u])
+                        v' <- const v
+                        u' <- simplifyProduct [u, v']
                         Mul vs <- term v
                         return $ u' : vs
     | base u == base v = do
