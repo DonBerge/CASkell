@@ -142,6 +142,12 @@ instance Floating Number where
     acosh = makeFun acosh
     atanh = makeFun atanh
 
+    x ** (Int y) = x ^^ y
+    x ** y@(Fraction _) = x ** toReal y
+    (Int x) ** (Real y) = simplify $ Real (fromIntegral x ** y)
+    (Fraction x) ** (Real y) = simplify $ Real (fromRational x ** y)
+    (Real x) ** (Real y) = simplify $ Real (x ** y)
+
 instance Real Number where
     toRational (Fraction a) = a
     toRational x = toRational $ toFraction x

@@ -128,6 +128,3 @@ eMap f (Mul xs) = Mul (map f xs)
 eMap f (Add xs) = Add (map f xs)
 eMap f (Pow x y) = Pow (f x) (f y)
 eMap f (Fun s xs) = Fun s $ map f xs
-
-
-

@@ -11,7 +11,27 @@ import Prelude hiding (const, exponent)
 import PExpr
 import Symplify
 
-newtype Expr = Expr { unExpr :: Maybe PExpr }
+newtype Fail a = Fail { unFail :: Maybe a }
+
+instance Functor Fail where
+    fmap f (Fail x) = Fail $ f <$> x
+
+instance Applicative Fail where
+    pure = Fail . Just
+    Fail f <*> Fail x = Fail $ f <*> x
+
+instance Monad Fail where
+    return = pure
+    
+    Fail Nothing >>= _ = Fail Nothing
+    Fail (Just x) >>= f = f x
+
+instance MonadFail Fail where
+    fail _ = Fail Nothing
+
+
+type Expr = Fail PExpr
+
 
 pattern Symbol :: String -> PExpr
 pattern Symbol x = Fun x []
@@ -71,38 +91,38 @@ pattern Pi :: PExpr
 pattern Pi = Symbol "Pi"
 
 instance Num Expr where
-    fromInteger = Expr . Just . Number . fromInteger
-    p + q = Expr $ do
-                    p' <- unExpr p
-                    q' <- unExpr q
-                    simplifySum [p', q']
-    p * q = Expr $ do
-                    p' <- unExpr p
-                    q' <- unExpr q
-                    simplifyProduct [p', q']
+    fromInteger = return . Number . fromInteger
+    p + q = do
+              p' <- p
+              q' <- q
+              simplifySum [p', q']
+    p * q = do
+              p' <- p
+              q' <- q
+              simplifyProduct [p', q']
 
-    negate p = Expr $ unExpr p >>= simplifyProduct . (:[Number (-1)])
+    negate p = p >>= simplifyProduct . (:[Number (-1)])
 
-    p - q = Expr $ do
-                    p' <- unExpr p
-                    q' <- unExpr $ negate q
-                    simplifySum [p', q']
+    p - q = do
+              p' <- p
+              q' <- negate q
+              simplifySum [p', q']
 
     abs = undefined
     signum = undefined
 
 instance Fractional Expr where
-    fromRational = Expr . Just . Number . fromRational
-    p / q = Expr $ do
-                    p' <- unExpr p
-                    q' <- (unExpr q) >>= (`simplifyPow` (-1))
-                    simplifyProduct [p', q']
+    fromRational = return . Number . fromRational
+    p / q = do
+              p' <- p
+              q' <- q >>= (`simplifyPow` (-1))
+              simplifyProduct [p', q']
 
 makeFun :: (PExpr -> PExpr) -> Expr -> Expr
-makeFun f x = Expr $ f <$> unExpr x 
+makeFun f x = Fail $ f <$> unFail x 
 
 instance Floating Expr where
-    pi = Expr $ Just Pi
+    pi = return Pi
     exp = makeFun Exp
     log = makeFun Log
     sin = makeFun Sin
@@ -118,17 +138,23 @@ instance Floating Expr where
     acosh = makeFun Acosh
     atanh = makeFun Atanh
 
+    p ** q =  do
+                p' <- p
+                q' <- q
+                simplifyPow p' q'
 
-    p ** q =  Expr $ do
-                        p' <- unExpr p
-                        q' <- unExpr q
-                        simplifyPow p' q'
+
+cot :: Expr -> Expr
+cot = makeFun Cot
 
 -------
 
+instance Show Expr where
+    show (Fail Nothing) = "Undefined"
+    show (Fail (Just x)) = show x
 
--- number :: Rational -> Expr
--- number = fromRational
--- 
--- symbol :: String -> Expr
--- symbol = return . Symbol
+number :: Rational -> Expr
+number = fromRational
+
+symbol :: String -> Expr
+symbol = pure . Symbol

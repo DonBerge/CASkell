@@ -43,6 +43,12 @@ isPositive (Mul xs) = and <$> mapM isPositive xs
 -- isPositive (Exp _) = return True
 isPositive _ = fail "could not assure if the expression is positive"
 
+isNegative :: MonadFail m => PExpr -> m Bool
+isNegative (Number x) = return $ x < 0
+isNegative (Mul xs) = and <$> mapM isNegative xs
+-- isNegative (Exp _) = return False
+isNegative _ = fail "could not assure if the expression is negative"
+
 ------------------------------
 isConstant :: PExpr -> Bool
 isConstant (Number _) = True
