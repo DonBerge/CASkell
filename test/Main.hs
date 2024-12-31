@@ -25,7 +25,7 @@ sb4 :: Test
 sb4 = TestCase $ assertEqual "eval x-x" (x-x) 0
 
 sb5 :: Test
-sb5 = TestCase $ assertEqual "eval x+x" (x+x) (2*x)
+sb5 = TestCase $ assertEqual "eval 2*x+5*x" (2*x+5*x) (7*x)
 
 sb6 :: Test
 sb6 = TestCase $ assertEqual "eval 2 * (4*x)" (2*(4*x)) (8*x)

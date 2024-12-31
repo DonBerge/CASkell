@@ -55,23 +55,23 @@ isConstant (Number _) = True
 -- isConstant Pi = True
 isConstant _ = False
 
-const :: MonadFail m => PExpr -> m (PExpr)
-const (Mul []) = return 1
+const :: PExpr -> PExpr
+const (Mul []) = 1
 const (Mul (x:_))
-    | isConstant x = return x
-    | otherwise = return 1
+    | isConstant x = x
+    | otherwise = 1
 const u
-    | isConstant u = fail "Constants dont have terms"
-    | otherwise = return 1
+    | isConstant u = error "Constants dont have terms"
+    | otherwise = 1
 
-term :: MonadFail m => PExpr -> m (PExpr)
-term (Mul []) = fail "Empty products do not have terms"
+term :: PExpr -> PExpr
+term (Mul []) = error "Empty products do not have terms"
 term (Mul (x:xs))
-    | isConstant x = return $ Mul xs
-    | otherwise = return $ Mul (x:xs)
+    | isConstant x = Mul xs
+    | otherwise = Mul (x:xs)
 term u
-    | isConstant u = fail "Constants dont have terms"
-    | otherwise = return $ Mul [u]
+    | isConstant u = error "Constants dont have terms"
+    | otherwise = Mul [u]
 
 base :: PExpr -> PExpr
 base (Number _) = error "Base of a number is not defined"
@@ -84,23 +84,6 @@ exponent (Number _) = error "Exponent of a number is not defined"
 -- exponent (Exp x) = x
 exponent (Pow _ x) = x
 exponent _ = 1
-
-
-dterm :: MonadFail m => PExpr -> m (PExpr)
-dterm (Add (x:xs))
-    | isConstant x = return $ Add xs
-    | otherwise = return $ Add (x:xs)
-dterm u
-    | isConstant u = fail "Constants dont have dependent terms"
-    | otherwise = return $ Add [u]
-
-iterm :: MonadFail m => PExpr -> m (PExpr)
-iterm (Add (x:_))
-    | isConstant x = return x
-    | otherwise = return 0
-iterm u
-    | isConstant u = fail "Constants dont have independent terms"
-    | otherwise = return 0
 
 ---------------------------------------------------------------------------------------
 
@@ -196,19 +179,17 @@ simplifySumRec [u, 0] = return [u]
 simplifySumRec [u, v]
     | v < u = simplifySumRec [v,u]
     | isConstant u  = return [u,v] -- evita undefined en el caso de abajo
-    | otherwise = do
-                    vt <- term v
-                    ut <- term u
-                    if vt == ut
-                        then do
-                                uc <- const u
-                                vc <- const v
+    | term u == term v = let
+                            vt = term v
+                            uc = const u
+                            vc = const v
+                         in do
                                 s <- simplifySum [uc, vc]
                                 p <- simplifyProduct [s, vt]
                                 if p == 0
                                     then return []
                                     else return [p]
-                        else return [u,v]
+    | otherwise = return [u,v]
 -- SPRDREC-3
 simplifySumRec ((Add us):vs) = simplifySumRec vs >>= mergeSums us
 simplifySumRec (u:vs) = simplifySumRec vs >>= mergeSums [u]
