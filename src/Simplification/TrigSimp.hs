@@ -1,5 +1,5 @@
 {-# LANGUAGE PatternSynonyms #-}
-module TrigSimp where
+module Simplification.TrigSimp where
 
 import PExpr
 

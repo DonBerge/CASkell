@@ -62,7 +62,8 @@ library
     exposed-modules:  Number
                       PExpr
                       Symplify
-                      TrigSimp
+                      Simplification.TrigSimp
+                      Simplification.TrigExpand
                       Simplification.Algebraic
                       Expr
 
@@ -79,6 +80,7 @@ library
     -- Directories containing source files.
     hs-source-dirs:   src
                       src/Simplification
+    main-is:          Main.hs
 
     -- Base language which the package is written in.
     default-language: Haskell2010
