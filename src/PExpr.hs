@@ -84,8 +84,15 @@ instance Show PExpr where
             parenExpr s@(Add _) = paren $ show s
             parenExpr s = show s
     show (Add []) = "0"
-    show (Add xs) = intercalate "+" $ map parenExpr xs
+    show (Add xs) = foldl (\x y -> case x of
+                                    "" -> show y
+                                    _ | mulByNeg y -> x ++ "-" ++ show (negate y)
+                                    _ -> x ++ "+" ++ parenExpr y
+                            ) "" xs --intercalate "+" $ map parenExpr xs
         where
+            mulByNeg (Mul ((Number a):_)) = a < 0
+            mulByNeg _ = False
+
             parenExpr (Number s)
                 | s < 0 || not (isInteger s) = paren $ show s
                 | otherwise = show s
@@ -125,6 +132,9 @@ instance Num PExpr where
 
     negate (Number x) = Number (negate x)
     negate (Add ps) = Add $ map negate ps
+    negate (Mul ((Number a): ps))
+        | a == -1 = Mul ps
+        | otherwise = Mul $ (Number (negate a)):ps
     negate (Mul ps) = Mul ((fromInteger (-1)):ps)
     negate e = Mul [fromInteger (-1), e]
 

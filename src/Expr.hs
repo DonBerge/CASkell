@@ -146,6 +146,8 @@ instance Floating Expr where
     acosh = makeFun Acosh
     atanh = makeFun Atanh
 
+    sqrt x = x ** 0.5
+
     p ** q =  do
                 p' <- p
                 q' <- q

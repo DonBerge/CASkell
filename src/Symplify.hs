@@ -138,7 +138,7 @@ simplifyProduct xs
                     case xs' of -- SPRD.4
                         [] -> return 1
                         [x] -> return x
-                        [u, Add vs] -> Add . sort <$> mapM (simplifyProduct . reverse . (:[u])) vs
+                        [u, Add vs] | isConstant u -> Add . sort <$> mapM (simplifyProduct . reverse . (:[u])) vs
                         _ -> return $ Mul $ sort xs'
 
 simplifyProductRec :: MonadFail m => [PExpr] -> m [PExpr]
