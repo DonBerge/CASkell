@@ -4,7 +4,8 @@ module Number (
     Number(..),
     numerator,
     denominator,
-    isInteger
+    isInteger,
+    fromNumber
 ) where
 
 import Data.Ratio ((%))
@@ -162,3 +163,8 @@ isInteger :: Number -> Bool
 isInteger x = case simplify x of
                 Int _ -> True
                 _ -> False
+
+fromNumber :: Number -> Double
+fromNumber (Int x) = fromIntegral x
+fromNumber (Fraction x) = fromRational x
+fromNumber (Real x) = x

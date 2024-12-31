@@ -70,6 +70,10 @@ unquote s = s
 paren :: String -> String
 paren s = "(" ++ s ++ ")"
 
+isNegative :: PExpr -> Bool
+isNegative (Number x) = x < 0
+isNegative (Mul xs) = all isNegative xs
+isNegative _ = False
 
 -- TODO: usar DOC
 instance Show PExpr where
@@ -97,7 +101,6 @@ instance Show PExpr where
                 | s < 0 || not (isInteger s) = paren $ show s
                 | otherwise = show s
             parenExpr s@(Add _) = paren $ show s
-            parenExpr s@(Mul _) = paren $ show s
             parenExpr s = show s
     
     show (Pow x (Number a))
@@ -105,7 +108,10 @@ instance Show PExpr where
         | a == 1/3 = "∛" ++ "(" ++ show x ++ ")"
         | a == 1/4 = "∜" ++ "(" ++ show x ++ ")"
      -- = parenExpr x ++ "^2"
-    show (Pow x y) = parenExpr x ++ "^" ++ parenExpr y
+    show (Pow x y)
+        | y == 1 = show x
+        | isNegative y = "1/" ++ parenExpr (Pow x (negate y))
+        | otherwise = parenExpr x ++ "^" ++ parenExpr y
         where
             parenExpr (Number s)
                 | s < 0 || not (isInteger s) = paren $ show s

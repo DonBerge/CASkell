@@ -37,17 +37,17 @@ automaticSymplify (Fun f xs) = do
                                     simplifyFunction $ Fun f xs'
 automaticSymplify x = return x
 
-isPositive :: MonadFail m => PExpr -> m Bool
-isPositive (Number x) = return $ x > 0
-isPositive (Mul xs) = and <$> mapM isPositive xs
+isPositive :: PExpr -> Bool
+isPositive (Number x) = x > 0
+isPositive (Mul xs) = all isPositive xs
 -- isPositive (Exp _) = return True
-isPositive _ = fail "could not assure if the expression is positive"
+isPositive _ = False
 
-isNegative :: MonadFail m => PExpr -> m Bool
-isNegative (Number x) = return $ x < 0
-isNegative (Mul xs) = and <$> mapM isNegative xs
+isNegative :: PExpr -> Bool
+isNegative (Number x) = x < 0
+isNegative (Mul xs) = all isNegative xs
 -- isNegative (Exp _) = return False
-isNegative _ = fail "could not assure if the expression is negative"
+isNegative _ = False
 
 ------------------------------
 isConstant :: PExpr -> Bool
@@ -109,13 +109,15 @@ isInteger :: PExpr -> Bool
 isInteger (Number x) = N.isInteger x
 isInteger _ = False
 
+fromNumber :: PExpr -> Double
+fromNumber (Number x) = N.fromNumber x
+fromNumber _ = error "fromNumber: not a number"
+
 simplifyPow :: MonadFail m => PExpr -> PExpr -> m (PExpr)
 -- SPOW-2
-simplifyPow 0 w = do
-                    positive <- isPositive w
-                    if positive
-                        then return 0
-                        else fail "0^w is not defined for w <= 0"
+simplifyPow 0 w
+    | isPositive w = return 0
+    | otherwise = fail "0^w is not defined for w <= 0"
 simplifyPow 1 _ = return 1
 simplifyPow v w
     | isInteger w = numerator w >>= simplifyIntPow v
@@ -226,9 +228,9 @@ mergeOps f (p:ps) (q:qs) = do
                             case h of
                                 [] -> mergeOps f ps qs
                                 [h'] -> (h':) <$> mergeOps f ps qs
-                                [p',q'] -> if p == p'
-                                                then (p':) <$> mergeOps f ps (q':qs)
-                                                else (q':) <$> mergeOps f (p':ps) qs
+                                [r,_] -> if p == r
+                                                then (p:) <$> mergeOps f ps (q:qs)
+                                                else (q:) <$> mergeOps f (p:ps) qs
                                 _ -> error "mergeOps: unexpected pattern"
 
 mergeProducts :: MonadFail m => [PExpr] -> [PExpr] -> m [PExpr]
