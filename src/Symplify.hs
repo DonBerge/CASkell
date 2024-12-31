@@ -159,11 +159,7 @@ simplifyProductRec [Number 1, v] = return [v]
 simplifyProductRec [u, Number 1] = return [u]
 simplifyProductRec [u,v]
     | v < u = simplifyProductRec [v,u]
-    | isConstant u = do
-                        v' <- const v
-                        u' <- simplifyProduct [u, v']
-                        Mul vs <- term v
-                        return $ u' : vs
+    | isConstant u = return [u,v] -- evita un error en el caso de abajo
     | base u == base v = do
                             s <- simplifySum [exponent u, exponent v]
                             p <- simplifyPow (base u) s
@@ -199,10 +195,7 @@ simplifySumRec [0, v] = return [v]
 simplifySumRec [u, 0] = return [u]
 simplifySumRec [u, v]
     | v < u = simplifySumRec [v,u]
-    | isConstant u  = do
-                        u' <- iterm v >>= simplifySum . (:[u])
-                        Add vs <- dterm v
-                        return $ u':vs
+    | isConstant u  = return [u,v] -- evita undefined en el caso de abajo
     | otherwise = do
                     vt <- term v
                     ut <- term u

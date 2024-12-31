@@ -25,10 +25,16 @@ sb4 :: Test
 sb4 = TestCase $ assertEqual "eval x-x" (x-x) 0
 
 sb5 :: Test
-sb5 = TestLabel "Simplififcacion basica" $ TestCase $ assertEqual "eval x+x" (x+x) (2*x)
+sb5 = TestCase $ assertEqual "eval x+x" (x+x) (2*x)
+
+sb6 :: Test
+sb6 = TestCase $ assertEqual "eval 2 * (4*x)" (2*(4*x)) (8*x)
+
+sb7 :: Test
+sb7 = TestCase $ assertEqual "eval 3*x * 3*x * 3*x" (3*x * 3*x * 3*x) (27 * x**3)
 
 symplifyBasic :: Test
-symplifyBasic = TestList [sb1, sb2, sb3, sb4, sb5]
+symplifyBasic = TestList [sb1, sb2, sb3, sb4, sb5, sb6, sb7]
 
 -----------------------------------
 
