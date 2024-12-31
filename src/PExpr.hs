@@ -114,6 +114,7 @@ instance Show PExpr where
                                     _ -> x ++ "+" ++ parenExpr y
                             ) "" xs --intercalate "+" $ map parenExpr xs
         where
+            mulByNeg (Number a) = a < 0
             mulByNeg (Mul ((Number a):_)) = a < 0
             mulByNeg _ = False
 

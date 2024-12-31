@@ -4,6 +4,8 @@ import Test.HUnit
 
 import Expr
 
+import qualified Test.Algebraic as Algebraic
+
 x :: Expr
 x = symbol "x"
 
@@ -79,4 +81,4 @@ symplifyRadical :: Test
 symplifyRadical = TestLabel "Simplififcacion de radicales" $ TestList [sr1, sr2]
 
 main :: IO Counts
-main = runTestTT $ TestList $ [symplifyBasic, symplifyConst, symplifyFraction, symplifyRadical]
+main = runTestTT $ TestList $ [symplifyBasic, symplifyConst, symplifyFraction, symplifyRadical, Algebraic.tests]

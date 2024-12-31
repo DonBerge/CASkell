@@ -1,4 +1,4 @@
-module Algebraic (
+module Simplification.Algebraic (
     expand
 ) where
 
