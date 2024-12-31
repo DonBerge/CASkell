@@ -36,64 +36,6 @@ instance Show x => Show (Fail x) where
 
 type Expr = Fail PExpr
 
-
-pattern Symbol :: String -> PExpr
-pattern Symbol x = Fun x []
-
-pattern Exp :: PExpr -> PExpr
-pattern Exp x = Fun "Exp" [x]
-
-pattern Log :: PExpr -> PExpr
-pattern Log x = Fun "Log" [x]
-
-pattern Sin :: PExpr -> PExpr
-pattern Sin x = Fun "Sin" [x]
-
-pattern Cos :: PExpr -> PExpr
-pattern Cos x = Fun "Cos" [x]
-
-pattern Tan :: PExpr -> PExpr
-pattern Tan x = Fun "Tan" [x]
-
-pattern Cot :: PExpr -> PExpr
-pattern Cot x = Fun "Cot" [x]
-
-pattern Sec :: PExpr -> PExpr
-pattern Sec x = Fun "Sec" [x]
-
-pattern Csc :: PExpr -> PExpr
-pattern Csc x = Fun "Csc" [x]
-
-pattern Asin :: PExpr -> PExpr
-pattern Asin x = Fun "Asin" [x]
-
-pattern Acos :: PExpr -> PExpr
-pattern Acos x = Fun "Acos" [x]
-
-pattern Atan :: PExpr -> PExpr
-pattern Atan x = Fun "Atan" [x]
-
-pattern Sinh :: PExpr -> PExpr
-pattern Sinh x = Fun "Sinh" [x]
-
-pattern Cosh :: PExpr -> PExpr
-pattern Cosh x = Fun "Cosh" [x]
-
-pattern Tanh :: PExpr -> PExpr
-pattern Tanh x = Fun "Tanh" [x]
-
-pattern Asinh :: PExpr -> PExpr
-pattern Asinh x = Fun "Asinh" [x]
-
-pattern Acosh :: PExpr -> PExpr
-pattern Acosh x = Fun "Acosh" [x]
-
-pattern Atanh :: PExpr -> PExpr
-pattern Atanh x = Fun "Atanh" [x]
-
-pattern Pi :: PExpr
-pattern Pi = Symbol "Pi"
-
 instance Num Expr where
     fromInteger = return . Number . fromInteger
     p + q = do
