@@ -39,14 +39,12 @@ automaticSymplify x = return x
 
 isPositive :: PExpr -> Bool
 isPositive (Number x) = x > 0
-isPositive (Mul xs) = all isPositive xs
--- isPositive (Exp _) = return True
+isPositive (Exp _) = True
 isPositive _ = False
 
 isNegative :: PExpr -> Bool
 isNegative (Number x) = x < 0
-isNegative (Mul xs) = all isNegative xs
--- isNegative (Exp _) = return False
+isNegative (Exp _) = False
 isNegative _ = False
 
 ------------------------------

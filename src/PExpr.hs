@@ -92,7 +92,6 @@ paren s = "(" ++ s ++ ")"
 
 isNegative :: PExpr -> Bool
 isNegative (Number x) = x < 0
-isNegative (Mul xs) = all isNegative xs
 isNegative _ = False
 
 -- TODO: usar DOC
