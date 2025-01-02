@@ -13,13 +13,13 @@ import PExpr
 
 import Data.List
 
-numerator :: MonadFail m => PExpr -> m Integer
-numerator (Number x) = return $ N.numerator x
-numerator _ = fail "numerator: not a number"
+numberNumerator :: PExpr -> Integer
+numberNumerator (Number x) = N.numerator x
+numberNumerator _ = error "numberNumerator: not a number"
 
-denominator :: MonadFail m => PExpr -> m Integer
-denominator (Number x) = return $ N.denominator x
-denominator _ = fail "numerator: not a number"
+numberDenominator :: PExpr -> Integer
+numberDenominator (Number x) = N.denominator x
+numberDenominator _ = error "numberDenominator: not a number"
 
 -- instance Real PExpr where
 --     toRational (Number x) = x
@@ -101,7 +101,7 @@ simplifyPow 0 w
     | otherwise = fail "0^w is not defined for w <= 0"
 simplifyPow 1 _ = return 1
 simplifyPow v w
-    | isInteger w = numerator w >>= simplifyIntPow v
+    | isInteger w = simplifyIntPow v (numberNumerator w)
     | otherwise = return (Pow v w)
     where
         simplifyIntPow (Number x) n = return $ Number $ x**fromIntegral n

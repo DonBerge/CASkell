@@ -16,6 +16,18 @@ y = symbol "y"
 z :: Expr
 z = symbol "z"
 
+a :: Expr
+a = symbol "a"
+
+b :: Expr
+b = symbol "b"
+
+c :: Expr
+c = symbol "c"
+
+d :: Expr
+d = symbol "d"
+
 te1 :: Test
 te1 = TestCase $ assertEqual "expand (x+1)^2" (expand ((x + 1)**2))  (x**2 + 2*x + 1)
 
@@ -46,5 +58,20 @@ te9 = TestCase $ assertEqual "expand (x+1)^2 + (y+1)^2" (expand ((x+1)**2 + (y+1
 te10 :: Test
 te10 = TestCase $ assertEqual "expand ((x+2)^2 + 3)^2" (expand (((x+2)**2 + 3)**2)) (x**4 + 8*x**3 + 30*x**2 + 56*x + 49)
 
+te11 :: Test
+te11 = TestCase $ assertEqual "expand y/((x+1)*(x+2))" (y/(x**2+3*x+2)) (expand (y/((x+1)*(x+2))))
+
+-- te12 :: Test
+-- te12 = TestCase $ assertEqual "expand (x+y) ** (3/2)" (x * (x+y)**(1/2) + y * (x+y) ** (1/2)) (expand ((x+y)**(3/2)))
+
+te12 :: Test
+te12 = TestCase $ assertEqual "expand sin(a(b+c))" (sin (a*b+a*c)) (expand (sin (a*(b+c))))
+
+te13 :: Test
+te13 = TestCase $ assertEqual "expand a/(b(c+d))" (a/(b*c+b*d)) (expand (a/(b*(c+d))))
+
+te14 :: Test
+te14 = TestCase $ assertEqual "expand (x+1)^2 * (x+3)^3" (x**5 + 11*x**4 + 46 * x**3 + 90 * x**2 + 81 * x + 27) (expand ((x+1)**2 * (x+3)**3))
+
 tests :: Test
-tests = TestLabel "Expansion algebraica" $ TestList [te1, te2, te3, te4, te5, te6, te7, te8, te9, te10]
+tests = TestLabel "Expansion algebraica" $ TestList [te1, te2, te3, te4, te5, te6, te7, te8, te9, te10, te11, te12, te13,te14]
