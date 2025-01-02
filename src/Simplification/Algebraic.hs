@@ -48,14 +48,18 @@ expand' (Mul (x:xs)) = do
                         xs' <- expand' (Mul xs)
                         expandProduct x' xs'
 
-expand' (Pow b e)
-    | isInteger e && e >= 2 = do
-                                b' <- expand' b
-                                expandPower b' (numberNumerator e)
-    | otherwise = do
+expand' (Pow b (Number f))
+    | f > 0 = let
+                (fl, m) = properFraction f
+              in do 
                     b' <- expand' b
-                    e' <- expand' e
-                    expandFraction $ Pow b' e'
+                    t' <- if f == m then expr (Pow b (Number m)) else expand $ simplifyPow b' (Number m)
+                    expandPower b' fl >>= expandProduct t'
+
+expand' (Pow b e) = do
+                        b' <- expand' b
+                        e' <- expand' e
+                        expandFraction $ Pow b' e'
 
 expand' (Fun f xs) = (Fun f <$> mapM (expand') xs) >>= expandFraction
 
@@ -68,21 +72,22 @@ expandFraction x = do
                         then expr x
                         else numerator x / (expand $ denominator x)
 
-
 expandProduct :: PExpr -> PExpr -> Expr
 expandProduct (Add []) _ = 0
-expandProduct (Add (r:rs)) s = expandProduct r s + expandProduct (Add rs) s >>= expandFraction
+expandProduct (Add (r:rs)) s = expandProduct r s + expandProduct (Add rs) s >>= expand' -- autosimplificacion puede generar terminos no expanadidos, por lo que hay que expnadir otra vez
 expandProduct r s@(Add _) = expandProduct s r
 expandProduct r s = expr r * expr s >>= expandFraction
 
 -- Se asume que n es no negativo
 expandPower :: PExpr -> Integer -> Expr
-expandPower (Add []) 0 = 1
+expandPower _ 0 = 1
+expandPower u 1 = expr u
+expandPower 0 _ = 0
 expandPower (Add []) _ = 0
 expandPower (Add (f:rs)) n = sum [ do
                                     cf' <- cf k
                                     cr' <- expandPower (Add rs) k
-                                    expandProduct cf' cr'  | k <- [0..n] ] >>= expandFraction
+                                    expandProduct cf' cr'  | k <- [0..n] ] >>= expandFraction -- autosimplificacion puede generar terminos no expanadidos, por lo que hay que expnadir otra vez
     where
         coeff:: Integer -> Expr
         coeff k = fromInteger (choose n k)

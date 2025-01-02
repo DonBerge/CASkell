@@ -21,6 +21,10 @@ numberDenominator :: PExpr -> Integer
 numberDenominator (Number x) = N.denominator x
 numberDenominator _ = error "numberDenominator: not a number"
 
+getNumber :: PExpr -> N.Number
+getNumber (Number x) = x
+getNumber _ = error "getNumber: not a number"
+
 -- instance Real PExpr where
 --     toRational (Number x) = x
 --     toRational _ = error "toRational: not a number"

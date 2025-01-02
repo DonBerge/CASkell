@@ -56,13 +56,10 @@ te9 :: Test
 te9 = TestCase $ assertEqual "expand (x+1)^2 + (y+1)^2" (expand ((x+1)**2 + (y+1)**2)) (x**2 + 2*x + y**2 + 2*y + 2)
 
 te10 :: Test
-te10 = TestCase $ assertEqual "expand ((x+2)^2 + 3)^2" (expand (((x+2)**2 + 3)**2)) (x**4 + 8*x**3 + 30*x**2 + 56*x + 49)
+te10 = TestCase $ assertEqual "expand ((x+2)^2 + 3)^2" (x**4 + 8*x**3 + 30*x**2 + 56*x + 49) (expand (((x+2)**2 + 3)**2)) 
 
 te11 :: Test
 te11 = TestCase $ assertEqual "expand y/((x+1)*(x+2))" (y/(x**2+3*x+2)) (expand (y/((x+1)*(x+2))))
-
--- te12 :: Test
--- te12 = TestCase $ assertEqual "expand (x+y) ** (3/2)" (x * (x+y)**(1/2) + y * (x+y) ** (1/2)) (expand ((x+y)**(3/2)))
 
 te12 :: Test
 te12 = TestCase $ assertEqual "expand sin(a(b+c))" (sin (a*b+a*c)) (expand (sin (a*(b+c))))
@@ -73,5 +70,17 @@ te13 = TestCase $ assertEqual "expand a/(b(c+d))" (a/(b*c+b*d)) (expand (a/(b*(c
 te14 :: Test
 te14 = TestCase $ assertEqual "expand (x+1)^2 * (x+3)^3" (x**5 + 11*x**4 + 46 * x**3 + 90 * x**2 + 81 * x + 27) (expand ((x+1)**2 * (x+3)**3))
 
+te15 :: Test
+te15 = TestCase $ assertEqual "expand (x+1)^(5/2)" (x**2 * sqrt (x+1) + 2 * x * sqrt (x + 1) + sqrt (x + 1)) (expand ((x + 1) ** (5/2)))
+
+te16 :: Test
+te16 = TestCase $ assertEqual "expand (x+1)^(3/2)" (x * sqrt (x + y) + y * sqrt (x + y)) (expand ((x + y) ** (3/2)))
+
+te17 :: Test
+te17 = TestCase $ assertEqual "expand (x * (y + 1) ** (3/2) + 1) * (x * (y + 1) ** (3/2) - 1)" ((x**2 * y**3) + (3 * x**2 * y**2) + (3 * x**2 * y) + x**2 - 1) (expand ((x * (y + 1) ** (3/2) + 1) * (x * (y + 1) ** (3/2) - 1))) 
+
+te18 :: Test
+te18 = TestCase $ assertEqual "expand (x*(y+1)**(1/2) + 1)**4" (1+6*x**2+x**4+6*x**2*y+2*x**4*y+x**4*y**2+4*x* sqrt (1+y)+4*x**3* sqrt (1+y)+4*x**3*y* sqrt (1+y)) (expand ((x*(y+1)**(1/2) + 1)**4))
+
 tests :: Test
-tests = TestLabel "Expansion algebraica" $ TestList [te1, te2, te3, te4, te5, te6, te7, te8, te9, te10, te11, te12, te13,te14]
+tests = TestLabel "Expansion algebraica" $ TestList [te1, te2, te3, te4, te5, te6, te7, te8, te9, te10, te11, te12, te13, te14, te15, te16, te17,te18]
