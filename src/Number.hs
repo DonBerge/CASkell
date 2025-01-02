@@ -153,6 +153,17 @@ instance Real Number where
     toRational (Fraction a) = a
     toRational x = toRational $ toFraction x
 
+instance RealFrac Number where
+    properFraction (Int i) = (fromInteger i, 0)
+    properFraction (Fraction x) = let
+                                    (n,f) = properFraction x
+                                  in
+                                    (n, simplify $ Fraction f)
+    properFraction (Real x) = let
+                                (n,f) = properFraction x
+                              in
+                                (n, simplify $ Real f)
+
 numerator :: Number -> Integer
 numerator = R.numerator . toRational 
 

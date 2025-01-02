@@ -30,19 +30,19 @@ denominator (Pow x y)
     | isNegative y = expr x ** (negate $ expr y)
 denominator (Exp x)
     | isNegative x = exp $ negate $ expr x
-denominator x = 1
+denominator _ = 1
 
 expand :: Expr -> Expr
 expand x = x >>= expand'
 
 expand' :: PExpr -> Expr
 expand' (Add []) = 0
-expand' (Add [x]) = expand' x
-expand' (Add (x:xs)) = expand' x + expand' (Add xs)
+expand' (Add [x]) = expand' x >>= expandFraction
+expand' (Add (x:xs)) = expand' x + expand' (Add xs) >>= expandFraction
                         
 
 expand' (Mul []) = 1
-expand' (Mul [x]) = expand' x
+expand' (Mul [x]) = expand' x >>= expandFraction
 expand' (Mul (x:xs)) = do
                         x' <- expand' x
                         xs' <- expand' (Mul xs)
@@ -55,18 +55,25 @@ expand' (Pow b e)
     | otherwise = do
                     b' <- expand' b
                     e' <- expand' e
-                    return $ Pow b' e'
+                    expandFraction $ Pow b' e'
 
-expand' (Fun f xs) = Fun f <$> mapM expand' xs
+expand' (Fun f xs) = (Fun f <$> mapM (expand') xs) >>= expandFraction
 
-expand' u = expr u
+expand' u = expr u >>= expandFraction
+
+expandFraction :: PExpr -> Expr
+expandFraction x = do
+                    d <- denominator x
+                    if d == 1
+                        then expr x
+                        else numerator x / (expand $ denominator x)
 
 
 expandProduct :: PExpr -> PExpr -> Expr
 expandProduct (Add []) _ = 0
-expandProduct (Add (r:rs)) s = expandProduct r s + expandProduct (Add rs) s
+expandProduct (Add (r:rs)) s = expandProduct r s + expandProduct (Add rs) s >>= expandFraction
 expandProduct r s@(Add _) = expandProduct s r
-expandProduct r s = expr r * expr s
+expandProduct r s = expr r * expr s >>= expandFraction
 
 -- Se asume que n es no negativo
 expandPower :: PExpr -> Integer -> Expr
@@ -75,7 +82,7 @@ expandPower (Add []) _ = 0
 expandPower (Add (f:rs)) n = sum [ do
                                     cf' <- cf k
                                     cr' <- expandPower (Add rs) k
-                                    expandProduct cf' cr'  | k <- [0..n] ]
+                                    expandProduct cf' cr'  | k <- [0..n] ] >>= expandFraction
     where
         coeff:: Integer -> Expr
         coeff k = fromInteger (choose n k)
@@ -85,4 +92,4 @@ expandPower (Add (f:rs)) n = sum [ do
 
         cf :: Integer -> Expr
         cf k = coeff k * expr f ** expo k
-expandPower u n = expr $ Pow u $ fromInteger n
+expandPower u n = (expr $ Pow u $ fromInteger n) >>= expandFraction
