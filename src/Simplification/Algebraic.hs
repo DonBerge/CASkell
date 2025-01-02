@@ -7,14 +7,17 @@ import PExpr
 
 import Symplify
 
+import qualified Number as N
+
 import Math.Combinatorics.Exact.Binomial (choose)
 
 expr :: PExpr -> Expr
 expr = return 
 
 numerator :: PExpr -> Expr
-numerator (Add []) = 0
-numerator (Mul []) = 1
+numerator (Number n) = fromInteger $ N.numerator n
+numerator (Add []) = numerator 0
+numerator (Mul []) = numerator 1
 numerator (Mul xs) = product $ map numerator xs
 numerator (Pow _ y)
     | isNegative y = 1
@@ -23,11 +26,12 @@ numerator (Exp x)
 numerator x = expr x    
 
 denominator :: PExpr -> Expr
-denominator (Add []) = 1
-denominator (Mul []) = 1
+denominator (Number n) = fromInteger $ N.denominator n
+denominator (Add []) = denominator 0
+denominator (Mul []) = denominator 1
 denominator (Mul xs) = product $ map denominator xs
-denominator (Pow x y)
-    | isNegative y = expr x ** (negate $ expr y)
+denominator u@(Pow _ y)
+    | isNegative y = recip $ expr u
 denominator (Exp x)
     | isNegative x = exp $ negate $ expr x
 denominator _ = 1
