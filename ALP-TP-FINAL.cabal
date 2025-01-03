@@ -60,6 +60,7 @@ library
 
     -- Modules exported by the library.
     exposed-modules:  Number
+                      TriBool
                       PExpr
                       Symplify
                       Simplification.TrigSimp
@@ -72,6 +73,7 @@ library
 
     -- LANGUAGE extensions used by modules in this package.
     other-extensions: PatternSynonyms
+                      NoImplicitPrelude
 
     -- Other library packages from which modules are imported.
     build-depends:    base ^>=4.20.0.0,
@@ -79,6 +81,7 @@ library
 
     -- Directories containing source files.
     hs-source-dirs:   src
+                      src/Trillean
                       src/Simplification
     main-is:          Main.hs
 
