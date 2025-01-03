@@ -71,8 +71,13 @@ instance Floating Expr where
     pi = return Pi
     exp = makeFun Exp
     log = makeFun Log
-    sin = makeFun Sin
-    cos = makeFun Cos
+
+    sin 0 = 0
+    sin x = makeFun Sin x
+
+    cos 0 = 1
+    cos x = makeFun Cos x
+    
     tan = makeFun Tan
     asin = makeFun Asin
     acos = makeFun Acos
