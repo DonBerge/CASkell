@@ -11,6 +11,9 @@ module Number (
 import Data.Ratio ((%))
 import qualified Data.Ratio as R
 
+import Classes.Assumptions
+import TriBool
+
 data Number = Int Integer | Fraction Rational | Real Double
 
 digitCount :: Integer -> Int
@@ -164,16 +167,34 @@ instance RealFrac Number where
                               in
                                 (n, simplify $ Real f)
 
+
+--- NOTA: Asume que el numero esta simplificado
+instance Assumptions Number where
+    isPositive (Int x) = liftBool $ x > 0
+    isPositive (Fraction x) = liftBool $ x > 0
+    isPositive (Real x) = liftBool $ x > 0
+
+    isNegative (Int x) = liftBool $ x < 0
+    isNegative (Fraction x) = liftBool $ x < 0
+    isNegative (Real x) = liftBool $ x < 0
+
+    isZero (Int x) = liftBool $ x == 0
+    isZero _ = F
+
+    isEven (Int x) = liftBool $ even x
+    isEven _ = F
+
+    isOdd (Int x) = liftBool $ odd x
+    isOdd _ = F
+
+    isInteger (Int _) = T
+    isInteger _ = F
+
 numerator :: Number -> Integer
 numerator = R.numerator . toRational 
 
 denominator :: Number -> Integer
 denominator = R.denominator . toRational
-
-isInteger :: Number -> Bool
-isInteger x = case simplify x of
-                Int _ -> True
-                _ -> False
 
 fromNumber :: Number -> Double
 fromNumber (Int x) = fromIntegral x

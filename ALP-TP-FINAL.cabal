@@ -67,9 +67,10 @@ library
                       Simplification.TrigExpand
                       Simplification.Algebraic
                       Expr
+                      Classes.Assumptions
 
     -- Modules included in this library but not exported.
-    -- other-modules:
+    -- other-modules:  
 
     -- LANGUAGE extensions used by modules in this package.
     other-extensions: PatternSynonyms
@@ -83,6 +84,7 @@ library
     hs-source-dirs:   src
                       src/Trillean
                       src/Simplification
+                      src/Classes
     main-is:          Main.hs
 
     -- Base language which the package is written in.
@@ -102,6 +104,8 @@ test-suite cas-test
                     Derivate
                     Simplification.Algebraic
                     Test.Algebraic
+                    Classes.Assumptions
+                    TriBool
                                         
 
     -- LANGUAGE extensions used by modules in this package.
@@ -114,6 +118,7 @@ test-suite cas-test
     hs-source-dirs:   test/Test
                       test
                       src
+                      src/Trillean
                       src/Simplification
 
     -- The entrypoint to the test suite.
@@ -136,10 +141,13 @@ test-suite trig-test
 
     other-modules:  Expr
                     Simplification.Algebraic
+                    Classes.Assumptions
+                    TriBool
 
     -- Directories containing source files.
     hs-source-dirs:   test/Trigonometry
                       src
+                      src/Trillean
                       src/Simplification
 
     -- The entrypoint to the test suite.

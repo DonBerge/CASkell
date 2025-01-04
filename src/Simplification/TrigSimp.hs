@@ -3,7 +3,7 @@ module Simplification.TrigSimp where
 
 import PExpr
 
-import Symplify (simplifyProduct, simplifySum, isInteger)
+import Symplify (simplifyProduct, simplifySum)
 import Expr
 
 pattern Recip :: PExpr -> PExpr
@@ -52,6 +52,6 @@ tr2i = bottomUp tr2i'
             | x == y = tan $ expr x
         tr2i' (Div (Cos x) (Sin y))
             | x == y = cot $ expr x
-        tr2i' (DivPow x y a b)
-            | isInteger a && a == -b = tr2i (Div x y) ** (expr a)
+        -- tr2i' (DivPow x y a b)
+        --     | isInteger a && a == -b = tr2i (Div x y) ** (expr a)
         tr2i' x = expr x

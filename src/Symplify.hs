@@ -11,6 +11,9 @@ import Prelude hiding (const, exponent)
 import qualified Number as N
 import PExpr
 
+import TriBool
+import Classes.Assumptions
+
 import Data.List
 
 numberNumerator :: PExpr -> Integer
@@ -40,16 +43,6 @@ automaticSymplify (Fun f xs) = do
                                     xs' <- mapM automaticSymplify xs
                                     simplifyFunction $ Fun f xs'
 automaticSymplify x = return x
-
-isPositive :: PExpr -> Bool
-isPositive (Number x) = x > 0
-isPositive (Exp _) = True
-isPositive _ = False
-
-isNegative :: PExpr -> Bool
-isNegative (Number x) = x < 0
-isNegative (Exp _) = False
-isNegative _ = False
 
 ------------------------------
 isConstant :: PExpr -> Bool
@@ -89,11 +82,6 @@ exponent _ = 1
 
 ---------------------------------------------------------------------------------------
 
-
-isInteger :: PExpr -> Bool
-isInteger (Number x) = N.isInteger x
-isInteger _ = False
-
 fromNumber :: PExpr -> Double
 fromNumber (Number x) = N.fromNumber x
 fromNumber _ = error "fromNumber: not a number"
@@ -101,11 +89,11 @@ fromNumber _ = error "fromNumber: not a number"
 simplifyPow :: MonadFail m => PExpr -> PExpr -> m (PExpr)
 -- SPOW-2
 simplifyPow 0 w
-    | isPositive w = return 0
+    | isTrue $ isPositive w = return 0
     | otherwise = fail "0^w is not defined for w <= 0"
 simplifyPow 1 _ = return 1
 simplifyPow v w
-    | isInteger w = simplifyIntPow v (numberNumerator w)
+    | isTrue $ isInteger w = simplifyIntPow v (numberNumerator w)
     | otherwise = return (Pow v w)
     where
         simplifyIntPow (Number x) n = return $ Number $ x**fromIntegral n

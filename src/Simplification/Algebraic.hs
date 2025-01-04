@@ -11,6 +11,9 @@ import qualified Number as N
 
 import Math.Combinatorics.Exact.Binomial (choose)
 
+import Classes.Assumptions
+import TriBool
+
 expr :: PExpr -> Expr
 expr = return 
 
@@ -20,9 +23,9 @@ numerator (Add []) = numerator 0
 numerator (Mul []) = numerator 1
 numerator (Mul xs) = product $ map numerator xs
 numerator (Pow _ y)
-    | isNegative y = 1
+    | isTrue $ isNegative y = 1
 numerator (Exp x)
-    | isNegative x = 1
+    | isTrue $ isNegative x = 1
 numerator x = expr x    
 
 denominator :: PExpr -> Expr
@@ -31,9 +34,9 @@ denominator (Add []) = denominator 0
 denominator (Mul []) = denominator 1
 denominator (Mul xs) = product $ map denominator xs
 denominator u@(Pow _ y)
-    | isNegative y = recip $ expr u
+    | isTrue $ isNegative y = recip $ expr u
 denominator (Exp x)
-    | isNegative x = exp $ negate $ expr x
+    | isTrue $ isNegative x = exp $ negate $ expr x
 denominator _ = 1
 
 expand :: Expr -> Expr

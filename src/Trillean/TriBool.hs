@@ -69,3 +69,24 @@ instance BAlgebra TriBool Bool TriBool where
     (|||) = flip (|||)
     (!&&) = flip (!&&)
     (/||) = flip (/||)
+
+xor3 :: (a -> TriBool) -> [a] -> TriBool
+xor3 _ [] = F
+xor3 f (x:xs)
+    | isUnknown (f x) = U
+    | isFalse (f x) = xor3 f xs
+    | otherwise = xor3 f xs
+
+and3 :: (a -> TriBool) -> [a] -> TriBool
+and3 _ [] = T
+and3 f (x:xs)
+    | isUnknown (f x) = U
+    | isFalse (f x) = F
+    | otherwise = and3 f xs
+
+or3 :: (a -> TriBool) -> [a] -> TriBool
+or3 _ [] = T
+or3 f (x:xs)
+    | isUnknown (f x) = U
+    | isTrue (f x) = T
+    | otherwise = or3 f xs

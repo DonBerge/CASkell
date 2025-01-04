@@ -30,6 +30,9 @@ import Number
 
 import Data.List
 
+import Classes.Assumptions
+import TriBool
+
 -- Las PExpre construyen a partir de un conjunto de simbolos y constantes numericas
 data PExpr = Number Number 
                 | Mul [PExpr] 
@@ -90,9 +93,9 @@ unquote s = s
 paren :: String -> String
 paren s = "(" ++ s ++ ")"
 
-isNegative :: PExpr -> Bool
-isNegative (Number x) = x < 0
-isNegative _ = False
+-- isNegative :: PExpr -> Bool
+-- isNegative (Number x) = x < 0
+-- isNegative _ = False
 
 -- TODO: usar DOC
 instance Show PExpr where
@@ -102,7 +105,7 @@ instance Show PExpr where
     show (Mul xs) = intercalate "*" $ map parenExpr xs
         where
             parenExpr (Number s)
-                | s < 0 || not (isInteger s) = paren $ show s
+                | s < 0 || isFalse (isInteger s) = paren $ show s
                 | otherwise = show s
             parenExpr s@(Add _) = paren $ show s
             parenExpr s = show s
@@ -118,7 +121,7 @@ instance Show PExpr where
             mulByNeg _ = False
 
             parenExpr (Number s)
-                | s < 0 || not (isInteger s) = paren $ show s
+                | s < 0 || isFalse (isInteger s) = paren $ show s
                 | otherwise = show s
             parenExpr s@(Add _) = paren $ show s
             parenExpr s = show s
@@ -130,11 +133,11 @@ instance Show PExpr where
      -- = parenExpr x ++ "^2"
     show (Pow x y)
         | y == 1 = show x
-        | isNegative y = "1/" ++ parenExpr (Pow x (negate y))
+        | isTrue $ isNegative y = "1/" ++ parenExpr (Pow x (negate y))
         | otherwise = parenExpr x ++ "^" ++ parenExpr y
         where
             parenExpr (Number s)
-                | s < 0 || not (isInteger s) = paren $ show s
+                | s < 0 || isFalse (isInteger s) = paren $ show s
                 | otherwise = show s
             parenExpr s@(Add _) = "(" ++ show s ++ ")"
             parenExpr s@(Mul _) = "(" ++ show s ++ ")"
@@ -142,6 +145,49 @@ instance Show PExpr where
             parenExpr s = show s
     show (Fun f []) = unquote $ show f
     show (Fun f xs) = unquote (show f) ++ "(" ++ intercalate "," (map show xs) ++ ")"
+
+instance Assumptions PExpr where
+    isPositive (Number x) = isPositive x
+    isPositive (Mul xs) = xor3 isNegative xs
+    isPositive (Add xs) = and3 isPositive xs
+    isPositive (Pow x y) = isPositive x ||| isEven y
+    isPositive (Exp _) = T
+    isPositive (Log (Number a)) = liftBool $ a > 1
+    isPositive Pi = T
+    isPositive (Fun _ _) = U
+    
+
+    isNegative (Number x) = isNegative x
+    isNegative (Mul xs) = foldl nxor T $ map isNegative xs
+        where
+            nxor U _ = U
+            nxor _ U = U
+            nxor p q = liftBool $ p == q
+    isNegative (Add xs) = and3 isNegative xs
+    isNegative (Pow x y) = isNegative x &&& isOdd y
+    isNegative (Exp _) = F
+    isNegative (Log (Number a)) = liftBool $ a < 1
+    isNegative Pi = F
+    isNegative (Fun _ _) = U
+
+    isZero (Number x) = isZero x
+    isZero (Mul xs) = or3 isZero xs
+    isZero (Add xs) = and3 isZero xs
+    isZero (Pow x y) = isZero x &&& isPositive y
+    isZero (Exp _) = F
+    isZero (Log (Number a)) = liftBool $ a == 1
+    isZero Pi = F
+    isZero (Fun _ _) = U
+
+    isInteger (Number x) = isInteger x
+    isInteger (Mul xs) = and3 isInteger xs
+    isInteger (Add xs) = and3 isInteger xs
+    isInteger (Pow x y) = isInteger x &&& isInteger y
+    isInteger Pi = F
+    isInteger (Fun _ _) = U
+
+    isEven = undefined
+    isOdd = undefined
 
 
 instance Num PExpr where
