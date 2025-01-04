@@ -3,8 +3,9 @@
 {-# OPTIONS_GHC -Wno-noncanonical-monad-instances #-}
 module PExpr (
     PExpr(..),
-    eMap,
     showStruct,
+    module TriBool,
+    module Classes.Assumptions,
     pattern Pi,
     pattern Symbol,
     pattern Exp,
@@ -212,13 +213,6 @@ instance Num PExpr where
 
     abs = undefined
     signum = undefined
-
-eMap :: (PExpr -> PExpr) -> PExpr -> PExpr
-eMap _ (Number x) = Number x
-eMap f (Mul xs) = Mul (map f xs)
-eMap f (Add xs) = Add (map f xs)
-eMap f (Pow x y) = Pow (f x) (f y)
-eMap f (Fun s xs) = Fun s $ map f xs
 
 showStruct :: PExpr -> String
 showStruct (Number x) = "Number " ++ show x

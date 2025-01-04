@@ -11,9 +11,6 @@ import qualified Number as N
 
 import Math.Combinatorics.Exact.Binomial (choose)
 
-import Classes.Assumptions
-import TriBool
-
 expr :: PExpr -> Expr
 expr = return 
 

@@ -11,9 +11,6 @@ import Prelude hiding (const, exponent)
 import qualified Number as N
 import PExpr
 
-import TriBool
-import Classes.Assumptions
-
 import Data.List
 
 numberNumerator :: PExpr -> Integer
