@@ -69,6 +69,7 @@ library
                       Expr
                       Simplification.Rationalize
                       Classes.Assumptions
+                      Classes.ToRatio
 
     -- Modules included in this library but not exported.
     -- other-modules:  

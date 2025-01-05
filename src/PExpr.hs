@@ -1,9 +1,9 @@
 {-# LANGUAGE PatternSynonyms #-}
-{-# OPTIONS_GHC -Wall #-}
 {-# OPTIONS_GHC -Wno-noncanonical-monad-instances #-}
+{-# OPTIONS_GHC -Wall #-}
+
 module PExpr (
     PExpr(..),
-    showStruct,
     module TriBool,
     module Classes.Assumptions,
     pattern Pi,
@@ -213,13 +213,6 @@ instance Num PExpr where
 
     abs = undefined
     signum = undefined
-
-showStruct :: PExpr -> String
-showStruct (Number x) = "Number " ++ show x
-showStruct (Mul xs) = "Mul [" ++ intercalate "," (map showStruct xs) ++ "]"
-showStruct (Add xs) = "Add [" ++ intercalate "," (map showStruct xs) ++ "]"
-showStruct (Pow x y) = "Pow (" ++ showStruct x ++ ") (" ++ showStruct y ++ ")"
-showStruct (Fun s xs) = "Fun " ++ show s ++ " [" ++ intercalate "," (map showStruct xs) ++ "]"
 
 pattern Symbol :: String -> PExpr
 pattern Symbol x = Fun x []
