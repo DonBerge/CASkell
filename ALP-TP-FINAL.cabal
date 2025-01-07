@@ -60,19 +60,19 @@ library
 
     -- Modules exported by the library.
     exposed-modules:  Number
-                      TriBool
                       PExpr
                       Symplify
                       Simplification.TrigSimp
                       Simplification.TrigExpand
                       Simplification.Algebraic
+                      Simplification.Fu
                       Expr
                       Simplification.Rationalize
-                      Classes.Assumptions
-                      Classes.ToRatio
 
     -- Modules included in this library but not exported.
-    -- other-modules:  
+    other-modules:  Classes.Assumptions
+                    Classes.ToRatio
+                    TriBool
 
     -- LANGUAGE extensions used by modules in this package.
     other-extensions: PatternSynonyms
