@@ -126,14 +126,17 @@ instance Floating Expr where
     exp = makeFun Exp
     log = makeFun Log
 
+    sin 0 = 0
     sin x = do
-                (a,b) <- x >>= (`linearForm` Pi)
-                -- x = a * pi + b
-                case a of
-                    1 -> case b of
-                            Mul cs | foldl (\c -> (c /=) . (isTrue . isNegative)) False cs -> Sin <$> negate (return b)
-                            _ -> negate $ return $ Sin b
-                                    
+                n <- x >>= numerator
+                d <- x >>= denominator
+                case (n,d) of
+                    (Pi, 6) -> 1 / 2
+                    (Pi, 4) -> 1 / sqrt 2
+                    (Pi, 5) -> sqrt(10-2*sqrt 5) / 4
+                    (Pi, 3) -> sqrt 3 / 2
+                    (Pi, 2) -> 1
+                    (Pi, 1) -> 0
                     _ -> makeFun Sin x
 
     cos 0 = 1

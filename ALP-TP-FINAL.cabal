@@ -59,10 +59,7 @@ library
     import:           warnings
 
     -- Modules exported by the library.
-    exposed-modules:  Number
-                      PExpr
-                      Symplify
-                      Simplification.TrigSimp
+    exposed-modules:  Simplification.TrigSimp
                       Simplification.TrigExpand
                       Simplification.Algebraic
                       Simplification.Fu
@@ -70,7 +67,10 @@ library
                       Simplification.Rationalize
 
     -- Modules included in this library but not exported.
-    other-modules:  Classes.Assumptions
+    other-modules:  Number
+                    PExpr
+                    Symplify
+                    Classes.Assumptions
                     Classes.ToRatio
                     TriBool
 
