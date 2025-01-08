@@ -141,6 +141,11 @@ simplifyProductRec [u,v]
 simplifyProductRec ((Mul us):vs) = simplifyProductRec vs >>= mergeProducts us
 simplifyProductRec (u:vs) = simplifyProductRec vs >>= mergeProducts [u]
 
+simplifyDiv :: MonadFail m => PExpr -> PExpr -> m (PExpr)
+simplifyDiv x y = do
+                    y' <- simplifyPow y (-1)
+                    simplifyProduct [x, y']
+
 simplifySum :: MonadFail m => [PExpr] -> m (PExpr)
 simplifySum [] = return 0
 simplifySum [x] = return x
@@ -180,6 +185,11 @@ simplifySumRec [u, v]
 -- SPRDREC-3
 simplifySumRec ((Add us):vs) = simplifySumRec vs >>= mergeSums us
 simplifySumRec (u:vs) = simplifySumRec vs >>= mergeSums [u]
+
+simplifySub :: MonadFail m => PExpr -> PExpr -> m (PExpr)
+simplifySub x y = do
+                    y' <- simplifyProduct [y, -1]
+                    simplifySum [x, y']
 
 mergeOps :: (Monad m, Eq a) => ([a] -> m [a]) -> [a] -> [a] -> m [a]
 mergeOps _ p [] = return p
