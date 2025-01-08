@@ -40,22 +40,14 @@ instance Num Expr where
     p + q = do
               p' <- p
               q' <- q
-              Add xs <- return $ p' + q'
-              simplifySum xs
+              simplifySum [p',q']
     p * q = do
               p' <- p
               q' <- q
-              Mul xs <- return $ p' * q'
-              simplifyProduct xs
+              simplifyProduct [p',q']
 
-    negate p = p >>= simplifyProduct . (:[Number (-1)])
-
-    p - q = do
-              p' <- p
-              q' <- negate q
-              Add xs <- return $ p' + q'
-              simplifySum xs
-
+    negate p = p >>= simplifyProduct . (:[(-1)])
+    
     abs x
         | isTrue $ isNegative x = negate x
         | isTrue $ isPositive x = x
@@ -65,11 +57,8 @@ instance Num Expr where
         
 instance Fractional Expr where
     fromRational = return . Number . fromRational
-    p / q = do
-              p' <- p
-              q' <- q >>= (`simplifyPow` (-1))
-              Mul xs <- return $ p' * q'
-              simplifyProduct xs
+
+    recip p = p >>= (`simplifyPow` (-1))
 
 makeFun :: (PExpr -> PExpr) -> Expr -> Expr
 makeFun f x = Fail $ f <$> unFail x 
