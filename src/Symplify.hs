@@ -1,10 +1,15 @@
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# OPTIONS_GHC -Wall #-}
 {-# OPTIONS_GHC -Wno-noncanonical-monad-instances #-}
 
-module Symplify where
+module Symplify (
+    automaticSymplify,
+    simplifyProduct,
+    simplifySum,
+    simplifyDiv,
+    simplifySub,
+    simplifyPow,
+    module PExpr,
+) where
 
 import Prelude hiding (const, exponent)
 
@@ -86,11 +91,11 @@ fromNumber _ = error "fromNumber: not a number"
 simplifyPow :: MonadFail m => PExpr -> PExpr -> m (PExpr)
 -- SPOW-2
 simplifyPow 0 w
-    | isTrue $ isPositive w = return 0
+    | true $ isPositive w = return 0
     | otherwise = fail "0^w is not defined for w <= 0"
 simplifyPow 1 _ = return 1
 simplifyPow v w
-    | isTrue $ isInteger w = simplifyIntPow v (numberNumerator w)
+    | true $ isInteger w = simplifyIntPow v (numberNumerator w)
     | otherwise = return (Pow v w)
     where
         simplifyIntPow (Number x) n = return $ Number $ x**fromIntegral n
@@ -212,3 +217,4 @@ mergeSums = mergeOps simplifySumRec
 
 simplifyFunction :: Monad m => a -> m a
 simplifyFunction = return
+

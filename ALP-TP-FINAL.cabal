@@ -129,4 +129,5 @@ test-suite cas-test
     -- Test dependencies.
     build-depends:    base ^>=4.20.0.0,
                       HUnit,
-                      exact-combinatorics
+                      exact-combinatorics,
+                      monad-parallel

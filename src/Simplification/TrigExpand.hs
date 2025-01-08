@@ -16,8 +16,8 @@ expandTrig' (Sin (Add [x])) = sin $ expr x
 expandTrig' (Cos (Add [x])) = cos $ expr x
 
 expandTrig' (Sin (Add (x:xs))) = do
-                                    sx <- sin $ expr x
-                                    cx <- cos $ expr x
+                                    sx <- sin $ return x
+                                    cx <- cos $ return x
                                     sxs <- expandTrig' $ Sin $ Add xs
                                     cxs <- expandTrig' $ Cos $ Add xs
                                     return $ sx * cxs + cx * sxs

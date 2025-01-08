@@ -49,8 +49,8 @@ instance Num Expr where
     negate p = p >>= simplifyProduct . (:[(-1)])
     
     abs x
-        | isTrue $ isNegative x = negate x
-        | isTrue $ isPositive x = x
+        | true $ isNegative x = negate x
+        | true $ isPositive x = x
         | otherwise = fail "abs is undefined for this expression"
     
     signum = undefined
@@ -183,9 +183,9 @@ numerator (Add []) = numerator 0
 numerator (Mul []) = numerator 1
 numerator (Mul xs) = product $ map numerator xs
 numerator (Pow _ y)
-    | isTrue $ isNegative y = 1
+    | true $ isNegative y = 1
 numerator (Exp x)
-    | isTrue $ isNegative x = 1
+    | true $ isNegative x = 1
 numerator x = return x    
 
 denominator :: PExpr -> Expr
@@ -194,9 +194,9 @@ denominator (Add []) = denominator 0
 denominator (Mul []) = denominator 1
 denominator (Mul xs) = product $ map denominator xs
 denominator u@(Pow _ y)
-    | isTrue $ isNegative y = recip $ return u
+    | true $ isNegative y = recip $ return u
 denominator (Exp x)
-    | isTrue $ isNegative x = exp $ negate $ return x
+    | true $ isNegative x = exp $ negate $ return x
 denominator _ = 1
 
 

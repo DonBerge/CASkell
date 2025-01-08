@@ -106,7 +106,7 @@ instance Show PExpr where
     show (Mul xs) = intercalate "*" $ map parenExpr xs
         where
             parenExpr (Number s)
-                | s < 0 || isFalse (isInteger s) = paren $ show s
+                | s < 0 || false (isInteger s) = paren $ show s
                 | otherwise = show s
             parenExpr s@(Add _) = paren $ show s
             parenExpr s = show s
@@ -122,7 +122,7 @@ instance Show PExpr where
             mulByNeg _ = False
 
             parenExpr (Number s)
-                | s < 0 || isFalse (isInteger s) = paren $ show s
+                | s < 0 || false (isInteger s) = paren $ show s
                 | otherwise = show s
             parenExpr s@(Add _) = paren $ show s
             parenExpr s = show s
@@ -134,11 +134,11 @@ instance Show PExpr where
      -- = parenExpr x ++ "^2"
     show (Pow x y)
         | y == 1 = show x
-        | isTrue $ isNegative y = "1/" ++ parenExpr (Pow x (negate y))
+        | true $ isNegative y = "1/" ++ parenExpr (Pow x (negate y))
         | otherwise = parenExpr x ++ "^" ++ parenExpr y
         where
             parenExpr (Number s)
-                | s < 0 || isFalse (isInteger s) = paren $ show s
+                | s < 0 || false (isInteger s) = paren $ show s
                 | otherwise = show s
             parenExpr s@(Add _) = "(" ++ show s ++ ")"
             parenExpr s@(Mul _) = "(" ++ show s ++ ")"
@@ -207,8 +207,8 @@ instance Num PExpr where
     negate (Add ps) = Add $ map negate ps
     negate (Mul ((Number a): ps))
         | a == -1 = Mul ps
-        | otherwise = Mul $ (Number (negate a)):ps
-    negate (Mul ps) = Mul ((fromInteger (-1)):ps)
+        | otherwise = Mul $ Number (negate a):ps
+    negate (Mul ps) = Mul (fromInteger (-1):ps)
     negate e = Mul [fromInteger (-1), e]
 
     abs = undefined
