@@ -69,6 +69,32 @@ symplifyFraction = TestLabel "Simplififcacion de fracciones" $ TestList [sf1, sf
 
 ------------------------------------
 
+st1 :: Test
+st1 = TestCase $ assertEqual "sin(2*pi + x)" (sin x) (sin(2*pi+x))
+
+st2 :: Test
+st2 = TestCase $ assertEqual "sin(pi/2)" 1 (sin(pi/2))
+
+st3 :: Test
+st3 = TestCase $ assertEqual "sin(pi+x)" (-sin x) (sin(pi+x))
+
+st4 :: Test
+st4 = TestCase $ assertEqual "sin(-x)" (-sin x) (sin(-x))
+
+st5 :: Test
+st5 = TestCase $ assertEqual "sin(pi-x)" (sin x) (sin(pi-x))
+
+st6 :: Test
+st6 = TestCase $ assertEqual "sin(3*pi/2)" (-1) (sin(3*pi/2))
+
+st7 :: Test
+st7 = TestCase $ assertEqual "sin(3*pi/2 + x)" 1 (sin(-3*pi/2))
+
+simplifyTrigTests :: Test
+simplifyTrigTests = TestLabel "Simplififcacion de funciones trigonometricas" $ TestList [st1, st2, st3, st4, st5, st6, st7]
+
+--
+
 assertNotEqual :: Eq a => String -> a -> a -> Assertion
 assertNotEqual msg a b = assertBool msg (a /= b)
 
@@ -76,10 +102,10 @@ sr1 :: Test
 sr1 = TestCase $ assertNotEqual "sqrt (x ** 2) != x" (sqrt (x**2)) x
 
 sr2 :: Test
-sr2 = TestCase $ assertEqual "(sqrt x) ** 2" ((sqrt x)**2) x
+sr2 = TestCase $ assertEqual "(sqrt x) ** 2" (sqrt x ** 2) x
 
 symplifyRadical :: Test
 symplifyRadical = TestLabel "Simplififcacion de radicales" $ TestList [sr1, sr2]
 
 main :: IO Counts
-main = runTestTT $ TestList $ [symplifyBasic, symplifyConst, symplifyFraction, symplifyRadical, Algebraic.tests, Fu.tests]
+main = runTestTT $ TestList [symplifyBasic, symplifyConst, symplifyFraction, symplifyRadical, simplifyTrigTests, Algebraic.tests, Fu.tests]

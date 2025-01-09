@@ -90,3 +90,8 @@ or3 f (x:xs)
     | unknown (f x) = U
     | true (f x) = T
     | otherwise = or3 f xs
+
+triBoolCase :: TriBool -> a -> a -> a -> a
+triBoolCase T t _ _ = t
+triBoolCase F _ f _ = f
+triBoolCase U _ _ u = u

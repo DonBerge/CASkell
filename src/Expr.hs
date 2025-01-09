@@ -74,7 +74,7 @@ instance Floating Expr where
     exp = makeFun Exp
     log = makeFun Log
 
-    sin = makeFun Sin
+    sin = (=<<) (simplifyFun . Sin)
 
     cos 0 = 1
     cos x = makeFun Cos x

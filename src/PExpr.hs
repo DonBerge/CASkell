@@ -187,8 +187,14 @@ instance Assumptions PExpr where
     isInteger Pi = F
     isInteger (Fun _ _) = U
 
-    isEven = undefined
-    isOdd = undefined
+    isEven (Number x) = isEven x
+    isEven (Mul xs) = and3 isInteger xs &&& or3 isEven xs
+    isEven (Add xs) = and3 isInteger xs &&& xor3 isOdd xs
+    isEven (Pow x y) = isInteger y &&& isEven x
+    isEven Pi = F
+    isEven _ = U
+    
+    isOdd = not3 . isEven
 
 
 instance Num PExpr where
@@ -213,6 +219,11 @@ instance Num PExpr where
 
     abs = undefined
     signum = undefined
+
+instance Fractional PExpr where
+    fromRational x = Number (fromRational x)
+    recip (Number x) = Number (recip x)
+    recip x = Pow x (-1)
 
 pattern Symbol :: String -> PExpr
 pattern Symbol x = Fun x []
