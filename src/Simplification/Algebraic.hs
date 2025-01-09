@@ -40,7 +40,7 @@ expand' (Pow b e) = do
                         e' <- expand' e
                         expandFraction $ Pow b' e'
 
-expand' (Fun f xs) = (Fun f <$> mapM (expand') xs) >>= expandFraction
+expand' (Fun f xs) = (Fun f <$> mapM expand' xs) >>= expandFraction
 
 expand' u = expandFraction u
 
@@ -49,7 +49,7 @@ expandFraction x = do
                     d <- denominator x
                     if d == 1
                         then return x
-                        else numerator x / (expand' d)
+                        else numerator x / expand' d
 
 expandProduct :: PExpr -> PExpr -> Expr
 expandProduct (Add []) _ = 0

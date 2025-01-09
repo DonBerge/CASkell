@@ -5,6 +5,7 @@ import Test.HUnit
 import Expr
 
 import qualified Test.Algebraic as Algebraic
+import qualified Test.Fu as Fu
 
 x :: Expr
 x = symbol "x"
@@ -41,10 +42,10 @@ symplifyBasic = TestList [sb1, sb2, sb3, sb4, sb5, sb6, sb7]
 -----------------------------------
 
 sc1 :: Test
-sc1 = TestCase $ assertEqual "eval 2+3" (((2::Expr) + (3::Expr))) (5::Expr)
+sc1 = TestCase $ assertEqual "eval 2+3" ((2::Expr) + (3::Expr)) (5::Expr)
 
 sc2 :: Test
-sc2 = TestCase $ assertEqual "eval 3*4" (((2::Expr) * (3::Expr))) (6::Expr)
+sc2 = TestCase $ assertEqual "eval 3*4" ((2::Expr) * (3::Expr)) (6::Expr)
 
 sc3 :: Test
 sc3 = TestCase $ assertEqual "eval 2^3" ((2::Expr) ** (3::Expr)) (8::Expr)
@@ -81,4 +82,4 @@ symplifyRadical :: Test
 symplifyRadical = TestLabel "Simplififcacion de radicales" $ TestList [sr1, sr2]
 
 main :: IO Counts
-main = runTestTT $ TestList $ [symplifyBasic, symplifyConst, symplifyFraction, symplifyRadical, Algebraic.tests]
+main = runTestTT $ TestList $ [symplifyBasic, symplifyConst, symplifyFraction, symplifyRadical, Algebraic.tests, Fu.tests]

@@ -105,7 +105,9 @@ test-suite cas-test
                     Symplify
                     Derivate
                     Simplification.Algebraic
+                    Simplification.Fu
                     Test.Algebraic
+                    Test.Fu
                     Classes.Assumptions
                     TriBool
                                         

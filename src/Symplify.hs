@@ -8,6 +8,12 @@ module Symplify (
     simplifyDiv,
     simplifySub,
     simplifyPow,
+    simplifyFunction,
+    operands,
+    freeOf,
+    linearForm,
+    numerator,
+    denominator,
     module PExpr,
 ) where
 
@@ -17,24 +23,17 @@ import qualified Number as N
 import PExpr
 
 import Data.List
+import Data.Maybe
 
 numberNumerator :: PExpr -> Integer
 numberNumerator (Number x) = N.numerator x
 numberNumerator _ = error "numberNumerator: not a number"
 
-numberDenominator :: PExpr -> Integer
-numberDenominator (Number x) = N.denominator x
-numberDenominator _ = error "numberDenominator: not a number"
-
-getNumber :: PExpr -> N.Number
-getNumber (Number x) = x
-getNumber _ = error "getNumber: not a number"
-
 -- instance Real PExpr where
 --     toRational (Number x) = x
 --     toRational _ = error "toRational: not a number"
 
-automaticSymplify :: MonadFail m => PExpr -> m (PExpr)
+automaticSymplify :: MonadFail m => PExpr -> m PExpr
 automaticSymplify (Mul xs) = mapM automaticSymplify xs >>= simplifyProduct
 automaticSymplify (Add xs) = mapM automaticSymplify xs >>= simplifySum
 automaticSymplify (Pow x y) = do
@@ -84,11 +83,7 @@ exponent _ = 1
 
 ---------------------------------------------------------------------------------------
 
-fromNumber :: PExpr -> Double
-fromNumber (Number x) = N.fromNumber x
-fromNumber _ = error "fromNumber: not a number"
-
-simplifyPow :: MonadFail m => PExpr -> PExpr -> m (PExpr)
+simplifyPow :: MonadFail m => PExpr -> PExpr -> m PExpr
 -- SPOW-2
 simplifyPow 0 w
     | true $ isPositive w = return 0
@@ -105,7 +100,7 @@ simplifyPow v w
         simplifyIntPow (Mul r) n = mapM (`simplifyIntPow` n) r >>= simplifyProduct
         simplifyIntPow x n = return $ Pow x (fromInteger n)
 
-simplifyProduct :: MonadFail m => [PExpr] -> m (PExpr)
+simplifyProduct :: MonadFail m => [PExpr] -> m PExpr
 simplifyProduct [] = return 1
 simplifyProduct [x] = return x -- SPRD.3
 simplifyProduct xs
@@ -146,12 +141,12 @@ simplifyProductRec [u,v]
 simplifyProductRec ((Mul us):vs) = simplifyProductRec vs >>= mergeProducts us
 simplifyProductRec (u:vs) = simplifyProductRec vs >>= mergeProducts [u]
 
-simplifyDiv :: MonadFail m => PExpr -> PExpr -> m (PExpr)
+simplifyDiv :: MonadFail m => PExpr -> PExpr -> m PExpr
 simplifyDiv x y = do
                     y' <- simplifyPow y (-1)
                     simplifyProduct [x, y']
 
-simplifySum :: MonadFail m => [PExpr] -> m (PExpr)
+simplifySum :: MonadFail m => [PExpr] -> m PExpr
 simplifySum [] = return 0
 simplifySum [x] = return x
 simplifySum xs = do
@@ -191,7 +186,7 @@ simplifySumRec [u, v]
 simplifySumRec ((Add us):vs) = simplifySumRec vs >>= mergeSums us
 simplifySumRec (u:vs) = simplifySumRec vs >>= mergeSums [u]
 
-simplifySub :: MonadFail m => PExpr -> PExpr -> m (PExpr)
+simplifySub :: MonadFail m => PExpr -> PExpr -> m PExpr
 simplifySub x y = do
                     y' <- simplifyProduct [y, -1]
                     simplifySum [x, y']
@@ -218,3 +213,76 @@ mergeSums = mergeOps simplifySumRec
 simplifyFunction :: Monad m => a -> m a
 simplifyFunction = return
 
+operands :: PExpr -> [PExpr]
+operands (Add xs) = xs
+operands (Mul xs) = xs
+operands (Pow x y) = [x, y]
+operands  (Fun _ xs) = xs
+operands _ = []
+
+
+freeOf :: PExpr -> PExpr -> Bool
+freeOf u t
+    | u == t = False
+freeOf (Symbol _) _ = True
+freeOf (Number _) _ = True
+freeOf u t = all (freeOf t) $ operands u
+
+
+linearForm :: MonadFail m => PExpr -> PExpr -> m (PExpr, PExpr)
+linearForm u x
+    | u == x = return (1, 0)
+    | notASymbol x = fail "x must be a symbol"
+        where
+            notASymbol (Symbol _) = False
+            notASymbol _ = True
+linearForm u@(Number _) _ = return (0, u)
+linearForm u@(Symbol _) _ = return (0, u)
+linearForm u@(Mul _) x
+    | freeOf u x = return (0, u)
+    | otherwise = do
+                    udivx <- simplifyDiv u x
+                    if freeOf udivx x
+                        then return (0, u)
+                        else fail "not a linear form"
+linearForm u@(Add []) _ = return (0, u)
+linearForm (Add (u:us)) x = do
+                                (a,b) <- linearForm u x
+                                (c,d) <- linearForm (Add us) x
+                                a' <- simplifySum [a, c]
+                                b' <- simplifySum [b, d]
+                                return (a', b')
+linearForm u x
+    | freeOf u x = return (0, u)
+    | otherwise = fail "not a linear form"
+
+solvePiFrac :: MonadFail m => PExpr -> PExpr -> [(PExpr, m PExpr)] -> m PExpr
+solvePiFrac e x xs = do
+                        n <- numerator x
+                        d <- denominator x
+                        case n of
+                            0 -> return 0
+                            Pi -> fromMaybe (return e) $ lookup d xs
+                            _ -> return e
+
+numerator :: MonadFail m => PExpr -> m PExpr
+numerator (Number n) = return $ fromInteger $ N.numerator n
+numerator (Add []) = return 0
+numerator (Mul xs) = mapM numerator xs >>= simplifyProduct
+numerator (Pow _ y)
+    | true $ isNegative y = return 1
+numerator (Exp x)
+    | true $ isNegative x = return 1
+numerator x = return x    
+
+denominator :: MonadFail m => PExpr -> m PExpr
+denominator (Number n) = return $ fromInteger $ N.denominator n
+denominator (Add []) = return 0
+denominator (Mul xs) = mapM denominator xs >>= simplifyProduct
+denominator u@(Pow _ y)
+    | true $ isNegative y = simplifyPow u (-1)
+denominator (Exp x)
+    | true $ isNegative x = Exp <$> simplifyProduct [x,-1]
+denominator _ = return 1
+
+----

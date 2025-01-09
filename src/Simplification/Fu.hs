@@ -11,13 +11,13 @@ pattern Neg :: PExpr -> PExpr
 pattern Neg x <- Mul ((-1):x:_)
 
 bottomUp :: (PExpr -> Expr) -> PExpr -> Expr
-bottomUp f (Add xs) = mapM (bottomUp f) xs >>= simplifySum >>= f
-bottomUp f (Mul xs) = mapM (bottomUp f) xs >>= simplifyProduct >>= f
+bottomUp f (Add xs) = mapM (bottomUp f) xs >>= simplifySum >>= f >>= automaticSymplify
+bottomUp f (Mul xs) = mapM (bottomUp f) xs >>= simplifyProduct >>= f >>= automaticSymplify
 bottomUp f (Pow x y) = do
                         x' <- bottomUp f x
                         y' <- bottomUp f y
-                        simplifyPow x' y' >>= f
-bottomUp f (Fun g xs) = mapM (bottomUp f) xs >>= f . Fun g
+                        simplifyPow x' y' >>= f >>= automaticSymplify
+bottomUp f (Fun g xs) = mapM (bottomUp f) xs >>= f . Fun g >>= automaticSymplify
 bottomUp _ x = return x
 
 tr0 :: PExpr -> Expr
