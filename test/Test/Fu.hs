@@ -32,7 +32,7 @@ tr2t2 :: Test
 tr2t2 = TestCase $ assertEqual "tr2: cot x" (cos x / sin x) (cot x >>= tr2)
 
 tr2t3 :: Test
-tr2t3 = TestCase $ assertEqual "tr2: sec x" 0 (tan(tan x - sin x /cos x) >>= tr2)
+tr2t3 = TestCase $ assertEqual "tr2: tan(tan x - sin x / cos x))" 0 (tan(tan x - sin x /cos x) >>= tr2)
 
 tr2tests :: Test
 tr2tests = TestLabel "tr2" $ TestList [tr2t1, tr2t2, tr2t3]

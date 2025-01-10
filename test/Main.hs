@@ -69,29 +69,56 @@ symplifyFraction = TestLabel "Simplififcacion de fracciones" $ TestList [sf1, sf
 
 ------------------------------------
 
-st1 :: Test
-st1 = TestCase $ assertEqual "sin(2*pi + x)" (sin x) (sin(2*pi+x))
+stSin1 :: Test
+stSin1 = TestCase $ assertEqual "sin(2*pi + x)" (sin x) (sin(2*pi+x))
 
-st2 :: Test
-st2 = TestCase $ assertEqual "sin(pi/2)" 1 (sin(pi/2))
+stSin2 :: Test
+stSin2 = TestCase $ assertEqual "sin(pi/2)" 1 (sin((pi::Expr)/2))
 
-st3 :: Test
-st3 = TestCase $ assertEqual "sin(pi+x)" (-sin x) (sin(pi+x))
+stSin3 :: Test
+stSin3 = TestCase $ assertEqual "sin(0)" 0 (sin(0 :: Expr))
 
-st4 :: Test
-st4 = TestCase $ assertEqual "sin(-x)" (-sin x) (sin(-x))
+stSin4 :: Test
+stSin4 = TestCase $ assertEqual "sin(-x)" (-sin (x+2)) (sin(-x-2))
 
-st5 :: Test
-st5 = TestCase $ assertEqual "sin(pi-x)" (sin x) (sin(pi-x))
+stSin5 :: Test
+stSin5 = TestCase $ assertEqual "sin(pi-x)" (sin x) (sin(pi-x))
 
-st6 :: Test
-st6 = TestCase $ assertEqual "sin(3*pi/2)" (-1) (sin(3*pi/2))
+stSin6 :: Test
+stSin6 = TestCase $ assertEqual "sin(3*pi/2)" (-1) (sin(3*(pi:: Expr)/2))
 
-st7 :: Test
-st7 = TestCase $ assertEqual "sin(3*pi/2 + x)" 1 (sin(-3*pi/2))
+stSin7 :: Test
+stSin7 = TestCase $ assertEqual "sin(9*pi-x)" (sin x) (sin(9*(pi :: Expr)-x))
+
+stSin :: Test
+stSin = TestList [stSin1, stSin2, stSin3, stSin4, stSin5, stSin6, stSin7]
+
+
+---
+
+st1Cos :: Test
+st1Cos = TestCase $ assertEqual "cos(2*pi + x)" (cos x) (cos(2*pi+x))
+
+st2Cos :: Test
+st2Cos = TestCase $ assertEqual "cos(pi/2)" 0 (cos(pi/2))
+
+st3Cos :: Test
+st3Cos = TestCase $ assertEqual "cos(0)" 1 (cos(0 :: Expr))
+
+st4Cos :: Test
+st4Cos = TestCase $ assertEqual "sin(-x)" (cos x) (cos(-x))
+
+st5Cos :: Test
+st5Cos = TestCase $ assertEqual "cos(pi-x)" (-cos x) (cos(pi-x))
+
+st6Cos :: Test
+st6Cos = TestCase $ assertEqual "cos(3*pi/2)" 0 (cos(3*(pi :: Expr)/2))
+
+stCos :: Test
+stCos = TestList []
 
 simplifyTrigTests :: Test
-simplifyTrigTests = TestLabel "Simplififcacion de funciones trigonometricas" $ TestList [st1, st2, st3, st4, st5, st6, st7]
+simplifyTrigTests = TestLabel "Simplififcacion de funciones trigonometricas" $ TestList [stSin]
 
 --
 

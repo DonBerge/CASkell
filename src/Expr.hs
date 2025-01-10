@@ -76,8 +76,7 @@ instance Floating Expr where
 
     sin = (=<<) (simplifyFun . Sin)
 
-    cos 0 = 1
-    cos x = makeFun Cos x
+    cos = (=<<) (simplifyFun . Cos)
     
     tan = makeFun Tan
     asin = makeFun Asin

@@ -17,7 +17,7 @@ bottomUp f (Pow x y) = do
                         x' <- bottomUp f x
                         y' <- bottomUp f y
                         simplifyPow x' y' >>= f >>= automaticSymplify
-bottomUp f (Fun g xs) = mapM (bottomUp f) xs >>= f . Fun g >>= automaticSymplify
+bottomUp f (Fun g xs) = mapM (bottomUp f) xs >>= simplifyFun . Fun g >>= f >>= automaticSymplify
 bottomUp _ x = return x
 
 tr0 :: PExpr -> Expr

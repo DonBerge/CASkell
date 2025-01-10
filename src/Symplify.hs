@@ -264,12 +264,14 @@ linearForm u x
     | otherwise = fail "not a linear form"
 
 mulByNeg :: PExpr -> Bool
-mulByNeg (Mul xs)
-    | foldl (\x -> (x /=) . true . isNegative) False xs = True
+mulByNeg (Mul ((Number a):_)) = a<0
+mulByNeg (Add xs) = all mulByNeg xs
 mulByNeg x = true $ isNegative x
 
 simplifySqrt :: MonadFail m => PExpr -> m PExpr
 simplifySqrt x = simplifyPow x (1/2)
+
+----------------
 
 simplifyFun :: (Alternative f, MonadFail f) => PExpr -> f PExpr
 simplifyFun (Sin x)
@@ -279,7 +281,7 @@ simplifyFun (Sin x) = do
                         case p of
                             (Number n, b) -> let
                                                 (m, r) = properFraction n
-                                                q = cases (Number r) b
+                                                q = cases r b
                                              in if even m
                                                     then q
                                                     else q >>= simplifyNegate
@@ -295,9 +297,11 @@ simplifyFun (Sin x) = do
                         (_,0) | r==1/4 -> simplifySqrt 2 >>= (`simplifyDiv` 2)
                         (_,0) | r==1/3 -> simplifySqrt 3 >>= (`simplifyDiv` 2)
                         (_,0) | r==1/2 -> return 1
-                        (_,_) -> Sin <$> (simplifyProduct [r,Pi] >>= simplifySum . (:[b]))
+                        (_,_) -> Sin <$> (simplifyProduct [(Number r),Symbol "messi"] >>= simplifySum . (:[b]))
 simplifyFun x = return x
 
+
+------------------
 
 numerator :: MonadFail m => PExpr -> m PExpr
 numerator (Number n) = return $ fromInteger $ N.numerator n
