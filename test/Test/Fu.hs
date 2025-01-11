@@ -152,5 +152,20 @@ tr13t2 = TestCase $ assertEqual "tr13: cot(3)*cot(2)" (1 + (cot 2 + cot 3) * cot
 tr13tests :: Test
 tr13tests = TestLabel "tr13" $ TestList [tr13t1, tr13t2]
 
+---
+
+fu1 :: Test
+fu1 = TestCase $ assertEqual "fu: cos^2 x + sin^2 x" 1 (fu $ cos x ** 2 + sin x ** 2)
+
+fu2 :: Test
+fu2 = TestCase $ assertEqual "fu: sin(50)**2 + cos(50)**2 + sin(pi/6)" (3/2) (fu $ sin 50 **2 + cos 50 **2 + sin((pi:: Expr)/6))
+
+fu3 :: Test
+fu3 = TestCase $ assertEqual "fu: 1- sin x ** 2" (sin x ** 2) (fu $ sin x * tan x / sec x)
+
+futests :: Test
+futests = TestLabel "Fu" $ TestList [fu1, fu2, fu3]
+
+
 tests :: Test
-tests = TestLabel "Fu" $ TestList [tr1tests, tr2tests, tr5tests, tr6tests, tr7tests, tr8tests, tr9tests, tr10tests, tr11tests, tr12tests, tr13tests]
+tests = TestLabel "Fu" $ TestList [tr1tests, tr2tests, tr5tests, tr6tests, tr7tests, tr8tests, tr9tests, tr10tests, tr11tests, tr12tests, tr13tests, futests]

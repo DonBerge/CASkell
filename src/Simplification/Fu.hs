@@ -7,6 +7,11 @@ import Symplify
 
 import Expr
 
+import Control.Monad
+
+import Data.Function
+import Data.List ( minimumBy )
+
 pattern Neg :: PExpr -> PExpr
 pattern Neg x <- Mul ((-1):x:_)
 
@@ -156,6 +161,9 @@ tr10 = bottomUp tr10'
         
         tr10' x = return x
 
+tr10i :: PExpr -> Expr
+tr10i = return
+
 tr11 :: PExpr -> Expr
 tr11 = bottomUp tr11'
     where
@@ -225,3 +233,72 @@ tr13 = bottomUp tr13'
         tr13'' (Tan x:Tan y:xs) = tr13Helper (-) Tan (recip . tan) x y * tr13'' xs
         tr13'' (Cot x:Cot y:xs) = tr13Helper (+) Cot cot x y * tr13'' xs
         tr13'' xs = return $ Mul xs
+
+trigFuns :: PExpr -> Int
+trigFuns (Sin x) = trigFuns x + 1
+trigFuns (Cos x) = trigFuns x + 1
+trigFuns (Tan x) = trigFuns x + 1
+trigFuns (Sec x) = trigFuns x + 1
+trigFuns (Csc x) = trigFuns x + 1
+trigFuns (Cot x) = trigFuns x + 1
+trigFuns x = (sum . map trigFuns . operands) x
+
+operations :: PExpr -> Int
+operations (Add []) = 0
+operations (Add xs) = sum (map operations xs) + length xs - 1
+operations (Mul []) = 0
+operations (Mul xs) = sum (map operations xs) + length xs - 1
+operations (Pow x y) = operations x + operations y + 1
+operations (Fun _ xs) = sum (map operations xs) + 1
+operations _ = 0
+
+measure :: PExpr -> (Int, Int)
+measure x = (trigFuns x, operations x)
+
+
+chain :: (Foldable t, Monad m) => t (a -> m a) -> (a -> m a)
+chain = foldl (>=>) return
+
+choice :: Monad m => [PExpr -> m PExpr] -> PExpr -> m PExpr
+choice fs x = minimumBy (compare `on` measure) <$> mapM (\f -> f x) fs
+
+ctr1 :: PExpr -> Expr
+ctr1 = choice [chain [tr5,tr0], chain [tr6,tr0], return]
+
+ctr2 :: PExpr -> Expr
+ctr2 = choice [tr11, choice [chain [tr5,tr0], chain [tr6,tr0], tr0]]
+
+ctr3 :: PExpr -> Expr
+ctr3 = choice [chain [tr8, tr0], chain [tr8, tr10i, tr0], return]
+
+ctr4 :: PExpr -> Expr
+ctr4 = choice [chain [tr4, tr10i], return] 
+
+rl1 :: PExpr -> Expr
+rl1 = chain [tr4,tr3,tr4,tr12,tr4,tr13,tr4,tr0]
+
+rl2 :: PExpr -> Expr
+rl2 = choice [ chain [tr4,tr3,tr10,tr4,tr3,tr11], 
+               chain [tr5,tr7,tr11,tr4],
+               chain [ctr3, ctr1, tr9, ctr2, tr4, tr9, tr9, ctr4]
+            ]
+
+exists :: [String] -> PExpr -> Bool
+exists symbols (Fun f _) = f `elem` symbols
+exists symbols x = any (exists symbols) (operands x)
+
+whenExists :: Monad m => [String] -> (PExpr -> m PExpr) -> PExpr -> m PExpr
+whenExists symbols f x = if exists symbols x then f x else return x
+
+fu :: Expr -> Expr
+fu x = x 
+        >>=
+       automaticSymplify
+        >>= 
+       tr1 
+        >>=
+       whenExists ["Tan", "Cot"] (choice [rl1, return] >=> whenExists ["Tan", "Cot"] tr2) 
+        >>= 
+       whenExists ["Sin", "Cos"] (choice [rl2, const x, tr8, return])
+        >>=
+       choice [tr2i, return] 
