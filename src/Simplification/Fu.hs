@@ -159,8 +159,25 @@ tr10 = bottomUp tr10'
 tr11 :: PExpr -> Expr
 tr11 = bottomUp tr11'
     where
-        tr11' (Sin (Mul (2:x))) = let x' = if null x then 1 else return (Mul x) in 2 * sin x' * cos x'
-        tr11' (Cos (Mul (2:x))) = let x' = if null x then 1 else return (Mul x) in 2 * cos x' ** 2 - 1
+        tr11' x@(Sin (Mul [2])) = return x
+        tr11' x@(Cos (Mul [2])) = return x
+        tr11' (Sin (Mul (2:x))) = let x' = simplifyProduct x in 2 * sin x' * cos x'
+        tr11' (Cos (Mul (2:x))) = let x' = simplifyProduct x in cos x' ** 2 -  sin x' ** 2
+        tr11' (Sin (Mul (n:x)))
+            | true $ isEven n = do
+                                    n' <- n `simplifyDiv` 2
+                                    x' <- simplifyProduct (n':x)
+                                    s <- tr11' (Sin x')
+                                    c <- tr11' (Cos x')
+                                    simplifyProduct [2,s,c]
+        tr11' (Cos (Mul (n:x)))
+            | true $ isEven n = do
+                                    n' <- n `simplifyDiv` 2
+                                    x' <- simplifyProduct (n':x)
+                                    s <- tr11' (Sin x') ** 2
+                                    c <- tr11' (Cos x') ** 2
+                                    simplifySub c s
+                                    
         tr11' x = return x
 
 tr12 :: PExpr -> Expr
