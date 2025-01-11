@@ -273,20 +273,21 @@ simplifySqrt x = simplifyPow x (1/2)
 
 ----------------
 
+handlePeriod cases x = do
+                    p <- linearForm x Pi
+                    case p of
+                        (Number n, b) -> let
+                                            (m, r) = properFraction n
+                                            q = cases r b
+                                         in if even m
+                                                then q
+                                                else q >>= simplifyNegate
+                        _ -> fail "Could not handle period"
+
 simplifyFun :: (Alternative f, MonadFail f) => PExpr -> f PExpr
 simplifyFun (Sin x)
     | mulByNeg x = simplifyNegate x >>= simplifyFun . Sin >>= simplifyNegate
-simplifyFun (Sin x) = do
-                        p <- linearForm x Pi
-                        case p of
-                            (Number n, b) -> let
-                                                (m, r) = properFraction n
-                                                q = cases r b
-                                             in if even m
-                                                    then q
-                                                    else q >>= simplifyNegate
-                            _ -> fail "Default to sin x"
-                      <|> return (Sin x)
+simplifyFun (Sin x) = handlePeriod cases x <|> return (Sin x)
     where
         cases r b = case (r,b) of
                         (0,0) -> return 0
