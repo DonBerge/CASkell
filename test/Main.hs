@@ -106,7 +106,7 @@ st3Cos :: Test
 st3Cos = TestCase $ assertEqual "cos(0)" 1 (cos(0 :: Expr))
 
 st4Cos :: Test
-st4Cos = TestCase $ assertEqual "sin(-x)" (cos x) (cos(-x))
+st4Cos = TestCase $ assertEqual "cos(-x)" (cos x) (cos(-x))
 
 st5Cos :: Test
 st5Cos = TestCase $ assertEqual "cos(pi-x)" (-cos x) (cos(pi-x))

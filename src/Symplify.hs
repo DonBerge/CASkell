@@ -307,7 +307,7 @@ simplifyFun (Cos x) = handlePeriod cases simplifyNegate x <|> return (Cos x)
         cases r b = case (r,b) of
                         (0,0) -> return 1
                         (0,_) -> if mulByNeg b
-                                    then simplifyNegate b >>= simplifyNegate . Cos
+                                    then Cos <$> simplifyNegate b
                                     else return $ Cos b
                         (_,0) | r==1/6 -> simplifySqrt 3 >>= (`simplifyDiv` 2)
                         (_,0) | r==1/4 -> simplifySqrt 2 >>= (`simplifyDiv` 2)
