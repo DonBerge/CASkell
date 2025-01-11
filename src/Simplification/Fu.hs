@@ -187,12 +187,12 @@ tr12 = bottomUp tr12'
         tr12' x = return x
 
         tr12'' [] = 0
-        tr12'' [x] = return $ Tan x
+        tr12'' [x] = simplifyFun $ Tan x
         tr12'' (x:xs) = let
-                            a = tr3' (Tan x)
-                            b = tr12'' xs >>= tr3'
+                            a = tr12'' [x]
+                            b = tr12'' xs
                         in
-                            (tan a + tan b) / (1 - tan a * tan b)
+                            (a + b) / (1 - a * b)
 
 tr13 :: PExpr -> Expr
 tr13 = bottomUp tr13'
@@ -205,11 +205,11 @@ tr13 = bottomUp tr13'
                                 Cot _ -> (a,x:b,c)
                                 _ -> (a,b,x:c)
 
-        tr13Helper f g x y = let
-                                a = simplifySum [g x, g y]
-                                b = cot $ simplifySum [x,y]
-                             in
-                                1 `f` a * b
+        tr13Helper f g h x y = let
+                                  a = simplifySum [g x, g y]
+                                  b = h $ simplifySum [x,y]
+                               in
+                                  1 `f` (a * b)
 
         tr13' (Mul xs) = let
                             (a,b,c) = partition xs
@@ -222,6 +222,6 @@ tr13 = bottomUp tr13'
 
         tr13'' [] = 1
         tr13'' [x] = return x
-        tr13'' (Tan x:Tan y:xs) = tr13Helper (-) Tan x y * tr13'' xs
-        tr13'' (Cot x:Cot y:xs) = tr13Helper (+) Cot x y * tr13'' xs
+        tr13'' (Tan x:Tan y:xs) = tr13Helper (-) Tan (recip . tan) x y * tr13'' xs
+        tr13'' (Cot x:Cot y:xs) = tr13Helper (+) Cot cot x y * tr13'' xs
         tr13'' xs = return $ Mul xs
