@@ -11,6 +11,12 @@ import Test.HUnit ( assertEqual, Test(..) )
 x :: Expr
 x = symbol "x"
 
+y :: Expr
+y = symbol "y"
+
+z :: Expr
+z = symbol "z"
+
 tr1t1 :: Test
 tr1t1 = TestCase $ assertEqual "tr1: sec x" (1 / cos x) (sec x >>= tr1)
 
@@ -99,5 +105,19 @@ tr9t1 = TestCase $ assertEqual "tr9: cos 1 + cos 2" (2 * cos(1/2) * cos(3/2)) ( 
 tr9tests :: Test
 tr9tests = TestLabel "tr9" $ TestList [tr9t1]
 
+----
+
+tr10t1 :: Test
+tr10t1 = TestCase $ assertEqual "tr10: cos(x+y)" (cos x * cos y - sin x * sin y ) (cos(x+y) >>= tr10)
+
+tr10t2 :: Test
+tr10t2 = TestCase $ assertEqual "tr10: sin(x+y)" (sin x * cos y + sin y * cos x ) (sin(x+y) >>= tr10)
+
+tr10t3 :: Test
+tr10t3 = TestCase $ assertEqual "tr10: sin(x + y + z)" ((-sin z * sin y + cos z * cos y) * sin x + (sin z * cos y + sin y * cos z)*cos x) (sin(x+y+z) >>= tr10)
+
+tr10tests :: Test
+tr10tests = TestLabel "tr10" $ TestList [tr10t1, tr10t2, tr10t3]
+
 tests :: Test
-tests = TestLabel "Fu" $ TestList [tr1tests, tr2tests, tr5tests, tr6tests, tr7tests, tr8tests, tr9tests]
+tests = TestLabel "Fu" $ TestList [tr1tests, tr2tests, tr5tests, tr6tests, tr7tests, tr8tests, tr9tests, tr10tests]
