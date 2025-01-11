@@ -299,7 +299,7 @@ simplifyFun (Sin x) = handlePeriod cases simplifyNegate x <|> return (Sin x)
                         (_,0) | r==1/4 -> simplifySqrt 2 >>= (`simplifyDiv` 2)
                         (_,0) | r==1/3 -> simplifySqrt 3 >>= (`simplifyDiv` 2)
                         (_,0) | r==1/2 -> return 1
-                        (_,_) -> Sin <$> (simplifyProduct [Number r,Symbol "messi"] >>= simplifySum . (:[b]))
+                        (_,_) -> Sin <$> (simplifyProduct [Number r,Pi] >>= simplifySum . (:[b]))
 simplifyFun (Cos x)
     | mulByNeg x = simplifyNegate x >>= simplifyFun . Cos
 simplifyFun (Cos x) = handlePeriod cases simplifyNegate x <|> return (Cos x)
@@ -313,7 +313,7 @@ simplifyFun (Cos x) = handlePeriod cases simplifyNegate x <|> return (Cos x)
                         (_,0) | r==1/4 -> simplifySqrt 2 >>= (`simplifyDiv` 2)
                         (_,0) | r==1/3 -> return $ 1/2
                         (_,0) | r==1/2 -> return 0
-                        (_,_) -> Cos <$> (simplifyProduct [Number r,Symbol "messi"] >>= simplifySum . (:[b]))
+                        (_,_) -> Cos <$> (simplifyProduct [Number r,Pi] >>= simplifySum . (:[b]))
 simplifyFun (Tan x)
     | mulByNeg x = simplifyNegate x >>= simplifyFun . Tan >>= simplifyNegate
 simplifyFun (Tan x) = handlePeriod cases return x <|> return (Tan x)
@@ -327,7 +327,7 @@ simplifyFun (Tan x) = handlePeriod cases return x <|> return (Tan x)
                         (_,0) | r==1/4 -> return 1
                         (_,0) | r==1/3 -> simplifySqrt 3
                         (_,0) | r==1/2 -> return $ 1/0
-                        (_,_) -> Tan <$> (simplifyProduct [Number r,Symbol "messi"] >>= simplifySum . (:[b]))
+                        (_,_) -> Tan <$> (simplifyProduct [Number r,Pi] >>= simplifySum . (:[b]))
 simplifyFun x = return x
 
 
