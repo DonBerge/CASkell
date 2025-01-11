@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-{-# OPTIONS_GHC -Wno-noncanonical-monad-instances #-}
+{-# OPTIONS_GHC -Wno-type-defaults #-}
 
 module Symplify (
     automaticSymplify,
@@ -273,7 +273,8 @@ simplifySqrt x = simplifyPow x (1/2)
 
 ----------------
 
-handlePeriod cases x = do
+handlePeriod :: MonadFail m => (N.Number -> PExpr -> m a) -> (a -> m a) -> PExpr -> m a
+handlePeriod cases onOddPi x = do
                     p <- linearForm x Pi
                     case p of
                         (Number n, b) -> let
@@ -281,13 +282,13 @@ handlePeriod cases x = do
                                             q = cases r b
                                          in if even m
                                                 then q
-                                                else q >>= simplifyNegate
+                                                else q >>= onOddPi
                         _ -> fail "Could not handle period"
 
 simplifyFun :: (Alternative f, MonadFail f) => PExpr -> f PExpr
 simplifyFun (Sin x)
     | mulByNeg x = simplifyNegate x >>= simplifyFun . Sin >>= simplifyNegate
-simplifyFun (Sin x) = handlePeriod cases x <|> return (Sin x)
+simplifyFun (Sin x) = handlePeriod cases simplifyNegate x <|> return (Sin x)
     where
         cases r b = case (r,b) of
                         (0,0) -> return 0
@@ -298,7 +299,35 @@ simplifyFun (Sin x) = handlePeriod cases x <|> return (Sin x)
                         (_,0) | r==1/4 -> simplifySqrt 2 >>= (`simplifyDiv` 2)
                         (_,0) | r==1/3 -> simplifySqrt 3 >>= (`simplifyDiv` 2)
                         (_,0) | r==1/2 -> return 1
-                        (_,_) -> Sin <$> (simplifyProduct [(Number r),Symbol "messi"] >>= simplifySum . (:[b]))
+                        (_,_) -> Sin <$> (simplifyProduct [Number r,Symbol "messi"] >>= simplifySum . (:[b]))
+simplifyFun (Cos x)
+    | mulByNeg x = simplifyNegate x >>= simplifyFun . Cos
+simplifyFun (Cos x) = handlePeriod cases simplifyNegate x <|> return (Cos x)
+    where
+        cases r b = case (r,b) of
+                        (0,0) -> return 1
+                        (0,_) -> if mulByNeg b
+                                    then simplifyNegate b >>= simplifyNegate . Cos
+                                    else return $ Cos b
+                        (_,0) | r==1/6 -> simplifySqrt 3 >>= (`simplifyDiv` 2)
+                        (_,0) | r==1/4 -> simplifySqrt 2 >>= (`simplifyDiv` 2)
+                        (_,0) | r==1/3 -> return $ 1/2
+                        (_,0) | r==1/2 -> return 0
+                        (_,_) -> Cos <$> (simplifyProduct [Number r,Symbol "messi"] >>= simplifySum . (:[b]))
+simplifyFun (Tan x)
+    | mulByNeg x = simplifyNegate x >>= simplifyFun . Tan >>= simplifyNegate
+simplifyFun (Tan x) = handlePeriod cases return x <|> return (Tan x)
+    where
+        cases r b = case (r,b) of
+                        (0,0) -> return 0
+                        (0,_) -> if mulByNeg b
+                                    then simplifyNegate b >>= simplifyNegate . Tan
+                                    else return $ Tan b
+                        (_,0) | r==1/6 -> return $ 1/3
+                        (_,0) | r==1/4 -> return 1
+                        (_,0) | r==1/3 -> simplifySqrt 3
+                        (_,0) | r==1/2 -> return $ 1/0
+                        (_,_) -> Tan <$> (simplifyProduct [Number r,Symbol "messi"] >>= simplifySum . (:[b]))
 simplifyFun x = return x
 
 

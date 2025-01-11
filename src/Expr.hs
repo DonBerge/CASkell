@@ -65,7 +65,7 @@ instance Fractional Expr where
     recip p = p >>= (`simplifyPow` (-1))
 
 makeFun :: (PExpr -> PExpr) -> Expr -> Expr
-makeFun f x = Fail $ f <$> unFail x 
+makeFun f = (=<<) (simplifyFun . f)
 
 ---
 
@@ -73,11 +73,8 @@ instance Floating Expr where
     pi = return Pi
     exp = makeFun Exp
     log = makeFun Log
-
-    sin = (=<<) (simplifyFun . Sin)
-
-    cos = (=<<) (simplifyFun . Cos)
-    
+    sin = makeFun Sin
+    cos = makeFun Cos
     tan = makeFun Tan
     asin = makeFun Asin
     acos = makeFun Acos

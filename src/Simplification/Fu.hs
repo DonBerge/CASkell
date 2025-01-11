@@ -11,13 +11,13 @@ pattern Neg :: PExpr -> PExpr
 pattern Neg x <- Mul ((-1):x:_)
 
 bottomUp :: (PExpr -> Expr) -> PExpr -> Expr
-bottomUp f (Add xs) = mapM (bottomUp f) xs >>= simplifySum >>= f >>= automaticSymplify
-bottomUp f (Mul xs) = mapM (bottomUp f) xs >>= simplifyProduct >>= f >>= automaticSymplify
+bottomUp f (Add xs) = mapM (bottomUp f) xs >>= simplifySum >>= f
+bottomUp f (Mul xs) = mapM (bottomUp f) xs >>= simplifyProduct >>= f
 bottomUp f (Pow x y) = do
                         x' <- bottomUp f x
                         y' <- bottomUp f y
-                        simplifyPow x' y' >>= f >>= automaticSymplify
-bottomUp f (Fun g xs) = mapM (bottomUp f) xs >>= simplifyFun . Fun g >>= f >>= automaticSymplify
+                        simplifyPow x' y' >>= f
+bottomUp f (Fun g xs) = mapM (bottomUp f) xs >>= simplifyFun . Fun g >>= f
 bottomUp _ x = return x
 
 tr0 :: PExpr -> Expr
@@ -49,21 +49,10 @@ tr2i = bottomUp tr2i'
                         _ -> return x
 
 tr3 :: PExpr -> Expr
-tr3 = bottomUp tr3'
+tr3 = return
 
 tr3' :: PExpr -> Expr
-tr3' (Sin x)
-    | true $ isNegative x = return $ negate $ Sin $ negate x
--- falta pi-x, pi+x, 2kpi+x, etc   
-tr3' (Cos x)
-    | true $ isNegative x = return $ Cos $ negate x --let x' = return x in cos (-x')
-
-tr3' (Tan x)
-    | true $ isNegative x = return $ negate $ Tan $ negate x -- let x' = return x in -tan (-x')
-
-tr3' (Cot x)
-    | true $ isNegative x = return $ negate $ Cot $ negate x -- let x' = return x in -cot (-x')
-tr3' x = return x
+tr3' = return -- ya es manejado por autosimplificacion
 
 tr4 :: PExpr -> Expr
 tr4 = return -- ya es manejado por autosimplificacion
@@ -71,19 +60,29 @@ tr4 = return -- ya es manejado por autosimplificacion
 tr5 :: PExpr -> Expr
 tr5 = bottomUp tr5'
     where
-        tr5' (Pow (Sin x) 2) = simplifySub 1 (Cos x) >>= (`simplifyPow` 2) --let x' = return x in 1-cos x' ** 2
+        tr5' (Pow (Sin x) 2) = 1 - (Cos x `simplifyPow` 2)
+        tr5' (Pow (Sin x) n)
+            | true (isEven n &&& isPositive n) = let
+                                    n' = n `simplifyDiv` 2
+                                in
+                                    tr5 (Pow (Sin x) 2) ** n'
         tr5' x = return x
 
 tr6 :: PExpr -> Expr
-tr6 = bottomUp tr5'
+tr6 = bottomUp tr6'
     where
-        tr5' (Pow (Cos x) 2) = simplifySub 1 (Sin x) >>= (`simplifyPow` 2)
-        tr5' x = return x
+        tr6' (Pow (Cos x) 2) = 1 - (Sin x `simplifyPow` 2)
+        tr6' (Pow (Cos x) n)
+            | true (isEven n &&& isPositive n) = let
+                                    n' = n `simplifyDiv` 2
+                                in
+                                    tr6 (Pow (Cos x) 2) ** n'
+        tr6' x = return x
 
 tr7 :: PExpr -> Expr
 tr7 = bottomUp tr7'
     where
-        tr7' (Pow (Cos x) 2) = simplifyProduct [2,x] >>= simplifySum . (:[1]) >>= (`simplifyDiv` 2) --(1+cos(2*x'))/2
+        tr7' (Pow (Cos x) 2) = (simplifyProduct [2,x] + 1) / 2 --(1+cos(2*x'))/2
         tr7' x = return x
 
 tr8 :: PExpr -> Expr
