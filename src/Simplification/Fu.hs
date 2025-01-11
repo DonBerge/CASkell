@@ -82,7 +82,7 @@ tr6 = bottomUp tr6'
 tr7 :: PExpr -> Expr
 tr7 = bottomUp tr7'
     where
-        tr7' (Pow (Cos x) 2) = (simplifyProduct [2,x] + 1) / 2 --(1+cos(2*x'))/2
+        tr7' (Pow (Cos x) 2) = (cos (simplifyProduct [2,x]) + 1) / 2 --(1+cos(2*x'))/2
         tr7' x = return x
 
 tr8 :: PExpr -> Expr
@@ -101,7 +101,7 @@ tr8 = bottomUp tr8'
         tr8' (Mul ((Cos x):(Sin y):xs)) = tr8Helper (-) sin x y  * tr8' (Mul xs)
 
         tr8' (Mul ((Cos x):(Cos y):xs)) = tr8Helper (+) cos x y  * tr8' (Mul xs)
-        tr8' (Mul ((Sin x):(Sin y):xs)) = tr8Helper (-) cos x y  * tr8' (Mul xs)
+        tr8' (Mul ((Sin x):(Sin y):xs)) = negate $ tr8Helper (-) cos x y  * tr8' (Mul xs)
 
         tr8' (Mul (x@(Sin _):y:xs)) = tr8' (Mul (x:xs)) >>= simplifyProduct . (:[y])
         tr8' (Mul (x@(Cos _):y:xs)) = tr8' (Mul (x:xs)) >>= simplifyProduct . (:[y])

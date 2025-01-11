@@ -100,7 +100,7 @@ st1Cos :: Test
 st1Cos = TestCase $ assertEqual "cos(2*pi + x)" (cos x) (cos(2*pi+x))
 
 st2Cos :: Test
-st2Cos = TestCase $ assertEqual "cos(pi/2)" 0 (cos(pi/2))
+st2Cos = TestCase $ assertEqual "cos(pi/2)" 0 (cos((pi :: Expr)/2))
 
 st3Cos :: Test
 st3Cos = TestCase $ assertEqual "cos(0)" 1 (cos(0 :: Expr))
@@ -115,10 +115,10 @@ st6Cos :: Test
 st6Cos = TestCase $ assertEqual "cos(3*pi/2)" 0 (cos(3*(pi :: Expr)/2))
 
 stCos :: Test
-stCos = TestList []
+stCos = TestList [st1Cos, st2Cos, st3Cos, st4Cos, st5Cos, st6Cos]
 
 simplifyTrigTests :: Test
-simplifyTrigTests = TestLabel "Simplififcacion de funciones trigonometricas" $ TestList [stSin]
+simplifyTrigTests = TestLabel "Simplififcacion de funciones trigonometricas" $ TestList [stSin, stCos]
 
 --
 

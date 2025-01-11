@@ -65,6 +65,31 @@ tr6t3 = TestCase $ assertEqual "tr5: sin(x)^2" ((1 - sin x **2)**2) ( cos x **4 
 tr6tests :: Test
 tr6tests = TestLabel "tr5" $ TestList [tr6t1, tr6t2, tr6t3]
 
+----
+
+tr7t1 :: Test
+tr7t1 = TestCase $ assertEqual "tr7: sin(x)^2" ((1 + cos (2*x))/2) ( cos x **2 >>= tr7)
+
+tr7t2 :: Test
+tr7t2 = TestCase $ assertEqual "tr7: sin(x)^2" (cos (2*x)/2 + 3/2) ( cos x **2 + 1 >>= tr7)
+
+
+tr7tests :: Test
+tr7tests = TestLabel "tr7" $ TestList [tr7t1, tr7t2]
+
+----
+
+tr8t1 :: Test
+tr8t1 = TestCase $ assertEqual "tr8: sin(x)^2" ((cos 5 + cos 1) / 2) ( cos 2 * cos 3 >>= tr8)
+
+tr8t2 :: Test
+tr8t2 = TestCase $ assertEqual "tr8: sin(x)^2" ((sin 5 + sin 1) / 2) ( cos 2 * sin 3 >>= tr8)
+
+tr8t3 :: Test
+tr8t3 = TestCase $ assertEqual "tr8: sin(x)^2" ((-cos 5 + cos 1) / 2) ( sin 2 * sin 3 >>= tr8)
+
+tr8tests :: Test
+tr8tests = TestLabel "tr8" $ TestList [tr8t1, tr8t2, tr8t3]
 
 tests :: Test
-tests = TestLabel "Fu" $ TestList [tr1tests, tr2tests, tr5tests, tr6tests]
+tests = TestLabel "Fu" $ TestList [tr1tests, tr2tests, tr5tests, tr6tests, tr7tests, tr8tests]
