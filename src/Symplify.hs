@@ -9,7 +9,6 @@ module Symplify (
     simplifySub,
     simplifyPow,
     simplifyNegate,
-    simplifyFunction,
     operands,
     mulByNeg,
     freeOf,
@@ -37,7 +36,7 @@ numberNumerator _ = error "numberNumerator: not a number"
 --     toRational (Number x) = x
 --     toRational _ = error "toRational: not a number"
 
-automaticSymplify :: MonadFail m => PExpr -> m PExpr
+automaticSymplify :: (MonadFail m, Alternative m) => PExpr -> m PExpr
 automaticSymplify (Mul xs) = mapM automaticSymplify xs >>= simplifyProduct
 automaticSymplify (Add xs) = mapM automaticSymplify xs >>= simplifySum
 automaticSymplify (Pow x y) = do
@@ -46,7 +45,7 @@ automaticSymplify (Pow x y) = do
                                 simplifyPow x' y'
 automaticSymplify (Fun f xs) = do
                                     xs' <- mapM automaticSymplify xs
-                                    simplifyFunction $ Fun f xs'
+                                    simplifyFun $ Fun f xs'
 automaticSymplify x = return x
 
 ------------------------------
@@ -213,9 +212,6 @@ mergeProducts = mergeOps simplifyProductRec
 
 mergeSums :: MonadFail m => [PExpr] -> [PExpr] -> m [PExpr]
 mergeSums = mergeOps simplifySumRec
-
-simplifyFunction :: Monad m => a -> m a
-simplifyFunction = return
 
 simplifyNegate :: MonadFail m => PExpr -> m PExpr
 simplifyNegate a = simplifyProduct [a, -1]

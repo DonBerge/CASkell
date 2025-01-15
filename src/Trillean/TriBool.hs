@@ -23,6 +23,11 @@ liftBool :: Bool -> TriBool
 liftBool True = T
 liftBool False = F
 
+infixr 3 &&&
+infixr 2 |||
+infixr 3 !&&
+infixr 2 /||
+
 class BAlgebra a b c | a b -> c where
     (&&&) :: a -> b -> c
     (|||) :: a -> b -> c
