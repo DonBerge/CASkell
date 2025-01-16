@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 module Simplification.PolyTools where
 import Prelude hiding (exponent)
 
@@ -10,11 +11,14 @@ import Symplify (simplifyPow, freeOf, simplifyDiv, simplifySum, simplifyProduct,
 import qualified Simplification.Algebraic as Algebraic
 
 import Data.List
+import Data.Ratio ((%))
+import qualified Data.Ratio as R
 
 isSymbol :: PExpr -> Bool
 isSymbol (Fun _ _) = True
 isSymbol _ = False
 
+-- The list [c, m] where m is the degree of the monomial and c is the coefficient of xm
 coefficientMonomialGPE :: MonadFail m => PExpr -> PExpr -> m (PExpr, Integer)
 coefficientMonomialGPE u x
     | u == x = return (1, 1)
@@ -47,6 +51,11 @@ coefficientGPE u x j = do
                         if j == m
                             then return c
                             else return 0
+
+leadingCoefficient :: MonadFail m => PExpr -> PExpr -> m PExpr
+leadingCoefficient u x = do
+                            m <- degreeGPE u x
+                            coefficientGPE u x m
 
 leadingMonomial :: MonadFail m => PExpr -> [PExpr] -> m PExpr
 leadingMonomial p symbols = do
@@ -103,11 +112,11 @@ divmod p q = do
                 let vars = variables q'
                 polyDivide p' q' vars
 
-quotient :: MonadFail m => m PExpr -> m PExpr -> m PExpr
-quotient p q = fst <$> divmod p q
+quotient :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m PExpr
+quotient p q l = fst <$> polyDivide p q l
 
-remainder :: MonadFail m => m PExpr -> m PExpr -> m PExpr
-remainder p q = snd <$> divmod p q
+remainder :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m PExpr
+remainder p q l = snd <$> polyDivide p q l
 
 
 ---
@@ -124,9 +133,10 @@ pseudoDivision u v x = do
                         pseudoDivision' p s m n delta lcv sigma
     where
         pseudoDivision' p s m n delta lcv sigma
+            | m == 0 && n == 0 = polyDivide u v [x] -- both u and v do not have x as main variable
             | m >= n = do
-                        lcs <- coefficientGPE s x m
-                        x' <- simplifyPow x (fromInteger $ m-n)
+                        lcs <- coefficientGPE s x m -- 0
+                        x' <- simplifyPow x (fromInteger $ m-n) -- 1
                         p <- do
                                 a' <- simplifyProduct [lcv,p]
                                 b' <- simplifyProduct [lcs,x']
@@ -144,9 +154,72 @@ pseudoDivision u v x = do
                             r <- Algebraic.expand $ simplifyProduct [lcv',s]
                             return (q,r)
 
-pseudoDivide :: MonadFail m => m PExpr -> m PExpr -> m PExpr -> m (PExpr, PExpr)
-pseudoDivide u v x = do
-                        u' <- Algebraic.expand u
-                        v' <- Algebraic.expand v
-                        x' <- x
-                        pseudoDivision u' v' x'
+pseudoRem :: MonadFail m => PExpr -> PExpr -> PExpr -> m PExpr
+pseudoRem u v x = snd <$> pseudoDivision u v x
+
+--- pseudoDivide :: MonadFail m => m PExpr -> m PExpr -> m PExpr -> m (PExpr, PExpr)
+--- pseudoDivide u v x = do
+---                         u' <- Algebraic.expand u
+---                         v' <- Algebraic.expand v
+---                         x' <- x
+---                         pseudoDivision u' v' x'
+
+-- Find the unit normal form of u, the coefficient domain is the rational numbers
+-- normalize = undefined
+normalize :: MonadFail m => PExpr -> [PExpr] -> m PExpr
+normalize 0 _ = return 0
+normalize u [] = return u
+normalize u (x:r) = do
+                  lc <- leadingCoefficient u x
+                  u' <- fst <$> pseudoDivision u lc x
+                  normalize u' r
+
+polyGCD :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m PExpr
+polyGCD 0 v l = normalize v l
+polyGCD u 0 l = normalize u l
+polyGCD u v l = polyGCDRec u v l >>= (`normalize` l)
+    where
+        polyGCDRec _ _ [] = return 1
+        polyGCDRec u v l@(x:rest) = do
+                                    contU <- polyContent u x rest
+                                    contV <- polyContent v x rest
+                                    d <- polyGCDRec contU contV rest
+                                    ppU <- quotient u contU l
+                                    ppV <- quotient v contV l
+                                    gcdRec' x rest contU contV d ppU ppV
+        
+        gcdRec' x rest contU contV d ppU ppV
+            | ppV /= 0 = Algebraic.expand $ simplifyProduct [d,ppU]
+            | otherwise = do
+                            r <- pseudoRem ppU ppV x
+                            ppR <- if r == 0
+                                     then return 0
+                                     else do
+                                            contR <- polyContent r x rest
+                                            remainder u contR l
+                            -- let ppU = ppV
+                            --     ppV = ppR
+                            gcdRec' x rest contU contV d ppV ppR
+                            
+gcdList :: MonadFail m => [PExpr] -> [PExpr] -> m PExpr
+gcdList [] _ = return 0
+gcdList [p] _ = return p
+gcdList (p:ps) r = do
+                    ps' <- gcdList ps r
+                    polyGCD p ps' r
+
+polyContent :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m PExpr
+polyContent 0 _ _ = return 0
+polyContent (Add ps) x r = do
+                              cs <- mapM (fmap fst . (`coefficientMonomialGPE` x)) ps
+                              gcdList cs r
+polyContent p x r = do
+                              (c,_) <- coefficientMonomialGPE p x
+                              normalize c r
+
+polGCD :: MonadFail m => m PExpr -> m PExpr -> m PExpr
+polGCD u v = do
+                u' <- Algebraic.expand u
+                v' <- Algebraic.expand v
+                let vars = variables v'
+                polyGCD u' v' vars
