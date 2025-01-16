@@ -1,7 +1,6 @@
 module Simplification.PolyTools where
 import Prelude hiding (exponent)
 
-import Expr
 import PExpr
 
 import qualified Number as N
@@ -63,27 +62,30 @@ leadingMonomial p symbols = do
                                     simplifyProduct [xm,lm]
 
 
-polyDivide :: PExpr -> PExpr -> [PExpr] -> Fail (PExpr, PExpr)
-polyDivide u v l = polyDivide' 0 u
+-- Division de polinomios basada en monomios
+polyDivide :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m (PExpr, PExpr)
+polyDivide u v l = do
+                    let q = 0
+                        r = u
+                    vl <- leadingMonomial v l
+                    f <- g r vl
+                    polyDivide' q r f vl
     where
-        vl = leadingMonomial v l
-    
-        g (Add us) vm = mapM (`g` vm) us >>= simplifySum
+        polyDivide' q r f vl
+            | f /= 0 = do
+                        q <- simplifySum [q,f]
+                        r <- Algebraic.expand $ simplifySub r =<< simplifyProduct [f,v]
+                        f <- g r vl
+                        polyDivide' q r f vl
+            | otherwise = return (q,r)
+
+        g (Add us) vm = mapM (`g` vm) us >>= simplifySum  -- g = sum ui / vm, donde ui es divisible por vm
         g w wm = do
                     w' <- simplifyDiv w wm
                     dw <- denominator w'
                     if dw == 1
                         then return w'
                         else return 0
-
-        polyDivide' q r = do
-                            f <- vl >>= g r
-                            if f == 0
-                                then return (q,r)
-                                else do
-                                        q' <- simplifySum [q,f]
-                                        r' <- Algebraic.expand (simplifyProduct [f,v] >>= simplifySub r)
-                                        polyDivide' q' r'
     
 variables :: PExpr -> [PExpr]
 variables (Number _) = []
@@ -94,9 +96,57 @@ variables (Add us) = foldl union [] $ map variables us
 variables (Mul us) = foldl union [] $ map variables us
 variables u = [u]
 
-divide u v = do
-                u' <- Algebraic.expand u
-                v' <- Algebraic.expand v
-                let symbols = variables u'
-                (u'', v'') <- polyDivide u' v' symbols
-                return (u'', v'')
+divmod :: MonadFail m => m PExpr -> m PExpr -> m (PExpr, PExpr)
+divmod p q = do
+                p' <- Algebraic.expand p
+                q' <- Algebraic.expand q
+                let vars = variables q'
+                polyDivide p' q' vars
+
+quotient :: MonadFail m => m PExpr -> m PExpr -> m PExpr
+quotient p q = fst <$> divmod p q
+
+remainder :: MonadFail m => m PExpr -> m PExpr -> m PExpr
+remainder p q = snd <$> divmod p q
+
+
+---
+
+pseudoDivision :: MonadFail m => PExpr -> PExpr -> PExpr -> m (PExpr, PExpr)
+pseudoDivision u v x = do
+                        let p = 0
+                        let s = u
+                        m <- degreeGPE s x
+                        n <- degreeGPE v x
+                        let delta = max (m-n+1) 0
+                        lcv <- coefficientGPE v x n
+                        let sigma = 0
+                        pseudoDivision' p s m n delta lcv sigma
+    where
+        pseudoDivision' p s m n delta lcv sigma
+            | m >= n = do
+                        lcs <- coefficientGPE s x m
+                        x' <- simplifyPow x (fromInteger $ m-n)
+                        p <- do
+                                a' <- simplifyProduct [lcv,p]
+                                b' <- simplifyProduct [lcs,x']
+                                simplifySum [a',b']
+                        s <- do
+                                a' <- simplifyProduct [lcv, s]
+                                b' <- simplifyProduct [lcs, v, x']
+                                Algebraic.expand $ simplifySub a' b'
+                        -- let sigma = sigma + 1
+                        m <- degreeGPE s x
+                        pseudoDivision' p s m n delta lcv (sigma+1)
+            | otherwise = do
+                            lcv' <- simplifyPow lcv (fromInteger $ delta-sigma)
+                            q <- Algebraic.expand $ simplifyProduct [lcv',p]
+                            r <- Algebraic.expand $ simplifyProduct [lcv',s]
+                            return (q,r)
+
+pseudoDivide :: MonadFail m => m PExpr -> m PExpr -> m PExpr -> m (PExpr, PExpr)
+pseudoDivide u v x = do
+                        u' <- Algebraic.expand u
+                        v' <- Algebraic.expand v
+                        x' <- x
+                        pseudoDivision u' v' x'
