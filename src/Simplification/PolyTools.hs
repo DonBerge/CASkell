@@ -11,8 +11,6 @@ import Symplify (simplifyPow, freeOf, simplifyDiv, simplifySum, simplifyProduct,
 import qualified Simplification.Algebraic as Algebraic
 
 import Data.List
-import Data.Ratio ((%))
-import qualified Data.Ratio as R
 
 isSymbol :: PExpr -> Bool
 isSymbol (Fun _ _) = True
@@ -194,42 +192,44 @@ polyGCD u v l = polyGCDRec u v l >>= (`normalize` l)
         polyGCDRec u v l@(x:rest) = do
                                     contU <- polyContent u x rest
                                     contV <- polyContent v x rest
+                                    
                                     d <- polyGCDRec contU contV rest
-                                    ppU <- quotient u contU l
-                                    ppV <- quotient v contV l
-                                    gcdRec' x rest contU contV d ppU ppV
+                                    
+                                    ppU <- quotient u contU l -- primitive part of u
+                                    ppV <- quotient v contV l -- primitive part of v
+                                    
+                                    rp <- gcdRec' x rest ppU ppV
+
+                                    -- return rp
+
+                                    Algebraic.expand $ simplifyProduct [d,rp]
         
-        gcdRec' x rest contU contV d ppU ppV
-            | ppV /= 0 = Algebraic.expand $ simplifyProduct [d,ppU]
+        gcdRec' x rest ppU ppV
+            | ppV == 0 = return ppU --Algebraic.expand $ simplifyProduct [d,ppU]
             | otherwise = do
                             r <- pseudoRem ppU ppV x
                             ppR <- if r == 0
                                      then return 0
                                      else do
                                             contR <- polyContent r x rest
-                                            remainder u contR l
-                            -- let ppU = ppV
-                            --     ppV = ppR
-                            gcdRec' x rest contU contV d ppV ppR
+                                            quotient r contR l
+                            gcdRec' x rest ppV ppR
                             
 gcdList :: MonadFail m => [PExpr] -> [PExpr] -> m PExpr
 gcdList [] _ = return 0
-gcdList [p] _ = return p
+gcdList [p] l = normalize p l 
 gcdList (p:ps) r = do
                     ps' <- gcdList ps r
                     polyGCD p ps' r
 
 polyContent :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m PExpr
 polyContent u x r = do
-                      cs <- coefficientListGPE u x
-                      case filter (/= 0) cs of
-                        [] -> return 0
-                        [x] -> normalize x r
-                        cs' -> gcdList cs' r
+                      cfl <- coefficientListGPE u x 
+                      gcdList cfl r
 
-polGCD :: MonadFail m => m PExpr -> m PExpr -> m PExpr
-polGCD u v = do
+polGCD :: MonadFail m => m PExpr -> m PExpr -> [m PExpr] -> m PExpr
+polGCD u v l = do
                 u' <- Algebraic.expand u
                 v' <- Algebraic.expand v
-                let vars = variables v'
-                polyGCD u' v' vars
+                l' <- sequence l
+                polyGCD u' v' l'
