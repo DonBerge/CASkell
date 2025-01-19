@@ -68,38 +68,6 @@ contt3 = TestCase $ assertEqual "content: -y*x**2+y**3" y (cont (-y*x**2+y**3) x
 contt4 :: Test
 contt4 = TestCase $ assertEqual "content: -y*x**2+y**3" y (cont (y*x**2+2*y**2*x+y**3) x [y])
 
----
-
-psrem u v x = do
-                u' <- u
-                v' <- v
-                x' <- x
-                pseudoRem u' v' x'
-
-pp :: MonadFail m => m PExpr -> [m PExpr] -> m PExpr
-pp u l = do
-          u' <- u
-          (x:r) <- sequence l
-          contU <- polyContent u' x r 
-          if u' == 0
-            then return 0
-            else quotient u' contU (x:r) 
-
---remainderSequence :: MonadFail m => m PExpr -> m PExpr -> [m PExpr] -> m [PExpr]
---remainderSequence _ _ [] = return []
---remainderSequence u v l@(x:_) = do
---                            r0 <- pp u l
---                            r1 <- pp v l
---                            mksequence r0 r1
---  where
---    mksequence rprev 0 = return [rprev,0]
---    mksequence rprev rn = do
---                            x' <- x
---                            let rnext' = pseudoRem rprev rn x'
---                            rnext <- pp rnext' l
---                            seq <- mksequence rn rnext
---                            return (rprev : seq)
-
 pgcdt1 :: Test
 pgcdt1 = TestCase $ assertEqual "pgcd: x**2+2*x+1 and x+1" (x+y) (polGCD (x**2+2*x*y+y**2) (x+y) [x,y])
 
@@ -109,5 +77,12 @@ pgcdt2 = TestCase $ assertEqual "pgcd: x**2+2*x+1 and x+1" (x*y+y**2) (polGCD (-
 pgcdt3 :: Test
 pgcdt3 = TestCase $ assertEqual "pgcd: x**2+2*x+1 and x+1" (x*y) (polGCD (-4*x**3*y+4*x*y**3+4*x*y) (6*x**4*y+12*x**3*y**2+6*y**3*x**2) [x,y])
 
+pgcdt4 :: Test
+pgcdt4 = TestCase $ assertEqual "pgcd: x**2+2*x+1 and x+1" (x-y) (polGCD (-4*x**2+4*y**2) (8*x**2-16*x*y+8*y**2) [x,y])
+
+---
+rs1 :: Test
+rs1 = TestCase $ assertEqual "rational simplify: (-4*x**2+4*y**2)/(8*x**2-16*x*y+8*y**2)" (x+y) (rationalSimplify ((-4*x**2+4*y**2) / (8*x**2-16*x*y+8*y**2)))
+
 tests :: Test
-tests = TestList [ pdt1, nt1, nt2, nt3, pgcdt1, pgcdt2, pgcdt3, contt1, contt2, contt3, contt4 ]
+tests = TestList [ pdt1, nt1, nt2, nt3, pgcdt1, pgcdt2, pgcdt3, pgcdt4, contt1, contt2, contt3, contt4, rs1 ]

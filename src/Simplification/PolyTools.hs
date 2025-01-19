@@ -7,7 +7,7 @@ import PExpr
 import qualified Number as N
 
 import Control.Monad (unless, foldM)
-import Symplify (simplifyPow, freeOf, simplifyDiv, simplifySum, simplifyProduct, simplifySub, denominator)
+import Symplify (simplifyPow, freeOf, simplifyDiv, simplifySum, simplifyProduct, simplifySub, denominator, numerator)
 import qualified Simplification.Algebraic as Algebraic
 
 import Data.List
@@ -233,3 +233,16 @@ polGCD u v l = do
                 v' <- Algebraic.expand v
                 l' <- sequence l
                 polyGCD u' v' l'
+
+rationalSimplify :: MonadFail m => m PExpr -> m PExpr
+rationalSimplify = (=<<) rationalSimplify'
+    where
+        rationalSimplify' :: MonadFail m => PExpr -> m PExpr
+        rationalSimplify' u = do
+                                        n <- Algebraic.expand $ numerator u
+                                        d <- Algebraic.expand $ denominator u
+                                        let v = variables d
+                                        ggcd <- polyGCD n d v
+                                        n' <- quotient n ggcd v
+                                        d' <- quotient d ggcd v
+                                        simplifyDiv n' d'
