@@ -52,6 +52,11 @@ coefficientGPE u x j = do
                             then return c
                             else return 0
 
+coefficientListGPE :: MonadFail m => PExpr -> PExpr -> m [PExpr]
+coefficientListGPE u x = do
+                            m <- degreeGPE u x
+                            mapM (coefficientGPE u x) [0..m]
+
 leadingCoefficient :: MonadFail m => PExpr -> PExpr -> m PExpr
 leadingCoefficient u x = do
                             m <- degreeGPE u x
@@ -165,14 +170,20 @@ pseudoRem u v x = snd <$> pseudoDivision u v x
 ---                         pseudoDivision u' v' x'
 
 -- Find the unit normal form of u, the coefficient domain is the rational numbers
--- normalize = undefined
+-- A unit is an expresion that has a multiplicative inverse.
+
+-- An expression u is unit normal if
+-- 1. u = 0 or u = 1
+-- 2. u = v*w, where v and w are unit normals
+-- 3. There exists a unique unit c such that c*u is unit normal
+-- In Z, the unit normal expresions are the positive integers, in Q,
+-- the only unique normal elements are 0 and 1
+
+-- A polynomial u in K[x] is unit normal if lc(u) is unit normal
+-- A polynomial u in K[x,y,...] is unit normal if lc(u) is unit normal in K[y,...]
 normalize :: MonadFail m => PExpr -> [PExpr] -> m PExpr
 normalize 0 _ = return 0
-normalize u [] = return u
-normalize u (x:r) = do
-                  lc <- leadingCoefficient u x
-                  u' <- fst <$> pseudoDivision u lc x
-                  normalize u' r
+normalize u l = foldM leadingCoefficient u l  >>= simplifyDiv u
 
 polyGCD :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m PExpr
 polyGCD 0 v l = normalize v l
@@ -209,13 +220,12 @@ gcdList (p:ps) r = do
                     polyGCD p ps' r
 
 polyContent :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m PExpr
-polyContent 0 _ _ = return 0
-polyContent (Add ps) x r = do
-                              cs <- mapM (fmap fst . (`coefficientMonomialGPE` x)) ps
-                              gcdList cs r
-polyContent p x r = do
-                              (c,_) <- coefficientMonomialGPE p x
-                              normalize c r
+polyContent u x r = do
+                      cs <- coefficientListGPE u x
+                      case filter (/= 0) cs of
+                        [] -> return 0
+                        [x] -> normalize x r
+                        cs' -> gcdList cs' r
 
 polGCD :: MonadFail m => m PExpr -> m PExpr -> m PExpr
 polGCD u v = do
