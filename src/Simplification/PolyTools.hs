@@ -73,6 +73,42 @@ leadingMonomial p symbols = do
                                     lm <- leadingMonomial' l c
                                     simplifyProduct [xm,lm]
 
+-- division with integer coefficients
+-- u and v are rational multivariate polynomials
+-- l is a list of symbols
+recPolyDivide :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m (PExpr, PExpr)
+recPolyDivide u v [] = do
+                        udivv <- simplifyDiv u v
+                        if true (isInteger udivv)
+                            then return (udivv, 0)
+                            else return (0,u)
+recPolyDivide u v (x:tl) = do 
+                                m <- degreeGPE u x
+                                n <- degreeGPE v x
+                                lcv <- leadingCoefficient v x
+                                recPolyDivideLoop lcv 0 u m n
+    where
+        recPolyDivideLoop lcv q r m n
+            | m >= n = do
+                        lcr <- leadingCoefficient r x
+                        d <- recPolyDivide lcr lcv tl
+                        if snd d /= 0
+                            then Algebraic.expand (return q) >>= \q' -> return (q',r)
+                            else do
+                                let c = fst d
+                                xmn <- simplifyPow x (fromInteger $ m-n)
+                                q' <- simplifyProduct [c,xmn] >>= \t -> simplifySum [q,t] -- q' = q + c*x^(m-n)
+                                r' <- Algebraic.expand $ simplifyProduct [c,v, xmn] >>= simplifySub r -- r' = r - c*v*x^(m-n)
+                                m' <- degreeGPE r x
+                                recPolyDivideLoop lcv q' r' m' n
+            | otherwise = Algebraic.expand (return q) >>= \q' -> return (q',r)
+
+
+recQuotient :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m PExpr
+recQuotient u v l = fst <$> recPolyDivide u v l
+
+recRemainder :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m PExpr
+recRemainder u v l = snd <$> recPolyDivide u v l
 
 -- Division de polinomios basada en monomios
 polyDivide :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m (PExpr, PExpr)
@@ -159,13 +195,6 @@ pseudoDivision u v x = do
 
 pseudoRem :: MonadFail m => PExpr -> PExpr -> PExpr -> m PExpr
 pseudoRem u v x = snd <$> pseudoDivision u v x
-
---- pseudoDivide :: MonadFail m => m PExpr -> m PExpr -> m PExpr -> m (PExpr, PExpr)
---- pseudoDivide u v x = do
----                         u' <- Algebraic.expand u
----                         v' <- Algebraic.expand v
----                         x' <- x
----                         pseudoDivision u' v' x'
 
 -- Find the unit normal form of u, the coefficient domain is the rational numbers
 -- A unit is an expresion that has a multiplicative inverse.

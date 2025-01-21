@@ -81,6 +81,16 @@ pgcdt4 :: Test
 pgcdt4 = TestCase $ assertEqual "pgcd: x**2+2*x+1 and x+1" (x-y) (polGCD (-4*x**2+4*y**2) (8*x**2-16*x*y+8*y**2) [x,y])
 
 ---
+
+-- recDiv :: MonadFail m => m PExpr -> m PExpr -> [PExpr] -> m (PExpr, PExpr)
+-- recDiv u v x = do
+--                 u' <- u
+--                 v' <- v
+--                 x >>= recPolyDivide u' v'
+
+rdt1 :: Test
+rdt1 = TestCase $ assertEqual "rational simplify: (x**2+2*x+1)/(x+1)" (x+y) (rationalSimplify ((x**2+2*x*y+y**2) / (x+y)))
+
 rs1 :: Test
 rs1 = TestCase $ assertEqual "rational simplify: (-4*x**2+4*y**2)/(8*x**2-16*x*y+8*y**2)" (x+y) (rationalSimplify ((-4*x**2+4*y**2) / (8*x**2-16*x*y+8*y**2)))
 
