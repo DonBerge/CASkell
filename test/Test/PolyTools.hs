@@ -13,7 +13,11 @@ import Expr
 x :: Expr
 x = symbol "x"
 
+y :: Expr
 y = symbol "y"
+
+z :: Expr
+z = symbol "z"
 
 pseudoDivide :: MonadFail m => m PExpr -> m PExpr -> m PExpr -> m (PExpr, PExpr)
 pseudoDivide u v x = do
@@ -92,7 +96,17 @@ rdt1 :: Test
 rdt1 = TestCase $ assertEqual "rational simplify: (x**2+2*x+1)/(x+1)" (x+y) (rationalSimplify ((x**2+2*x*y+y**2) / (x+y)))
 
 rs1 :: Test
-rs1 = TestCase $ assertEqual "rational simplify: (-4*x**2+4*y**2)/(8*x**2-16*x*y+8*y**2)" (x+y) (rationalSimplify ((-4*x**2+4*y**2) / (8*x**2-16*x*y+8*y**2)))
+rs1 = TestCase $ assertEqual "rational simplify: (-4*x**2+4*y**2)/(8*x**2-16*x*y+8*y**2)" ((x+y)/(2*y-2*x)) (rationalSimplify ((-4*x**2+4*y**2) / (8*x**2-16*x*y+8*y**2)))
+
+rs2 :: Test
+rs2 = TestCase $ assertEqual "rational simplify: x^2-1 / x+1" (x-1) (rationalSimplify ((x**2 - 1) / (x+1)))
+
+rs3 :: Test
+rs3 = TestCase $ assertEqual "rational simplify: (1/x) + z/(x*y)" x (rationalSimplify (
+  (x*z)/(y+z) + (x*y)/(y+z)))
+
+rstests :: Test
+rstests = TestList [ rs1, rs2, rs3 ]
 
 tests :: Test
-tests = TestList [ pdt1, nt1, nt2, nt3, pgcdt1, pgcdt2, pgcdt3, pgcdt4, contt1, contt2, contt3, contt4, rs1 ]
+tests = TestList [ pdt1, nt1, nt2, nt3, pgcdt1, pgcdt2, pgcdt3, pgcdt4, contt1, contt2, contt3, contt4, rstests ]

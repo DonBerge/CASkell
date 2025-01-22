@@ -4,10 +4,12 @@ import Prelude hiding (exponent)
 
 import PExpr
 
+import Data.Bifunctor
+
 import qualified Number as N
 
-import Control.Monad (unless, foldM)
-import Symplify (simplifyPow, freeOf, simplifyDiv, simplifySum, simplifyProduct, simplifySub, denominator, numerator)
+import Control.Monad (unless, foldM, liftM2, when)
+import Symplify (simplifyPow, freeOf, simplifyDiv, simplifySum, simplifyProduct, simplifySub, denominator, numerator, simplifyNegate)
 import qualified Simplification.Algebraic as Algebraic
 
 import Data.List
@@ -212,6 +214,13 @@ normalize :: MonadFail m => PExpr -> [PExpr] -> m PExpr
 normalize 0 _ = return 0
 normalize u l = foldM leadingCoefficient u l  >>= simplifyDiv u
 
+-- Check if a polynomial is unit normal
+
+normalized :: (Foldable t, MonadFail m) => PExpr -> t PExpr -> m Bool
+normalized u l = do
+                    lc <- foldM leadingCoefficient u l
+                    return $ lc == 1 || lc == 0
+
 polyGCD :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m PExpr
 polyGCD 0 v l = normalize v l
 polyGCD u 0 l = normalize u l
@@ -263,15 +272,75 @@ polGCD u v l = do
                 l' <- sequence l
                 polyGCD u' v' l'
 
+lcmList :: MonadFail m => [PExpr] -> m PExpr
+lcmList us = do
+                n <- Algebraic.expand $ simplifyProduct us
+                let v = variables n
+                let d = removeEachElement us
+                d' <- mapM (Algebraic.expand . simplifyProduct) d >>= (`gcdList` v)
+                quotient n d' v
+            where
+                removeEachElement :: [a] -> [[a]]
+                removeEachElement xs = [take i xs ++ drop (i + 1) xs | i <- [0..length xs - 1]]
+
 rationalSimplify :: MonadFail m => m PExpr -> m PExpr
 rationalSimplify = (=<<) rationalSimplify'
     where
+        numberCoefficientList (Number p) = [p]
+        numberCoefficientList (Mul []) = [0]
+        numberCoefficientList (Mul (Number p:_)) = [p]
+        numberCoefficientList (Add us) = concatMap numberCoefficientList us
+        numberCoefficientList _ = [1]
+
+        signNormalized p v = do
+                                lcp <- foldM leadingCoefficient p v
+                                return (lcp == 1 || lcp == 0)
+
+        simplfyNumbers _ 0 = fail "Division by zero"
+        simplfyNumbers 0 _ = return (0,1)
+        simplfyNumbers n d = let
+                                c = numberCoefficientList n ++ numberCoefficientList d
+                                (n',d') = foldr (\x -> bimap (gcd (N.numerator x)) (lcm (N.denominator x))) (0,1) c  -- n' is lcm of the denominators and d' is the gcd of the numerators
+                             in do
+                                  c' <- simplifyDiv (fromInteger n') (fromInteger d')
+                                  n'' <- simplifyDiv n c'
+                                  d'' <- simplifyDiv d c'
+                                  return (n'',d'')
+
+        simplifySign n d v = do
+                                normn <- signNormalized n v
+                                normd <- signNormalized d v
+                                n' <- if normn then return n else simplifyNegate n
+                                d' <- if normd then return d else simplifyNegate d
+                                if normn == normd -- if both n and d had the same sign, do nothing otherwise negate the quotient
+                                    then simplifyDiv n' d'
+                                    else simplifyDiv n' d' >>= simplifyNegate
+        
+        simplifyNumberAndSign n d v = do
+                                        (n',d') <- simplfyNumbers n d
+                                        simplifySign n' d' v
+
         rationalSimplify' :: MonadFail m => PExpr -> m PExpr
-        rationalSimplify' u = do
-                                        n <- Algebraic.expand $ numerator u
-                                        d <- Algebraic.expand $ denominator u
-                                        let v = variables d
+        rationalSimplify' (Add us) = do
+                                        us' <- mapM rationalSimplify' us
+                                        lcu <- mapM denominator us' >>= lcmList
+                                        u' <- mapM (\u -> simplifyProduct [u, lcu]) us' >>= simplifySum -- Multiplico y divido por el lcm de los denominadores
+                                        p' <- simplifyDiv u' lcu
+                                        case p' of
+                                            Mul _ -> rationalSimplify' p'
+                                            _ -> return p'
+        rationalSimplify' (Mul us) = do
+                                        u' <- mapM rationalSimplify' us >>= simplifyProduct
+                                        n <- Algebraic.expand $ numerator u'
+                                        d <- Algebraic.expand $ denominator u'
+                                        let v = variables n `union` variables d
                                         ggcd <- polyGCD n d v
                                         n' <- quotient n ggcd v
                                         d' <- quotient d ggcd v
-                                        simplifyDiv n' d'
+                                        simplifyNumberAndSign n' d' v
+        rationalSimplify' (Pow b e)
+            | true $ isInteger e = do
+                                      n <- Algebraic.expand (numerator b >>= (`simplifyPow` e))
+                                      d <- Algebraic.expand (denominator b >>= (`simplifyPow` e))
+                                      simplifyDiv n d
+        rationalSimplify' u = return u

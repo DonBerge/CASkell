@@ -10,6 +10,8 @@ import Symplify
 
 import Control.Applicative
 
+import Data.List
+
 newtype Fail a = Fail { unFail :: Maybe a } deriving (Ord, Eq)
 
 instance Functor Fail where
@@ -129,3 +131,19 @@ number = fromRational
 
 symbol :: String -> Expr
 symbol = pure . Symbol
+
+showStruct :: Expr -> String
+showStruct (Fail Nothing) = "Undefined"
+showStruct (Fail (Just e)) = showStruct' e
+    where
+        unquote :: String -> String
+        unquote [] = []
+        unquote [x] = [x]
+        unquote x = if head x == last x then tail $ init x else x
+
+        showStruct' (Number n) = "Number " ++ show n
+        showStruct' (Symbol x) = unquote x
+        showStruct' (Mul xs) = "Mul ( (" ++ intercalate ") , (" (map showStruct' xs) ++ ") )"
+        showStruct' (Add xs) = "Add ( (" ++ intercalate ") , (" (map showStruct' xs) ++ ") )"
+        showStruct' (Pow x y) = "Pow (" ++ showStruct' x ++ "), (" ++ showStruct' y ++ ")"
+        showStruct' (Fun f xs) ="Fun " ++ unquote f ++ " " ++ intercalate "," (map showStruct' xs)
