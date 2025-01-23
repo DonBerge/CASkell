@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Expr where
 
@@ -8,38 +9,10 @@ import PExpr
 
 import Symplify
 
-import Control.Applicative
-
 import Data.List
+import Classes.EvalSteps
 
-newtype Fail a = Fail { unFail :: Maybe a } deriving (Ord, Eq)
-
-instance Functor Fail where
-    fmap f (Fail x) = Fail $ f <$> x
-
-instance Applicative Fail where
-    pure = Fail . Just
-    Fail f <*> Fail x = Fail $ f <*> x
-
-instance Monad Fail where
-    return = pure
-    
-    Fail Nothing >>= _ = Fail Nothing
-    Fail (Just x) >>= f = f x
-
-instance MonadFail Fail where
-    fail _ = Fail Nothing
-
-instance Alternative Fail where
-    empty = Fail Nothing
-    Fail Nothing <|> y = y
-    x <|> _ = x
-
-instance Show x => Show (Fail x) where
-    show (Fail Nothing) = "Undefined"
-    show (Fail (Just x)) = show x
-
-type Expr = Fail PExpr
+type Expr = EvalSteps PExpr
 
 instance Num Expr where
     fromInteger = return . Number . fromInteger
@@ -54,12 +27,14 @@ instance Num Expr where
 
     negate p = p >>= simplifyProduct . (:[-1])
     
-    abs x
-        | true $ isNegative x = negate x
-        | true $ isPositive x = x
-        | otherwise = fail "abs is undefined for this expression"
+    abs x = do
+              x' <- x
+              case x' of
+                Number a -> return $ Number $ abs a
+                _ -> sqrt (x ** 2)
     
-    signum = undefined
+    signum 0 = 0
+    signum x = x / abs x
         
 instance Fractional Expr where
     fromRational = return . Number . fromRational
@@ -106,9 +81,9 @@ cot = makeFun Cot
 
 ---------
 
-extractTriBool :: Fail TriBool -> TriBool
-extractTriBool (Fail Nothing) = U
-extractTriBool (Fail (Just x)) = x
+extractTriBool :: EvalSteps TriBool -> TriBool
+extractTriBool (EvalSteps (Left _, _)) = U
+extractTriBool (EvalSteps (Right x, _)) = x
 
 instance Assumptions Expr where
     isNegative = extractTriBool . fmap isNegative
@@ -137,14 +112,15 @@ undefinedExpr = fail "Explicit undefined"
 
 --
 
+-- | Muestra la estructura interna de la expresion, util para debuggear
 showStruct :: Expr -> String
-showStruct (Fail Nothing) = "Undefined"
-showStruct (Fail (Just e)) = showStruct' e
+showStruct (EvalSteps (Left e, _)) = "Undefined: " ++ e 
+showStruct (EvalSteps (Right e, _)) = showStruct' e
     where
         unquote :: String -> String
         unquote [] = []
         unquote [x] = [x]
-        unquote x = if head x == last x then tail $ init x else x
+        unquote (x:xs) = if x == last xs then init xs else x:xs
 
         showStruct' (Number n) = "Number " ++ show n
         showStruct' (Symbol x) = unquote x

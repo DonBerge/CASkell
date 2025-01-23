@@ -341,7 +341,6 @@ numerator x = return x
 
 denominator :: MonadFail m => PExpr -> m PExpr
 denominator (Number n) = return $ fromInteger $ N.denominator n
-denominator (Add []) = return 0
 denominator (Mul xs) = mapM denominator xs >>= simplifyProduct
 denominator u@(Pow _ y)
     | true $ isNegative y = simplifyPow u (-1)
