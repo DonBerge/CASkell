@@ -72,7 +72,6 @@ library
     other-modules:  Number
                     PExpr
                     Classes.Assumptions
-                    Classes.ToRatio
 
     -- LANGUAGE extensions used by modules in this package.
     other-extensions: PatternSynonyms
@@ -84,7 +83,6 @@ library
 
     -- Directories containing source files.
     hs-source-dirs:   src
-                      src/Trillean
                       src/Simplification
                       src/Classes
     main-is:          Main.hs
@@ -124,8 +122,8 @@ test-suite cas-test
     hs-source-dirs:   test/Test
                       test
                       src
-                      src/Trillean
                       src/Simplification
+                      src/Classes
 
     -- The entrypoint to the test suite.
     main-is:          Main.hs
