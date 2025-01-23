@@ -8,10 +8,10 @@ import Symplify
 
 import Math.Combinatorics.Exact.Binomial (choose)
 
-expand :: MonadFail m => m PExpr -> m PExpr
+expand :: EvalSteps PExpr -> EvalSteps PExpr
 expand x = x >>= expand'
 
-expand' :: MonadFail m => PExpr -> m PExpr
+expand' :: PExpr -> EvalSteps PExpr
 expand' (Add []) = return 0
 expand' (Add [x]) = expand' x >>= expandFraction
 expand' (Add (x:xs)) = do
@@ -45,7 +45,7 @@ expand' (Fun f xs) = (Fun f <$> mapM expand' xs) >>= expandFraction
 
 expand' u = expandFraction u
 
-expandFraction :: MonadFail m => PExpr -> m PExpr
+expandFraction :: PExpr -> EvalSteps PExpr
 expandFraction x = do
                     n <- numerator x
                     d <- denominator x
@@ -53,7 +53,7 @@ expandFraction x = do
                         then return x
                         else expand' d >>= simplifyDiv n  --numerator x / expand' d
 
-expandProduct :: MonadFail m => PExpr -> PExpr -> m PExpr
+expandProduct :: PExpr -> PExpr -> EvalSteps PExpr
 expandProduct (Add []) _ = return 0
 expandProduct (Add (r:rs)) s = do
                                 r' <- expandProduct r s
@@ -63,7 +63,7 @@ expandProduct r s@(Add _) = expandProduct s r
 expandProduct r s = simplifyProduct [r,s] >>= expandFraction
 
 -- Se asume que n es no negativo
-expandPower :: MonadFail m => PExpr -> Integer -> m PExpr
+expandPower :: PExpr -> Integer -> EvalSteps PExpr
 expandPower _ 0 = return 1
 expandPower u 1 = return u
 expandPower 0 _ = return 0

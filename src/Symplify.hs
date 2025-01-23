@@ -2,6 +2,7 @@
 {-# OPTIONS_GHC -Wno-type-defaults #-}
 
 module Symplify (
+    module Classes.EvalSteps,
     automaticSymplify,
     simplifyProduct,
     simplifySum,
@@ -26,6 +27,7 @@ import PExpr
 
 import Data.List
 import Control.Applicative
+import Classes.EvalSteps
 
 
 numberNumerator :: PExpr -> Integer
@@ -36,7 +38,7 @@ numberNumerator _ = error "numberNumerator: not a number"
 --     toRational (Number x) = x
 --     toRational _ = error "toRational: not a number"
 
-automaticSymplify :: (MonadFail m, Alternative m) => PExpr -> m PExpr
+automaticSymplify :: PExpr -> EvalSteps PExpr
 automaticSymplify (Mul xs) = mapM automaticSymplify xs >>= simplifyProduct
 automaticSymplify (Add xs) = mapM automaticSymplify xs >>= simplifySum
 automaticSymplify (Pow x y) = do
@@ -86,10 +88,12 @@ exponent _ = 1
 
 ---------------------------------------------------------------------------------------
 
-simplifyPow :: MonadFail m => PExpr -> PExpr -> m PExpr
 -- SPOW-2
+simplifyPow :: PExpr -> PExpr -> EvalSteps PExpr
 simplifyPow 0 w
-    | true $ isPositive w = return 0
+    | true $ isPositive w = do
+                              addStep $ "Para cualquier p > 0, 0^p = 0, por lo tanto 0^(" ++ show w ++ ") = 0"
+                              return 0
     | otherwise = fail "0^w is not defined for w <= 0"
 simplifyPow 1 _ = return 1
 simplifyPow v w
@@ -103,7 +107,7 @@ simplifyPow v w
         simplifyIntPow (Mul r) n = mapM (`simplifyIntPow` n) r >>= simplifyProduct
         simplifyIntPow x n = return $ Pow x (fromInteger n)
 
-simplifyProduct :: MonadFail m => [PExpr] -> m PExpr
+simplifyProduct :: [PExpr] -> EvalSteps PExpr
 simplifyProduct [] = return 1
 simplifyProduct [x] = return x -- SPRD.3
 simplifyProduct xs
@@ -116,9 +120,9 @@ simplifyProduct xs
                         [u, Add vs] | isConstant u -> Add . sort <$> mapM (simplifyProduct . reverse . (:[u])) vs
                         _ -> return $ Mul $ sort xs'
 
-simplifyProductRec :: MonadFail m => [PExpr] -> m [PExpr]
 --simplifyProductRec = undefined
 -- SPRDREC-2
+simplifyProductRec :: [PExpr] -> EvalSteps [PExpr]
 simplifyProductRec [] = return []
 simplifyProductRec [Mul us, Mul vs] = mergeProducts us vs
 simplifyProductRec [Mul us, v] = mergeProducts us [v]
@@ -144,12 +148,12 @@ simplifyProductRec [u,v]
 simplifyProductRec ((Mul us):vs) = simplifyProductRec vs >>= mergeProducts us
 simplifyProductRec (u:vs) = simplifyProductRec vs >>= mergeProducts [u]
 
-simplifyDiv :: MonadFail m => PExpr -> PExpr -> m PExpr
+simplifyDiv :: PExpr -> PExpr -> EvalSteps PExpr
 simplifyDiv x y = do
                     y' <- simplifyPow y (-1)
                     simplifyProduct [x, y']
 
-simplifySum :: MonadFail m => [PExpr] -> m PExpr
+simplifySum :: [PExpr] -> EvalSteps PExpr
 simplifySum [] = return 0
 simplifySum [x] = return x
 simplifySum xs = do
@@ -159,7 +163,7 @@ simplifySum xs = do
                         [x] -> return x
                         _ -> return $ Add $ sort xs'
 
-simplifySumRec :: MonadFail m => [PExpr] -> m [PExpr]
+simplifySumRec :: [PExpr] -> EvalSteps [PExpr]
 simplifySumRec [] = return []
 simplifySumRec [Add us, Add vs] = mergeSums us vs
 simplifySumRec [Add us, v] = mergeSums us [v]
@@ -189,7 +193,7 @@ simplifySumRec [u, v]
 simplifySumRec ((Add us):vs) = simplifySumRec vs >>= mergeSums us
 simplifySumRec (u:vs) = simplifySumRec vs >>= mergeSums [u]
 
-simplifySub :: MonadFail m => PExpr -> PExpr -> m PExpr
+simplifySub :: PExpr -> PExpr -> EvalSteps PExpr
 simplifySub x y = do
                     y' <- simplifyProduct [y, -1]
                     simplifySum [x, y']
@@ -207,13 +211,13 @@ mergeOps f (p:ps) (q:qs) = do
                                                 else (q:) <$> mergeOps f (p:ps) qs
                                 _ -> error "mergeOps: unexpected pattern"
 
-mergeProducts :: MonadFail m => [PExpr] -> [PExpr] -> m [PExpr]
+mergeProducts :: [PExpr] -> [PExpr] -> EvalSteps [PExpr]
 mergeProducts = mergeOps simplifyProductRec
 
-mergeSums :: MonadFail m => [PExpr] -> [PExpr] -> m [PExpr]
+mergeSums :: [PExpr] -> [PExpr] -> EvalSteps [PExpr]
 mergeSums = mergeOps simplifySumRec
 
-simplifyNegate :: MonadFail m => PExpr -> m PExpr
+simplifyNegate :: PExpr -> EvalSteps PExpr
 simplifyNegate a = simplifyProduct [a, -1]
 
 operands :: PExpr -> [PExpr]
@@ -232,7 +236,7 @@ freeOf (Number _) _ = True
 freeOf u t = all (freeOf t) $ operands u
 
 
-linearForm :: MonadFail m => PExpr -> PExpr -> m (PExpr, PExpr)
+linearForm :: PExpr -> PExpr -> EvalSteps (PExpr, PExpr)
 linearForm u x
     | u == x = return (1, 0)
     | notASymbol x = fail "x must be a symbol"
@@ -264,12 +268,12 @@ mulByNeg (Mul ((Number a):_)) = a<0
 mulByNeg (Add xs) = all mulByNeg xs
 mulByNeg x = true $ isNegative x
 
-simplifySqrt :: MonadFail m => PExpr -> m PExpr
+simplifySqrt :: PExpr -> EvalSteps PExpr
 simplifySqrt x = simplifyPow x (1/2)
 
 ----------------
 
-handlePeriod :: MonadFail m => (N.Number -> PExpr -> m a) -> (a -> m a) -> PExpr -> m a
+handlePeriod :: (N.Number -> PExpr -> EvalSteps a) -> (a -> EvalSteps a) -> PExpr -> EvalSteps a
 handlePeriod cases onOddPi x = do
                     p <- linearForm x Pi
                     case p of
@@ -281,7 +285,7 @@ handlePeriod cases onOddPi x = do
                                                 else q >>= onOddPi
                         _ -> fail "Could not handle period"
 
-simplifyFun :: (Alternative f, MonadFail f) => PExpr -> f PExpr
+simplifyFun :: PExpr -> EvalSteps PExpr
 simplifyFun (Sin x)
     | mulByNeg x = simplifyNegate x >>= simplifyFun . Sin >>= simplifyNegate
 simplifyFun (Sin x) = handlePeriod cases simplifyNegate x <|> return (Sin x)
@@ -329,7 +333,7 @@ simplifyFun x = return x
 
 ------------------
 
-numerator :: MonadFail m => PExpr -> m PExpr
+numerator :: PExpr -> EvalSteps PExpr
 numerator (Number n) = return $ fromInteger $ N.numerator n
 numerator (Add []) = return 0
 numerator (Mul xs) = mapM numerator xs >>= simplifyProduct
@@ -339,7 +343,7 @@ numerator (Exp x)
     | true $ isNegative x = return 1
 numerator x = return x    
 
-denominator :: MonadFail m => PExpr -> m PExpr
+denominator :: PExpr -> EvalSteps PExpr
 denominator (Number n) = return $ fromInteger $ N.denominator n
 denominator (Mul xs) = mapM denominator xs >>= simplifyProduct
 denominator u@(Pow _ y)

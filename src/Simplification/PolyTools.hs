@@ -9,7 +9,7 @@ import Data.Bifunctor
 import qualified Number as N
 
 import Control.Monad (unless, foldM)
-import Symplify (simplifyPow, freeOf, simplifyDiv, simplifySum, simplifyProduct, simplifySub, denominator, numerator, simplifyNegate)
+import Symplify
 import qualified Simplification.Algebraic as Algebraic
 
 import Data.List
@@ -19,7 +19,7 @@ isSymbol (Fun _ _) = True
 isSymbol _ = False
 
 -- The list [c, m] where m is the degree of the monomial and c is the coefficient of xm
-coefficientMonomialGPE :: MonadFail m => PExpr -> PExpr -> m (PExpr, Integer)
+coefficientMonomialGPE :: PExpr -> PExpr -> EvalSteps (PExpr, Integer)
 coefficientMonomialGPE u x
     | u == x = return (1, 1)
 coefficientMonomialGPE (Pow base (Number exponent)) x
@@ -32,11 +32,11 @@ coefficientMonomialGPE u x
     | freeOf u x = return (u,0)
     | otherwise = fail "Not a general monomial expression"
 
-degreeGPE :: MonadFail m => PExpr -> PExpr -> m Integer
+degreeGPE :: PExpr -> PExpr -> EvalSteps Integer
 degreeGPE (Add us) x = foldM (\d u -> max d . snd <$> coefficientMonomialGPE u x) (-1) us --maximum $ map (`degreeGPE` x) us
 degreeGPE u x = snd <$> coefficientMonomialGPE u x
 
-coefficientGPE :: MonadFail m => PExpr -> PExpr -> Integer -> m PExpr
+coefficientGPE :: PExpr -> PExpr -> Integer -> EvalSteps PExpr
 coefficientGPE u@(Add us) x j
     | u == x = if j == 1 then return 1 else return 0
     | otherwise = foldM combine 0 us
@@ -52,17 +52,17 @@ coefficientGPE u x j = do
                             then return c
                             else return 0
 
-coefficientListGPE :: MonadFail m => PExpr -> PExpr -> m [PExpr]
+coefficientListGPE :: PExpr -> PExpr -> EvalSteps [PExpr]
 coefficientListGPE u x = do
                             m <- degreeGPE u x
                             mapM (coefficientGPE u x) [0..m]
 
-leadingCoefficient :: MonadFail m => PExpr -> PExpr -> m PExpr
+leadingCoefficient :: PExpr -> PExpr -> EvalSteps PExpr
 leadingCoefficient u x = do
                             m <- degreeGPE u x
                             coefficientGPE u x m
 
-leadingMonomial :: MonadFail m => PExpr -> [PExpr] -> m PExpr
+leadingMonomial :: PExpr -> [PExpr] -> EvalSteps PExpr
 leadingMonomial p symbols = do
                                 unless (all isSymbol symbols) $ fail "leadingMonomial: not all arguments are symbols"
                                 leadingMonomial' symbols p
@@ -78,7 +78,7 @@ leadingMonomial p symbols = do
 -- division with integer coefficients
 -- u and v are rational multivariate polynomials
 -- l is a list of symbols
-recPolyDivide :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m (PExpr, PExpr)
+recPolyDivide :: PExpr -> PExpr -> [PExpr] -> EvalSteps (PExpr, PExpr)
 recPolyDivide u v [] = do
                         udivv <- simplifyDiv u v
                         if true (isInteger udivv)
@@ -106,14 +106,14 @@ recPolyDivide u v (x:tl) = do
             | otherwise = Algebraic.expand (return q) >>= \q' -> return (q',r)
 
 
-recQuotient :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m PExpr
+recQuotient :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
 recQuotient u v l = fst <$> recPolyDivide u v l
 
-recRemainder :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m PExpr
+recRemainder :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
 recRemainder u v l = snd <$> recPolyDivide u v l
 
 -- Division de polinomios basada en monomios
-polyDivide :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m (PExpr, PExpr)
+polyDivide :: PExpr -> PExpr -> [PExpr] -> EvalSteps (PExpr, PExpr)
 polyDivide u v l = do
                     let q = 0
                         r = u
@@ -146,23 +146,23 @@ variables (Add us) = foldl union [] $ map variables us
 variables (Mul us) = foldl union [] $ map variables us
 variables u = [u]
 
-divmod :: MonadFail m => m PExpr -> m PExpr -> m (PExpr, PExpr)
+divmod :: EvalSteps PExpr -> EvalSteps PExpr -> EvalSteps (PExpr, PExpr)
 divmod p q = do
                 p' <- Algebraic.expand p
                 q' <- Algebraic.expand q
                 let vars = variables q'
                 polyDivide p' q' vars
 
-quotient :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m PExpr
+quotient :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
 quotient p q l = fst <$> polyDivide p q l
 
-remainder :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m PExpr
+remainder :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
 remainder p q l = snd <$> polyDivide p q l
 
 
 ---
 
-pseudoDivision :: MonadFail m => PExpr -> PExpr -> PExpr -> m (PExpr, PExpr)
+pseudoDivision :: PExpr -> PExpr -> PExpr -> EvalSteps (PExpr, PExpr)
 pseudoDivision u v x = do
                         let p = 0
                         let s = u
@@ -195,7 +195,7 @@ pseudoDivision u v x = do
                             r <- Algebraic.expand $ simplifyProduct [lcv',s]
                             return (q,r)
 
-pseudoRem :: MonadFail m => PExpr -> PExpr -> PExpr -> m PExpr
+pseudoRem :: PExpr -> PExpr -> PExpr -> EvalSteps PExpr
 pseudoRem u v x = snd <$> pseudoDivision u v x
 
 -- Find the unit normal form of u, the coefficient domain is the rational numbers
@@ -210,25 +210,24 @@ pseudoRem u v x = snd <$> pseudoDivision u v x
 
 -- A polynomial u in K[x] is unit normal if lc(u) is unit normal
 -- A polynomial u in K[x,y,...] is unit normal if lc(u) is unit normal in K[y,...]
-normalize :: MonadFail m => PExpr -> [PExpr] -> m PExpr
+normalize :: Foldable t => PExpr -> t PExpr -> EvalSteps PExpr
 normalize 0 _ = return 0
 normalize u l = foldM leadingCoefficient u l  >>= simplifyDiv u
 
 -- Check if a polynomial is unit normal
 
-normalized :: (Foldable t, MonadFail m) => PExpr -> t PExpr -> m Bool
+normalized :: Foldable t => PExpr -> t PExpr -> EvalSteps Bool
 normalized u l = do
                     lc <- foldM leadingCoefficient u l
                     return $ lc == 1 || lc == 0
 
-polyPrimitivePart :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m PExpr
+polyPrimitivePart :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
 polyPrimitivePart 0 _ _ = return 0
 polyPrimitivePart u x r = do
                             contU <- polyContent u x r
-                            rem <- remainder u contU (x:r)
                             quotient u contU (x:r)
 
-polyGCD :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m PExpr
+polyGCD :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
 polyGCD 0 v l = normalize v l
 polyGCD u 0 l = normalize u l
 polyGCD u v l = polyGCDRec u v l >>= (`normalize` l)
@@ -256,7 +255,7 @@ polyGCD u v l = polyGCDRec u v l >>= (`normalize` l)
                                         then return 1
                                         else gcdRec' x rest ppV ppR 
 
-remainderSequence :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m [PExpr]
+remainderSequence :: PExpr -> PExpr -> [PExpr] -> EvalSteps [PExpr]
 remainderSequence _ _ [] = error "Remainder sequence undefined for empty lists"
 remainderSequence u v (x:rest) = do
                                     ppU <- polyPrimitivePart u x rest
@@ -270,26 +269,26 @@ remainderSequence u v (x:rest) = do
                                         rs <- remainderSequence' ppV ppR
                                         return $ ppU:rs
 
-gcdList :: MonadFail m => [PExpr] -> [PExpr] -> m PExpr
+gcdList :: [PExpr] -> [PExpr] -> EvalSteps PExpr
 gcdList [] _ = return 0
 gcdList [p] l = normalize p l 
 gcdList (p:ps) r = do
                     ps' <- gcdList ps r
                     polyGCD p ps' r
 
-polyContent :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m PExpr
+polyContent :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
 polyContent u x r = do
                       cfl <- coefficientListGPE u x 
                       gcdList cfl r
 
-polGCD :: MonadFail m => m PExpr -> m PExpr -> [m PExpr] -> m PExpr
+polGCD :: EvalSteps PExpr -> EvalSteps PExpr -> [EvalSteps PExpr] -> EvalSteps PExpr
 polGCD u v l = do
                 u' <- Algebraic.expand u
                 v' <- Algebraic.expand v
                 l' <- sequence l
                 polyGCD u' v' l'
 
-lcmList :: MonadFail m => [PExpr] -> m PExpr
+lcmList :: [PExpr] -> EvalSteps PExpr
 lcmList us = do
                 n <- Algebraic.expand $ simplifyProduct us
                 let v = variables n
@@ -300,7 +299,7 @@ lcmList us = do
                 removeEachElement :: [a] -> [[a]]
                 removeEachElement xs = [take i xs ++ drop (i + 1) xs | i <- [0..length xs - 1]]
 
-rationalSimplify :: MonadFail m => m PExpr -> m PExpr
+rationalSimplify :: EvalSteps PExpr -> EvalSteps PExpr
 rationalSimplify = (=<<) rationalSimplify'
     where
         numberCoefficientList (Number p) = [p]
@@ -337,7 +336,6 @@ rationalSimplify = (=<<) rationalSimplify'
                                         (n',d') <- simplfyNumbers n d
                                         simplifySign n' d' v
 
-        rationalSimplify' :: MonadFail m => PExpr -> m PExpr
         rationalSimplify' (Add us) = do
                                         us' <- mapM rationalSimplify' us
                                         lcu <- mapM denominator us' >>= lcmList

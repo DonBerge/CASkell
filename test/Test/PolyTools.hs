@@ -10,6 +10,8 @@ import Test.HUnit ( assertEqual, Test(..) )
 import PExpr
 import Expr
 
+import Classes.EvalSteps
+
 x :: Expr
 x = symbol "x"
 
@@ -19,7 +21,7 @@ y = symbol "y"
 z :: Expr
 z = symbol "z"
 
-pseudoDivide :: MonadFail m => m PExpr -> m PExpr -> m PExpr -> m (PExpr, PExpr)
+pseudoDivide :: EvalSteps PExpr -> EvalSteps PExpr -> EvalSteps PExpr -> EvalSteps (PExpr, PExpr)
 pseudoDivide u v x = do
                         u' <- u
                         v' <- v
@@ -37,7 +39,7 @@ pdt1 = TestCase $ assertEqual "pseudo division: (x^2 + 2x + 1)/x" (mkp (y*x+y) 0
 
 --- normalize
 
-normalize' :: MonadFail m => m PExpr -> [m PExpr] -> m PExpr
+normalize' :: Traversable t => EvalSteps PExpr -> t (EvalSteps PExpr) -> EvalSteps PExpr
 normalize' u l = do
                 l' <- sequence l
                 u' <- u
@@ -54,6 +56,7 @@ nt3 = TestCase $ assertEqual "normalize: 2x + 3x" 1 (normalize' 10 [y,x])
 
 ---
 
+cont :: EvalSteps PExpr -> EvalSteps PExpr -> [EvalSteps PExpr] -> EvalSteps PExpr
 cont u x r = do
               u' <- u
               x' <- x

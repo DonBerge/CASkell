@@ -10,7 +10,6 @@ import PExpr
 import Symplify
 
 import Data.List
-import Classes.EvalSteps
 
 type Expr = EvalSteps PExpr
 
