@@ -8,7 +8,7 @@ import Data.Bifunctor
 
 import qualified Number as N
 
-import Control.Monad (unless, foldM, liftM2, when)
+import Control.Monad (unless, foldM)
 import Symplify (simplifyPow, freeOf, simplifyDiv, simplifySum, simplifyProduct, simplifySub, denominator, numerator, simplifyNegate)
 import qualified Simplification.Algebraic as Algebraic
 
@@ -221,12 +221,19 @@ normalized u l = do
                     lc <- foldM leadingCoefficient u l
                     return $ lc == 1 || lc == 0
 
+polyPrimitivePart :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m PExpr
+polyPrimitivePart 0 _ _ = return 0
+polyPrimitivePart u x r = do
+                            contU <- polyContent u x r
+                            rem <- remainder u contU (x:r)
+                            quotient u contU (x:r)
+
 polyGCD :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m PExpr
 polyGCD 0 v l = normalize v l
 polyGCD u 0 l = normalize u l
 polyGCD u v l = polyGCDRec u v l >>= (`normalize` l)
     where
-        polyGCDRec _ _ [] = return 1
+        polyGCDRec _ _ [] = return 1 -- gcd(u,v) where u and v are non-zero rationals is 1
         polyGCDRec u v l@(x:rest) = do
                                     contU <- polyContent u x rest
                                     contV <- polyContent v x rest
@@ -235,24 +242,34 @@ polyGCD u v l = polyGCDRec u v l >>= (`normalize` l)
                                     
                                     ppU <- quotient u contU l -- primitive part of u
                                     ppV <- quotient v contV l -- primitive part of v
-                                    
-                                    rp <- gcdRec' x rest ppU ppV
 
-                                    -- return rp
+                                    rp <- gcdRec' x rest ppU ppV
 
                                     Algebraic.expand $ simplifyProduct [d,rp]
         
-        gcdRec' x rest ppU ppV
-            | ppV == 0 = return ppU --Algebraic.expand $ simplifyProduct [d,ppU]
-            | otherwise = do
-                            r <- pseudoRem ppU ppV x
-                            ppR <- if r == 0
-                                     then return 0
-                                     else do
-                                            contR <- polyContent r x rest
-                                            quotient r contR l
-                            gcdRec' x rest ppV ppR
-                            
+        gcdRec' _ _ ppU 0 = return ppU
+        gcdRec' x rest ppU ppV = do
+                                    r <- pseudoRem ppU ppV x
+                                    ppR <- polyPrimitivePart r x rest
+                                    degU <- degreeGPE ppU x
+                                    if ppR == ppU && degU == 0 -- Avoids infinite recursion
+                                        then return 1
+                                        else gcdRec' x rest ppV ppR 
+
+remainderSequence :: MonadFail m => PExpr -> PExpr -> [PExpr] -> m [PExpr]
+remainderSequence _ _ [] = error "Remainder sequence undefined for empty lists"
+remainderSequence u v (x:rest) = do
+                                    ppU <- polyPrimitivePart u x rest
+                                    ppV <- polyPrimitivePart v x rest
+                                    remainderSequence' ppU ppV
+    where
+        remainderSequence' ppU 0 = return [ppU, 0]
+        remainderSequence' ppU ppV = do
+                                        r <- pseudoRem ppU ppV x
+                                        ppR <- polyPrimitivePart r x rest
+                                        rs <- remainderSequence' ppV ppR
+                                        return $ ppU:rs
+
 gcdList :: MonadFail m => [PExpr] -> [PExpr] -> m PExpr
 gcdList [] _ = return 0
 gcdList [p] l = normalize p l 
@@ -340,7 +357,8 @@ rationalSimplify = (=<<) rationalSimplify'
                                         simplifyNumberAndSign n' d' v
         rationalSimplify' (Pow b e)
             | true $ isInteger e = do
-                                      n <- Algebraic.expand (numerator b >>= (`simplifyPow` e))
-                                      d <- Algebraic.expand (denominator b >>= (`simplifyPow` e))
+                                      b' <- rationalSimplify' b
+                                      n <- numerator b' >>= (`simplifyPow` e)
+                                      d <- denominator b' >>= (`simplifyPow` e)
                                       simplifyDiv n d
         rationalSimplify' u = return u

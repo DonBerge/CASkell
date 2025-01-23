@@ -132,6 +132,11 @@ number = fromRational
 symbol :: String -> Expr
 symbol = pure . Symbol
 
+undefinedExpr :: Expr
+undefinedExpr = fail "Explicit undefined"
+
+--
+
 showStruct :: Expr -> String
 showStruct (Fail Nothing) = "Undefined"
 showStruct (Fail (Just e)) = showStruct' e

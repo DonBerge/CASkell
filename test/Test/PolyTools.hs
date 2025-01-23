@@ -86,12 +86,6 @@ pgcdt4 = TestCase $ assertEqual "pgcd: x**2+2*x+1 and x+1" (x-y) (polGCD (-4*x**
 
 ---
 
--- recDiv :: MonadFail m => m PExpr -> m PExpr -> [PExpr] -> m (PExpr, PExpr)
--- recDiv u v x = do
---                 u' <- u
---                 v' <- v
---                 x >>= recPolyDivide u' v'
-
 rdt1 :: Test
 rdt1 = TestCase $ assertEqual "rational simplify: (x**2+2*x+1)/(x+1)" (x+y) (rationalSimplify ((x**2+2*x*y+y**2) / (x+y)))
 
@@ -102,11 +96,16 @@ rs2 :: Test
 rs2 = TestCase $ assertEqual "rational simplify: x^2-1 / x+1" (x-1) (rationalSimplify ((x**2 - 1) / (x+1)))
 
 rs3 :: Test
-rs3 = TestCase $ assertEqual "rational simplify: (1/x) + z/(x*y)" x (rationalSimplify (
-  (x*z)/(y+z) + (x*y)/(y+z)))
+rs3 = TestCase $ assertEqual "rational simplify: (1/x) + z/(x*y)" x (rationalSimplify (1/(1/x + z/(x*y)) + (x*y*z+x*z**2)/((y+z)**2)))
+
+rs4 :: Test
+rs4 = TestCase $ assertEqual "rational simplify: simplfication to undefined" undefinedExpr (rationalSimplify ((x+1)/(x**2 - 1 - (x+1)*(x-1))))
+
+rs5 :: Test
+rs5 = TestCase $ assertEqual "rational simplify: simplfication to undefined" ((x+3)/(x+2)) (rationalSimplify ( (1/(1+1/(x+1)))  +  (2/(x+2))))
 
 rstests :: Test
-rstests = TestList [ rs1, rs2, rs3 ]
+rstests = TestList [ rs1, rs2, rs3, rs4, rs5 ]
 
 tests :: Test
 tests = TestList [ pdt1, nt1, nt2, nt3, pgcdt1, pgcdt2, pgcdt3, pgcdt4, contt1, contt2, contt3, contt4, rstests ]
