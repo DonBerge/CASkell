@@ -1,0 +1,455 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE FunctionalDependencies #-}</span><span>
+</span><span id="line-2"></span><span class="annot"><span class="hs-comment">{-|
+Module      : TriBool
+Description : Modulo para el manejo de logica ternaria, que soporta 3 valores de verdad, Verdadearo(T), Falso(F) y Desconocido(U).
+
+La logica clasica soporta dos valores de verdad, Verdadero y Falso. Sin embargo, hay situaciones en las que no se puede 
+determinar si una proposicion es verdadera o falsa. Por ejemplo, la expresion @0^x@ evalua a aiferentes valores dependiendo del valor de @x@.
+
+@
+    0 ^ x = 0, si x &gt; 0
+    0 ^ x = Undefined: &quot;Division por 0&quot;, si x &lt;= 0
+@
+
+Pero el valor de @x@ no siempre es conocido, por lo que el valor de verdad de @x &gt; 0@ no siempre se puede inferir como verdadero o falso.
+
+La logica ternaria aborda este problema, introduciendo un tercer valor de verdad, Desconocido (U). 
+Este modulo proporciona una implementacion de la logica ternaria, que soporta los valores de verdad Verdadero (T), Falso (F) y Desconocido (U), 
+ademas de una extensi&#243;n de los operadores logicos para estos valores.
+
+Mas informaci&#243;n: &lt;https://en.wikipedia.org/wiki/Three-valued_logic&gt;
+
+Ejemplo de uso:
+
+@
+import TriBool
+
+-- and
+T &amp;&amp;&amp; T == T 
+T &amp;&amp;&amp; F == F
+U &amp;&amp;&amp; T == U
+
+-- or
+F ||| F = F 
+F ||| U = U
+T ||| U = T
+
+@
+
+Notar que las operaciones con valores desconocidos no siempre resultan en un valor desconocido.
+
+-}</span></span><span>
+</span><span id="line-42"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="TriBool.html"><span class="hs-identifier">TriBool</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span class="annot"><span class="hs-comment">-- | Tipo de dato que representa los valores de verdad, Verdadero, Falso y Desconocido.</span></span><span>
+</span><span id="line-45"></span><span class="hs-keyword">data</span><span> </span><span id="TriBool"><span class="annot"><a href="TriBool.html#TriBool"><span class="hs-identifier hs-var">TriBool</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span>
+</span><span id="line-46"></span><span>    </span><span id="F"><span class="annot"><a href="TriBool.html#F"><span class="hs-identifier hs-var">F</span></a></span></span><span>   </span><span class="annot"><span class="hs-comment">-- ^ Falso </span></span><span>
+</span><span id="line-47"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="U"><span class="annot"><a href="TriBool.html#U"><span class="hs-identifier hs-var">U</span></a></span></span><span> </span><span class="annot"><span class="hs-comment">-- ^ Desconocido</span></span><span>
+</span><span id="line-48"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="T"><span class="annot"><a href="TriBool.html#T"><span class="hs-identifier hs-var">T</span></a></span></span><span> </span><span class="annot"><span class="hs-comment">-- ^ Verdadero</span></span><span>
+</span><span id="line-49"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-50"></span><span>  </span><span id="local-6989586621679059362"><span id="local-6989586621679059367"><span class="annot"><span class="annottext">TriBool -&gt; TriBool -&gt; Bool
+(TriBool -&gt; TriBool -&gt; Bool)
+-&gt; (TriBool -&gt; TriBool -&gt; Bool) -&gt; Eq TriBool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: TriBool -&gt; TriBool -&gt; Bool
+== :: TriBool -&gt; TriBool -&gt; Bool
+$c/= :: TriBool -&gt; TriBool -&gt; Bool
+/= :: TriBool -&gt; TriBool -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span>
+</span><span id="line-51"></span><span>  </span><span id="local-6989586621679059374"><span id="local-6989586621679059378"><span id="local-6989586621679059382"><span id="local-6989586621679059386"><span id="local-6989586621679059389"><span id="local-6989586621679059392"><span id="local-6989586621679059395"><span class="annot"><span class="annottext">Eq TriBool
+Eq TriBool =&gt;
+(TriBool -&gt; TriBool -&gt; Ordering)
+-&gt; (TriBool -&gt; TriBool -&gt; Bool)
+-&gt; (TriBool -&gt; TriBool -&gt; Bool)
+-&gt; (TriBool -&gt; TriBool -&gt; Bool)
+-&gt; (TriBool -&gt; TriBool -&gt; Bool)
+-&gt; (TriBool -&gt; TriBool -&gt; TriBool)
+-&gt; (TriBool -&gt; TriBool -&gt; TriBool)
+-&gt; Ord TriBool
+TriBool -&gt; TriBool -&gt; Bool
+TriBool -&gt; TriBool -&gt; Ordering
+TriBool -&gt; TriBool -&gt; TriBool
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: TriBool -&gt; TriBool -&gt; Ordering
+compare :: TriBool -&gt; TriBool -&gt; Ordering
+$c&lt; :: TriBool -&gt; TriBool -&gt; Bool
+&lt; :: TriBool -&gt; TriBool -&gt; Bool
+$c&lt;= :: TriBool -&gt; TriBool -&gt; Bool
+&lt;= :: TriBool -&gt; TriBool -&gt; Bool
+$c&gt; :: TriBool -&gt; TriBool -&gt; Bool
+&gt; :: TriBool -&gt; TriBool -&gt; Bool
+$c&gt;= :: TriBool -&gt; TriBool -&gt; Bool
+&gt;= :: TriBool -&gt; TriBool -&gt; Bool
+$cmax :: TriBool -&gt; TriBool -&gt; TriBool
+max :: TriBool -&gt; TriBool -&gt; TriBool
+$cmin :: TriBool -&gt; TriBool -&gt; TriBool
+min :: TriBool -&gt; TriBool -&gt; TriBool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-comment">-- ^ F &lt;= U &lt;= T </span></span><span>
+</span><span id="line-52"></span><span>  </span><span id="local-6989586621679059403"><span id="local-6989586621679059405"><span id="local-6989586621679059409"><span class="annot"><span class="annottext">Int -&gt; TriBool -&gt; ShowS
+[TriBool] -&gt; ShowS
+TriBool -&gt; String
+(Int -&gt; TriBool -&gt; ShowS)
+-&gt; (TriBool -&gt; String) -&gt; ([TriBool] -&gt; ShowS) -&gt; Show TriBool
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; TriBool -&gt; ShowS
+showsPrec :: Int -&gt; TriBool -&gt; ShowS
+$cshow :: TriBool -&gt; String
+show :: TriBool -&gt; String
+$cshowList :: [TriBool] -&gt; ShowS
+showList :: [TriBool] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span class="hs-comment">-- = Eliminadores</span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span class="annot"><span class="hs-comment">-- | Retorna True si el valor es Verdadero, False en caso contrario.</span></span><span>
+</span><span id="line-57"></span><span class="annot"><a href="TriBool.html#true"><span class="hs-identifier hs-type">true</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="TriBool.html#TriBool"><span class="hs-identifier hs-type">TriBool</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-58"></span><span id="true"><span class="annot"><span class="annottext">true :: TriBool -&gt; Bool
+</span><a href="TriBool.html#true"><span class="hs-identifier hs-var hs-var">true</span></a></span></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#T"><span class="hs-identifier hs-var">T</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span>
+</span><span id="line-59"></span><span class="annot"><a href="TriBool.html#true"><span class="hs-identifier hs-var">true</span></a></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span class="annot"><span class="hs-comment">-- | Retorna True si el valor es Falso, False en caso contrario.</span></span><span>
+</span><span id="line-62"></span><span class="annot"><a href="TriBool.html#false"><span class="hs-identifier hs-type">false</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="TriBool.html#TriBool"><span class="hs-identifier hs-type">TriBool</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-63"></span><span id="false"><span class="annot"><span class="annottext">false :: TriBool -&gt; Bool
+</span><a href="TriBool.html#false"><span class="hs-identifier hs-var hs-var">false</span></a></span></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#F"><span class="hs-identifier hs-var">F</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span>
+</span><span id="line-64"></span><span class="annot"><a href="TriBool.html#false"><span class="hs-identifier hs-var">false</span></a></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="annot"><span class="hs-comment">-- | Retorna True si el valor es Desconocido, False en caso contrario.</span></span><span>
+</span><span id="line-67"></span><span class="annot"><a href="TriBool.html#unknown"><span class="hs-identifier hs-type">unknown</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="TriBool.html#TriBool"><span class="hs-identifier hs-type">TriBool</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-68"></span><span id="unknown"><span class="annot"><span class="annottext">unknown :: TriBool -&gt; Bool
+</span><a href="TriBool.html#unknown"><span class="hs-identifier hs-var hs-var">unknown</span></a></span></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#U"><span class="hs-identifier hs-var">U</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span>
+</span><span id="line-69"></span><span class="annot"><a href="TriBool.html#unknown"><span class="hs-identifier hs-var">unknown</span></a></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span class="annot"><span class="hs-comment">-- | &quot;if then else&quot; para valores de verdad ternarios</span></span><span>
+</span><span id="line-72"></span><span id="local-6989586621679059334"><span class="annot"><a href="TriBool.html#triBoolCase"><span class="hs-identifier hs-type">triBoolCase</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="TriBool.html#TriBool"><span class="hs-identifier hs-type">TriBool</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679059334"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679059334"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679059334"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679059334"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-73"></span><span id="triBoolCase"><span class="annot"><span class="annottext">triBoolCase :: forall a. TriBool -&gt; a -&gt; a -&gt; a -&gt; a
+</span><a href="TriBool.html#triBoolCase"><span class="hs-identifier hs-var hs-var">triBoolCase</span></a></span></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#T"><span class="hs-identifier hs-var">T</span></a></span><span> </span><span id="local-6989586621679059417"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679059417"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679059417"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-74"></span><span class="annot"><a href="TriBool.html#triBoolCase"><span class="hs-identifier hs-var">triBoolCase</span></a></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#F"><span class="hs-identifier hs-var">F</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679059418"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679059418"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679059418"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-75"></span><span class="annot"><a href="TriBool.html#triBoolCase"><span class="hs-identifier hs-var">triBoolCase</span></a></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#U"><span class="hs-identifier hs-var">U</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679059419"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679059419"><span class="hs-identifier hs-var">u</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679059419"><span class="hs-identifier hs-var">u</span></a></span><span>
+</span><span id="line-76"></span><span>
+</span><span id="line-77"></span><span class="hs-comment">---</span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span class="annot"><span class="hs-comment">-- | Convierte un valor de verdad booleano a uno ternario.</span></span><span>
+</span><span id="line-80"></span><span class="annot"><a href="TriBool.html#liftBool"><span class="hs-identifier hs-type">liftBool</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="TriBool.html#TriBool"><span class="hs-identifier hs-type">TriBool</span></a></span><span>
+</span><span id="line-81"></span><span id="liftBool"><span class="annot"><span class="annottext">liftBool :: Bool -&gt; TriBool
+</span><a href="TriBool.html#liftBool"><span class="hs-identifier hs-var hs-var">liftBool</span></a></span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#T"><span class="hs-identifier hs-var">T</span></a></span><span>
+</span><span id="line-82"></span><span class="annot"><a href="TriBool.html#liftBool"><span class="hs-identifier hs-var">liftBool</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#F"><span class="hs-identifier hs-var">F</span></a></span><span>
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span class="hs-keyword">infixr</span><span> </span><span class="hs-number">3</span><span> </span><span class="annot"><a href="TriBool.html#%26%26%26"><span class="hs-operator hs-type">&amp;&amp;&amp;</span></a></span><span>
+</span><span id="line-85"></span><span class="hs-keyword">infixr</span><span> </span><span class="hs-number">2</span><span> </span><span class="annot"><a href="TriBool.html#%7C%7C%7C"><span class="hs-operator hs-type">|||</span></a></span><span>
+</span><span id="line-86"></span><span class="hs-keyword">infixr</span><span> </span><span class="hs-number">3</span><span> </span><span class="annot"><a href="TriBool.html#%21%26%26"><span class="hs-operator hs-type">!&amp;&amp;</span></a></span><span>
+</span><span id="line-87"></span><span class="hs-keyword">infixr</span><span> </span><span class="hs-number">2</span><span> </span><span class="annot"><a href="TriBool.html#%2F%7C%7C"><span class="hs-operator hs-type">/||</span></a></span><span>
+</span><span id="line-88"></span><span>
+</span><span id="line-89"></span><span class="hs-comment">-- = Operadores logicos</span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span class="hs-comment">-- | Clase que permite redefinir los operadores logicos para valores que no necesariamente son Booleanos, </span><span>
+</span><span id="line-92"></span><span class="hs-comment">-- util para poder operar tanto con valores ternarios como booleanos.</span><span>
+</span><span id="line-93"></span><span class="hs-keyword">class</span><span> </span><span id="BAlgebra"><span class="annot"><a href="TriBool.html#BAlgebra"><span class="hs-identifier hs-var">BAlgebra</span></a></span></span><span> </span><span id="local-6989586621679059341"><span class="annot"><a href="#local-6989586621679059341"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span id="local-6989586621679059342"><span class="annot"><a href="#local-6989586621679059342"><span class="hs-identifier hs-type">b</span></a></span></span><span> </span><span id="local-6989586621679059343"><span class="annot"><a href="#local-6989586621679059343"><span class="hs-identifier hs-type">c</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><a href="#local-6989586621679059341"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679059342"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679059343"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-94"></span><span>    </span><span class="hs-comment">-- | Operador AND</span><span>
+</span><span id="line-95"></span><span>    </span><span id="%26%26%26"><span class="annot"><a href="TriBool.html#%26%26%26"><span class="hs-operator hs-type">(&amp;&amp;&amp;)</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679059341"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679059342"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679059343"><span class="hs-identifier hs-type">c</span></a></span><span>
+</span><span id="line-96"></span><span>
+</span><span id="line-97"></span><span>    </span><span class="hs-comment">-- | Operador OR</span><span>
+</span><span id="line-98"></span><span>    </span><span id="%7C%7C%7C"><span class="annot"><a href="TriBool.html#%7C%7C%7C"><span class="hs-operator hs-type">(|||)</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679059341"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679059342"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679059343"><span class="hs-identifier hs-type">c</span></a></span><span>
+</span><span id="line-99"></span><span>
+</span><span id="line-100"></span><span>    </span><span class="hs-comment">-- | Operador NAND</span><span>
+</span><span id="line-101"></span><span>    </span><span id="%21%26%26"><span class="annot"><a href="TriBool.html#%21%26%26"><span class="hs-operator hs-type">(!&amp;&amp;)</span></a></span></span><span>  </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679059341"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679059342"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679059343"><span class="hs-identifier hs-type">c</span></a></span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span>    </span><span class="hs-comment">-- | Operador XOR</span><span>
+</span><span id="line-104"></span><span>    </span><span id="%2F%7C%7C"><span class="annot"><a href="TriBool.html#%2F%7C%7C"><span class="hs-operator hs-type">(/||)</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679059341"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679059342"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679059343"><span class="hs-identifier hs-type">c</span></a></span><span>
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span class="annot"><span class="hs-comment">-- | Operador NOT</span></span><span>
+</span><span id="line-107"></span><span id="local-6989586621679059336"><span id="local-6989586621679059337"><span class="annot"><a href="TriBool.html#not3"><span class="hs-identifier hs-type">not3</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="TriBool.html#BAlgebra"><span class="hs-identifier hs-type">BAlgebra</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679059336"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679059336"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679059337"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679059336"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679059337"><span class="hs-identifier hs-type">c</span></a></span></span></span><span>
+</span><span id="line-108"></span><span id="not3"><span class="annot"><span class="annottext">not3 :: forall b c. BAlgebra b b c =&gt; b -&gt; c
+</span><a href="TriBool.html#not3"><span class="hs-identifier hs-var hs-var">not3</span></a></span></span><span> </span><span id="local-6989586621679059428"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679059428"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679059428"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; c
+forall a b c. BAlgebra a b c =&gt; a -&gt; b -&gt; c
+</span><a href="TriBool.html#%21%26%26"><span class="hs-operator hs-var">!&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679059428"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span class="annot"><span class="hs-comment">-- | Definicion de los operadores logicos para valores booleanos, se comportan igual que sus pares de la logica de dos valores.</span></span><span>
+</span><span id="line-111"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="TriBool.html#BAlgebra"><span class="hs-identifier hs-type">BAlgebra</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-112"></span><span>    </span><span id="local-6989586621679059435"><span class="annot"><span class="annottext">&amp;&amp;&amp; :: Bool -&gt; Bool -&gt; Bool
+</span><a href="TriBool.html#%26%26%26"><span class="hs-operator hs-var hs-var hs-var">(&amp;&amp;&amp;)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">(&amp;&amp;)</span></span><span>
+</span><span id="line-113"></span><span>    </span><span id="local-6989586621679059437"><span class="annot"><span class="annottext">||| :: Bool -&gt; Bool -&gt; Bool
+</span><a href="TriBool.html#%7C%7C%7C"><span class="hs-operator hs-var hs-var hs-var">(|||)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">(||)</span></span><span>
+</span><span id="line-114"></span><span>    </span><span id="local-6989586621679059439"><span class="annot"><span class="annottext">!&amp;&amp; :: Bool -&gt; Bool -&gt; Bool
+</span><a href="TriBool.html#%21%26%26"><span class="hs-operator hs-var hs-var hs-var">(!&amp;&amp;)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">(&amp;&amp;)</span></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Bool -&gt; Bool) -&gt; (Bool -&gt; Bool) -&gt; Bool -&gt; Bool -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
+</span><span class="hs-identifier hs-var">not</span></span><span> </span><span>
+</span><span id="line-115"></span><span>    </span><span id="local-6989586621679059444"><span class="annot"><span class="annottext">/|| :: Bool -&gt; Bool -&gt; Bool
+</span><a href="TriBool.html#%2F%7C%7C"><span class="hs-operator hs-var hs-var hs-var">(/||)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">(/=)</span></span><span>
+</span><span id="line-116"></span><span>
+</span><span id="line-117"></span><span class="annot"><span class="hs-comment">-- | Definicion de los operadores logicos para valores ternarios.</span></span><span>
+</span><span id="line-118"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="TriBool.html#BAlgebra"><span class="hs-identifier hs-type">BAlgebra</span></a></span><span> </span><span class="annot"><a href="TriBool.html#TriBool"><span class="hs-identifier hs-type">TriBool</span></a></span><span> </span><span class="annot"><a href="TriBool.html#TriBool"><span class="hs-identifier hs-type">TriBool</span></a></span><span> </span><span class="annot"><a href="TriBool.html#TriBool"><span class="hs-identifier hs-type">TriBool</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-119"></span><span>    </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#F"><span class="hs-identifier hs-var">F</span></a></span><span> </span><span id="local-6989586621679059451"><span class="annot"><span class="annottext">&amp;&amp;&amp; :: TriBool -&gt; TriBool -&gt; TriBool
+</span><a href="TriBool.html#%26%26%26"><span class="hs-operator hs-var hs-var hs-var">&amp;&amp;&amp;</span></a></span></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#F"><span class="hs-identifier hs-var">F</span></a></span><span>
+</span><span id="line-120"></span><span>    </span><span class="annot"><span class="annottext">TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><a href="TriBool.html#%26%26%26"><span class="hs-operator hs-var">&amp;&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#F"><span class="hs-identifier hs-var">F</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#F"><span class="hs-identifier hs-var">F</span></a></span><span>
+</span><span id="line-121"></span><span>    </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#T"><span class="hs-identifier hs-var">T</span></a></span><span> </span><span class="annot"><a href="TriBool.html#%26%26%26"><span class="hs-operator hs-var">&amp;&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#T"><span class="hs-identifier hs-var">T</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#T"><span class="hs-identifier hs-var">T</span></a></span><span>
+</span><span id="line-122"></span><span>    </span><span class="annot"><span class="annottext">TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><a href="TriBool.html#%26%26%26"><span class="hs-operator hs-var">&amp;&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#U"><span class="hs-identifier hs-var">U</span></a></span><span>
+</span><span id="line-123"></span><span>
+</span><span id="line-124"></span><span>    </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#T"><span class="hs-identifier hs-var">T</span></a></span><span> </span><span id="local-6989586621679059452"><span class="annot"><span class="annottext">||| :: TriBool -&gt; TriBool -&gt; TriBool
+</span><a href="TriBool.html#%7C%7C%7C"><span class="hs-operator hs-var hs-var hs-var">|||</span></a></span></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#T"><span class="hs-identifier hs-var">T</span></a></span><span>
+</span><span id="line-125"></span><span>    </span><span class="annot"><span class="annottext">TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><a href="TriBool.html#%7C%7C%7C"><span class="hs-operator hs-var">|||</span></a></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#T"><span class="hs-identifier hs-var">T</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#T"><span class="hs-identifier hs-var">T</span></a></span><span>
+</span><span id="line-126"></span><span>    </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#F"><span class="hs-identifier hs-var">F</span></a></span><span> </span><span class="annot"><a href="TriBool.html#%7C%7C%7C"><span class="hs-operator hs-var">|||</span></a></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#F"><span class="hs-identifier hs-var">F</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#F"><span class="hs-identifier hs-var">F</span></a></span><span>
+</span><span id="line-127"></span><span>    </span><span class="annot"><span class="annottext">TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><a href="TriBool.html#%7C%7C%7C"><span class="hs-operator hs-var">|||</span></a></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#U"><span class="hs-identifier hs-var">U</span></a></span><span>
+</span><span id="line-128"></span><span>
+</span><span id="line-129"></span><span>    </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#F"><span class="hs-identifier hs-var">F</span></a></span><span> </span><span id="local-6989586621679059453"><span class="annot"><span class="annottext">!&amp;&amp; :: TriBool -&gt; TriBool -&gt; TriBool
+</span><a href="TriBool.html#%21%26%26"><span class="hs-operator hs-var hs-var hs-var">!&amp;&amp;</span></a></span></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#T"><span class="hs-identifier hs-var">T</span></a></span><span>
+</span><span id="line-130"></span><span>    </span><span class="annot"><span class="annottext">TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><a href="TriBool.html#%21%26%26"><span class="hs-operator hs-var">!&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#F"><span class="hs-identifier hs-var">F</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#T"><span class="hs-identifier hs-var">T</span></a></span><span>
+</span><span id="line-131"></span><span>    </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#T"><span class="hs-identifier hs-var">T</span></a></span><span> </span><span class="annot"><a href="TriBool.html#%21%26%26"><span class="hs-operator hs-var">!&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#T"><span class="hs-identifier hs-var">T</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#F"><span class="hs-identifier hs-var">F</span></a></span><span>
+</span><span id="line-132"></span><span>    </span><span class="annot"><span class="annottext">TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><a href="TriBool.html#%21%26%26"><span class="hs-operator hs-var">!&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#U"><span class="hs-identifier hs-var">U</span></a></span><span>
+</span><span id="line-133"></span><span>
+</span><span id="line-134"></span><span>    </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#U"><span class="hs-identifier hs-var">U</span></a></span><span> </span><span id="local-6989586621679059455"><span class="annot"><span class="annottext">/|| :: TriBool -&gt; TriBool -&gt; TriBool
+</span><a href="TriBool.html#%2F%7C%7C"><span class="hs-operator hs-var hs-var hs-var">/||</span></a></span></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#U"><span class="hs-identifier hs-var">U</span></a></span><span>
+</span><span id="line-135"></span><span>    </span><span class="annot"><span class="annottext">TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><a href="TriBool.html#%2F%7C%7C"><span class="hs-operator hs-var">/||</span></a></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#U"><span class="hs-identifier hs-var">U</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#U"><span class="hs-identifier hs-var">U</span></a></span><span>
+</span><span id="line-136"></span><span>    </span><span id="local-6989586621679059456"><span class="annot"><span class="annottext">TriBool
+</span><a href="#local-6989586621679059456"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="annot"><a href="TriBool.html#%2F%7C%7C"><span class="hs-operator hs-var">/||</span></a></span><span> </span><span id="local-6989586621679059457"><span class="annot"><span class="annottext">TriBool
+</span><a href="#local-6989586621679059457"><span class="hs-identifier hs-var">q</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; TriBool
+</span><a href="TriBool.html#liftBool"><span class="hs-identifier hs-var">liftBool</span></a></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; TriBool) -&gt; Bool -&gt; TriBool
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="#local-6989586621679059456"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">TriBool -&gt; TriBool -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="#local-6989586621679059457"><span class="hs-identifier hs-var">q</span></a></span><span>
+</span><span id="line-137"></span><span>
+</span><span id="line-138"></span><span class="annot"><span class="hs-comment">-- | Definicion de los operadores logicos donde el primer operando es booleano y el segundo ternario</span></span><span>
+</span><span id="line-139"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="TriBool.html#BAlgebra"><span class="hs-identifier hs-type">BAlgebra</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="annot"><a href="TriBool.html#TriBool"><span class="hs-identifier hs-type">TriBool</span></a></span><span> </span><span class="annot"><a href="TriBool.html#TriBool"><span class="hs-identifier hs-type">TriBool</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-140"></span><span>    </span><span id="local-6989586621679059464"><span class="annot"><span class="annottext">&amp;&amp;&amp; :: Bool -&gt; TriBool -&gt; TriBool
+</span><a href="TriBool.html#%26%26%26"><span class="hs-operator hs-var hs-var hs-var">(&amp;&amp;&amp;)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool -&gt; TriBool -&gt; TriBool
+forall a b c. BAlgebra a b c =&gt; a -&gt; b -&gt; c
+</span><a href="TriBool.html#%26%26%26"><span class="hs-operator hs-var">(&amp;&amp;&amp;)</span></a></span><span> </span><span class="annot"><span class="annottext">(TriBool -&gt; TriBool -&gt; TriBool)
+-&gt; (Bool -&gt; TriBool) -&gt; Bool -&gt; TriBool -&gt; TriBool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; TriBool
+</span><a href="TriBool.html#liftBool"><span class="hs-identifier hs-var">liftBool</span></a></span><span>
+</span><span id="line-141"></span><span>    </span><span id="local-6989586621679059466"><span class="annot"><span class="annottext">||| :: Bool -&gt; TriBool -&gt; TriBool
+</span><a href="TriBool.html#%7C%7C%7C"><span class="hs-operator hs-var hs-var hs-var">(|||)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool -&gt; TriBool -&gt; TriBool
+forall a b c. BAlgebra a b c =&gt; a -&gt; b -&gt; c
+</span><a href="TriBool.html#%7C%7C%7C"><span class="hs-operator hs-var">(|||)</span></a></span><span> </span><span class="annot"><span class="annottext">(TriBool -&gt; TriBool -&gt; TriBool)
+-&gt; (Bool -&gt; TriBool) -&gt; Bool -&gt; TriBool -&gt; TriBool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; TriBool
+</span><a href="TriBool.html#liftBool"><span class="hs-identifier hs-var">liftBool</span></a></span><span>
+</span><span id="line-142"></span><span>    </span><span id="local-6989586621679059468"><span class="annot"><span class="annottext">!&amp;&amp; :: Bool -&gt; TriBool -&gt; TriBool
+</span><a href="TriBool.html#%21%26%26"><span class="hs-operator hs-var hs-var hs-var">(!&amp;&amp;)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool -&gt; TriBool -&gt; TriBool
+forall a b c. BAlgebra a b c =&gt; a -&gt; b -&gt; c
+</span><a href="TriBool.html#%21%26%26"><span class="hs-operator hs-var">(!&amp;&amp;)</span></a></span><span> </span><span class="annot"><span class="annottext">(TriBool -&gt; TriBool -&gt; TriBool)
+-&gt; (Bool -&gt; TriBool) -&gt; Bool -&gt; TriBool -&gt; TriBool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; TriBool
+</span><a href="TriBool.html#liftBool"><span class="hs-identifier hs-var">liftBool</span></a></span><span>
+</span><span id="line-143"></span><span>    </span><span id="local-6989586621679059470"><span class="annot"><span class="annottext">/|| :: Bool -&gt; TriBool -&gt; TriBool
+</span><a href="TriBool.html#%2F%7C%7C"><span class="hs-operator hs-var hs-var hs-var">(/||)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool -&gt; TriBool -&gt; TriBool
+forall a b c. BAlgebra a b c =&gt; a -&gt; b -&gt; c
+</span><a href="TriBool.html#%2F%7C%7C"><span class="hs-operator hs-var">(/||)</span></a></span><span> </span><span class="annot"><span class="annottext">(TriBool -&gt; TriBool -&gt; TriBool)
+-&gt; (Bool -&gt; TriBool) -&gt; Bool -&gt; TriBool -&gt; TriBool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; TriBool
+</span><a href="TriBool.html#liftBool"><span class="hs-identifier hs-var">liftBool</span></a></span><span>
+</span><span id="line-144"></span><span>
+</span><span id="line-145"></span><span class="annot"><span class="hs-comment">-- | Definicion de los operadores logicos donde el primer operando es ternario y el segundo booleano</span></span><span>
+</span><span id="line-146"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="TriBool.html#BAlgebra"><span class="hs-identifier hs-type">BAlgebra</span></a></span><span> </span><span class="annot"><a href="TriBool.html#TriBool"><span class="hs-identifier hs-type">TriBool</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="annot"><a href="TriBool.html#TriBool"><span class="hs-identifier hs-type">TriBool</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-147"></span><span>    </span><span id="local-6989586621679059477"><span class="annot"><span class="annottext">&amp;&amp;&amp; :: TriBool -&gt; Bool -&gt; TriBool
+</span><a href="TriBool.html#%26%26%26"><span class="hs-operator hs-var hs-var hs-var">(&amp;&amp;&amp;)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; TriBool -&gt; TriBool) -&gt; TriBool -&gt; Bool -&gt; TriBool
+forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
+</span><span class="hs-identifier hs-var">flip</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; TriBool -&gt; TriBool
+forall a b c. BAlgebra a b c =&gt; a -&gt; b -&gt; c
+</span><a href="TriBool.html#%26%26%26"><span class="hs-operator hs-var">(&amp;&amp;&amp;)</span></a></span><span>
+</span><span id="line-148"></span><span>    </span><span id="local-6989586621679059480"><span class="annot"><span class="annottext">||| :: TriBool -&gt; Bool -&gt; TriBool
+</span><a href="TriBool.html#%7C%7C%7C"><span class="hs-operator hs-var hs-var hs-var">(|||)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; TriBool -&gt; TriBool) -&gt; TriBool -&gt; Bool -&gt; TriBool
+forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
+</span><span class="hs-identifier hs-var">flip</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; TriBool -&gt; TriBool
+forall a b c. BAlgebra a b c =&gt; a -&gt; b -&gt; c
+</span><a href="TriBool.html#%7C%7C%7C"><span class="hs-operator hs-var">(|||)</span></a></span><span>
+</span><span id="line-149"></span><span>    </span><span id="local-6989586621679059482"><span class="annot"><span class="annottext">!&amp;&amp; :: TriBool -&gt; Bool -&gt; TriBool
+</span><a href="TriBool.html#%21%26%26"><span class="hs-operator hs-var hs-var hs-var">(!&amp;&amp;)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; TriBool -&gt; TriBool) -&gt; TriBool -&gt; Bool -&gt; TriBool
+forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
+</span><span class="hs-identifier hs-var">flip</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; TriBool -&gt; TriBool
+forall a b c. BAlgebra a b c =&gt; a -&gt; b -&gt; c
+</span><a href="TriBool.html#%21%26%26"><span class="hs-operator hs-var">(!&amp;&amp;)</span></a></span><span>
+</span><span id="line-150"></span><span>    </span><span id="local-6989586621679059484"><span class="annot"><span class="annottext">/|| :: TriBool -&gt; Bool -&gt; TriBool
+</span><a href="TriBool.html#%2F%7C%7C"><span class="hs-operator hs-var hs-var hs-var">(/||)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; TriBool -&gt; TriBool) -&gt; TriBool -&gt; Bool -&gt; TriBool
+forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
+</span><span class="hs-identifier hs-var">flip</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; TriBool -&gt; TriBool
+forall a b c. BAlgebra a b c =&gt; a -&gt; b -&gt; c
+</span><a href="TriBool.html#%2F%7C%7C"><span class="hs-operator hs-var">(/||)</span></a></span><span>
+</span><span id="line-151"></span><span>
+</span><span id="line-152"></span><span class="hs-comment">-- = Operadores con listas</span><span>
+</span><span id="line-153"></span><span>
+</span><span id="line-154"></span><span class="annot"><span class="hs-comment">-- | Aplica un predicado a una lista de valores y retorna el XOR ternario de todos</span></span><span>
+</span><span id="line-155"></span><span id="local-6989586621679059354"><span class="annot"><a href="TriBool.html#xor3"><span class="hs-identifier hs-type">xor3</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679059354"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="TriBool.html#TriBool"><span class="hs-identifier hs-type">TriBool</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679059354"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="TriBool.html#TriBool"><span class="hs-identifier hs-type">TriBool</span></a></span></span><span>
+</span><span id="line-156"></span><span id="xor3"><span class="annot"><span class="annottext">xor3 :: forall a. (a -&gt; TriBool) -&gt; [a] -&gt; TriBool
+</span><a href="TriBool.html#xor3"><span class="hs-identifier hs-var hs-var">xor3</span></a></span></span><span> </span><span class="annot"><span class="annottext">a -&gt; TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#F"><span class="hs-identifier hs-var">F</span></a></span><span>
+</span><span id="line-157"></span><span class="annot"><a href="TriBool.html#xor3"><span class="hs-identifier hs-var">xor3</span></a></span><span> </span><span id="local-6989586621679059487"><span class="annot"><span class="annottext">a -&gt; TriBool
+</span><a href="#local-6989586621679059487"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679059488"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679059488"><span class="hs-identifier hs-var">x</span></a></span></span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span id="local-6989586621679059489"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679059489"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-158"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">TriBool -&gt; Bool
+</span><a href="TriBool.html#unknown"><span class="hs-identifier hs-var">unknown</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; TriBool
+</span><a href="#local-6989586621679059487"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679059488"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#U"><span class="hs-identifier hs-var">U</span></a></span><span>
+</span><span id="line-159"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">TriBool -&gt; Bool
+</span><a href="TriBool.html#false"><span class="hs-identifier hs-var">false</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; TriBool
+</span><a href="#local-6989586621679059487"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679059488"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; TriBool) -&gt; [a] -&gt; TriBool
+forall a. (a -&gt; TriBool) -&gt; [a] -&gt; TriBool
+</span><a href="TriBool.html#xor3"><span class="hs-identifier hs-var">xor3</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; TriBool
+</span><a href="#local-6989586621679059487"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679059489"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-160"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool -&gt; TriBool
+forall b c. BAlgebra b b c =&gt; b -&gt; c
+</span><a href="TriBool.html#not3"><span class="hs-identifier hs-var">not3</span></a></span><span> </span><span class="annot"><span class="annottext">(TriBool -&gt; TriBool) -&gt; TriBool -&gt; TriBool
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(a -&gt; TriBool) -&gt; [a] -&gt; TriBool
+forall a. (a -&gt; TriBool) -&gt; [a] -&gt; TriBool
+</span><a href="TriBool.html#xor3"><span class="hs-identifier hs-var">xor3</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; TriBool
+</span><a href="#local-6989586621679059487"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679059489"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-161"></span><span>
+</span><span id="line-162"></span><span class="annot"><span class="hs-comment">-- | Aplica un predicado a una lista de valores y retorna el AND ternario de todos</span></span><span>
+</span><span id="line-163"></span><span id="local-6989586621679059490"><span class="annot"><a href="TriBool.html#and3"><span class="hs-identifier hs-type">and3</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679059490"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="TriBool.html#TriBool"><span class="hs-identifier hs-type">TriBool</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679059490"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="TriBool.html#TriBool"><span class="hs-identifier hs-type">TriBool</span></a></span></span><span>
+</span><span id="line-164"></span><span id="and3"><span class="annot"><span class="annottext">and3 :: forall a. (a -&gt; TriBool) -&gt; [a] -&gt; TriBool
+</span><a href="TriBool.html#and3"><span class="hs-identifier hs-var hs-var">and3</span></a></span></span><span> </span><span class="annot"><span class="annottext">a -&gt; TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#T"><span class="hs-identifier hs-var">T</span></a></span><span>
+</span><span id="line-165"></span><span class="annot"><a href="TriBool.html#and3"><span class="hs-identifier hs-var">and3</span></a></span><span> </span><span id="local-6989586621679059492"><span class="annot"><span class="annottext">a -&gt; TriBool
+</span><a href="#local-6989586621679059492"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679059493"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679059493"><span class="hs-identifier hs-var">x</span></a></span></span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span id="local-6989586621679059494"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679059494"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-166"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">TriBool -&gt; Bool
+</span><a href="TriBool.html#unknown"><span class="hs-identifier hs-var">unknown</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; TriBool
+</span><a href="#local-6989586621679059492"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679059493"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#U"><span class="hs-identifier hs-var">U</span></a></span><span>
+</span><span id="line-167"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">TriBool -&gt; Bool
+</span><a href="TriBool.html#false"><span class="hs-identifier hs-var">false</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; TriBool
+</span><a href="#local-6989586621679059492"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679059493"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#F"><span class="hs-identifier hs-var">F</span></a></span><span>
+</span><span id="line-168"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; TriBool) -&gt; [a] -&gt; TriBool
+forall a. (a -&gt; TriBool) -&gt; [a] -&gt; TriBool
+</span><a href="TriBool.html#and3"><span class="hs-identifier hs-var">and3</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; TriBool
+</span><a href="#local-6989586621679059492"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679059494"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-169"></span><span>
+</span><span id="line-170"></span><span class="annot"><span class="hs-comment">-- | Aplica un predicado a una lista de valores y retorna el OR ternario de todos</span></span><span>
+</span><span id="line-171"></span><span id="local-6989586621679059495"><span class="annot"><a href="TriBool.html#or3"><span class="hs-identifier hs-type">or3</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679059495"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="TriBool.html#TriBool"><span class="hs-identifier hs-type">TriBool</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679059495"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="TriBool.html#TriBool"><span class="hs-identifier hs-type">TriBool</span></a></span></span><span>
+</span><span id="line-172"></span><span id="or3"><span class="annot"><span class="annottext">or3 :: forall a. (a -&gt; TriBool) -&gt; [a] -&gt; TriBool
+</span><a href="TriBool.html#or3"><span class="hs-identifier hs-var hs-var">or3</span></a></span></span><span> </span><span class="annot"><span class="annottext">a -&gt; TriBool
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#T"><span class="hs-identifier hs-var">T</span></a></span><span>
+</span><span id="line-173"></span><span class="annot"><a href="TriBool.html#or3"><span class="hs-identifier hs-var">or3</span></a></span><span> </span><span id="local-6989586621679059497"><span class="annot"><span class="annottext">a -&gt; TriBool
+</span><a href="#local-6989586621679059497"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679059498"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679059498"><span class="hs-identifier hs-var">x</span></a></span></span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span id="local-6989586621679059499"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679059499"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-174"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">TriBool -&gt; Bool
+</span><a href="TriBool.html#unknown"><span class="hs-identifier hs-var">unknown</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; TriBool
+</span><a href="#local-6989586621679059497"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679059498"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#U"><span class="hs-identifier hs-var">U</span></a></span><span>
+</span><span id="line-175"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">TriBool -&gt; Bool
+</span><a href="TriBool.html#true"><span class="hs-identifier hs-var">true</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; TriBool
+</span><a href="#local-6989586621679059497"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679059498"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TriBool
+</span><a href="TriBool.html#T"><span class="hs-identifier hs-var">T</span></a></span><span>
+</span><span id="line-176"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; TriBool) -&gt; [a] -&gt; TriBool
+forall a. (a -&gt; TriBool) -&gt; [a] -&gt; TriBool
+</span><a href="TriBool.html#or3"><span class="hs-identifier hs-var">or3</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; TriBool
+</span><a href="#local-6989586621679059497"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679059499"><span class="hs-identifier hs-var">xs</span></a></span></pre></body></html>
