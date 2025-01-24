@@ -91,9 +91,7 @@ exponent _ = 1
 -- SPOW-2
 simplifyPow :: PExpr -> PExpr -> EvalSteps PExpr
 simplifyPow 0 w
-    | true $ isPositive w = do
-                              addStep $ "Para cualquier p > 0, 0^p = 0, por lo tanto 0^(" ++ show w ++ ") = 0"
-                              return 0
+    | true $ isPositive w = return 0
     | otherwise = fail "0^w is not defined for w <= 0"
 simplifyPow 1 _ = return 1
 simplifyPow v w

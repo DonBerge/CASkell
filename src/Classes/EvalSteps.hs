@@ -51,7 +51,7 @@ instance Alternative EvalSteps where
 instance Show a => Show (EvalSteps a) where
     show (EvalSteps (x, [])) = case x of
                                     Left e -> "Undefined: " ++ e
-                                    Right a -> show a
+                                    Right a -> "Resultado: " ++ show a
     show (EvalSteps (x, logs)) = unlines logs ++ "\n" ++ show (EvalSteps (x, []))
 
 -- | Función para agregar un mensaje de traza.
