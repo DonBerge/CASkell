@@ -108,7 +108,7 @@ rs5 :: Test
 rs5 = TestCase $ assertEqual "rational simplify: simplfication to undefined" ((x+3)/(x+2)) (rationalSimplify ( (1/(1+1/(x+1)))  +  (2/(x+2))))
 
 rstests :: Test
-rstests = TestList [ rs1, rs2, rs3, rs4, rs5 ]
+rstests = TestList [ rdt1, rs1, rs2, rs3, rs4, rs5 ]
 
 tests :: Test
 tests = TestList [ pdt1, nt1, nt2, nt3, pgcdt1, pgcdt2, pgcdt3, pgcdt4, contt1, contt2, contt3, contt4, rstests ]

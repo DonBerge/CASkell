@@ -63,11 +63,11 @@ library
                       Simplification.Algebraic
                       Simplification.Fu
                       Simplification.PolyTools
+                      Simplification.Rationalize
                       Classes.EvalSteps
                       TriBool
                       Symplify
                       Expr
-                      Simplification.Rationalize
 
     -- Modules included in this library but not exported.
     other-modules:  Number

@@ -149,7 +149,12 @@ instance Show PExpr where
 instance Assumptions PExpr where
     isPositive (Number x) = isPositive x
     isPositive (Mul xs) = xor3 isNegative xs
-    isPositive (Add xs) = and3 isPositive xs
+    isPositive (Add []) = F
+    isPositive (Add xs) = foldTri uand T isPositive xs
+        where
+            uand U _ = U
+            uand _ U = U
+            uand p q = p &&& q
     isPositive (Pow x y) = isPositive x ||| isEven y
     isPositive (Exp _) = T
     isPositive (Log (Number a)) = liftBool $ a > 1
@@ -163,7 +168,11 @@ instance Assumptions PExpr where
             nxor U _ = U
             nxor _ U = U
             nxor p q = liftBool $ p == q
-    isNegative (Add xs) = and3 isNegative xs
+    isNegative (Add xs) = foldTri uand T isNegative xs
+        where
+            uand U _ = U
+            uand _ U = U
+            uand p q = p &&& q
     isNegative (Pow x y) = isNegative x &&& isOdd y
     isNegative (Exp _) = F
     isNegative (Log (Number a)) = liftBool $ a < 1
@@ -189,7 +198,7 @@ instance Assumptions PExpr where
     isEven (Number x) = isEven x
     isEven (Mul xs) = and3 isInteger xs &&& or3 isEven xs
     isEven (Add xs) = and3 isInteger xs &&& xor3 isOdd xs
-    isEven (Pow x y) = isInteger y &&& isEven x
+    isEven (Pow x y) = isEven x &&& isInteger y
     isEven Pi = F
     isEven _ = U
     

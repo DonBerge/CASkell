@@ -2,19 +2,18 @@ module Simplification.Rationalize where
 
 import PExpr
 import Symplify
-import Expr
 
-rationalize :: PExpr -> Expr
+rationalize :: PExpr -> EvalSteps PExpr
 rationalize (Pow x y) = rationalize x >>= (`simplifyPow` y)
 rationalize (Mul xs) = mapM rationalize xs >>= simplifyProduct
-rationalize (Add []) = 0
+rationalize (Add []) = return 0
 rationalize (Add (x:xs)) = do
                             g <- rationalize x
                             h <- rationalize (Add xs)
                             rationalizeSum g h
 rationalize u = return u
+rationalizeSum :: PExpr -> PExpr -> EvalSteps PExpr
 
-rationalizeSum :: PExpr -> PExpr -> Expr
 rationalizeSum u v = do
                         m <- numerator u
                         r <- denominator u
@@ -25,4 +24,7 @@ rationalizeSum u v = do
                             else do
                                     ms <- simplifyProduct [m,s]
                                     nr <- simplifyProduct [n,r]
-                                    (rationalizeSum ms nr) / (simplifyProduct [r,s])
+                                    n' <- rationalizeSum ms nr
+                                    d' <- simplifyProduct [r,s]
+                                    simplifyDiv n' d'
+                                    -- (rationalizeSum ms nr) / (simplifyProduct [r,s])

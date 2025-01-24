@@ -174,3 +174,6 @@ or3 f (x:xs)
     | unknown (f x) = U
     | true (f x) = T
     | otherwise = or3 f xs
+
+foldTri :: (TriBool -> TriBool -> TriBool) -> TriBool -> (a -> TriBool) -> [a] -> TriBool
+foldTri g e f = foldl (\x y -> g x (f y)) e
