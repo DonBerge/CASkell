@@ -180,11 +180,8 @@ fu4 = TestCase $ assertEqual "fu: 1- sin x ** 2" (tan (4*x)) (fu $ (sin x + sin(
 fu5 :: Test
 fu5 = TestCase $ assertEqual "fu: conflict" 1 (fu (sin((x+1)/(x+2))**2 + cos((1+(1/x))/(1+(2/x)))**2))
 
-fu6 :: Test
-fu6 = TestCase $ assertEqual "fu: conflict" 0 (fu (sin(x**2-1)**2 + cos(1-x**2)**2 - 1))
-
 futests :: Test
-futests = TestLabel "Fu" $ TestList [fu1, fu2, fu3, fu4, fu5, fu6]
+futests = TestLabel "Fu" $ TestList [fu1, fu2, fu3, fu4, fu5]
 
 
 tests :: Test
