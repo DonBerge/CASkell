@@ -13,6 +13,7 @@ import Symplify
 import qualified Simplification.Algebraic as Algebraic
 
 import Data.List
+import Simplification.Rationalize (rationalize)
 
 isSymbol :: PExpr -> Bool
 isSymbol (Fun _ _) = True
@@ -337,14 +338,16 @@ rationalSimplify = (=<<) rationalSimplify'
                                         (n',d') <- simplfyNumbers n d
                                         simplifySign n' d' v
 
-        rationalSimplify' (Add us) = do
-                                        us' <- mapM rationalSimplify' us
-                                        lcu <- mapM denominator us' >>= lcmList
-                                        u' <- mapM (\u -> simplifyProduct [u, lcu]) us' >>= simplifySum -- Multiplico y divido por el lcm de los denominadores
-                                        p' <- simplifyDiv u' lcu
-                                        case p' of
-                                            Mul _ -> rationalSimplify' p'
-                                            _ -> return p'
+        rationalSimplify' u@(Add _) = do
+                                        u' <- rationalize u
+                                        return u'
+                                        --us' <- mapM rationalSimplify' us
+                                        --lcu <- mapM denominator us' >>= lcmList
+                                        --u' <- mapM (\u -> simplifyProduct [u, lcu]) us' >>= simplifySum -- Multiplico y divido por el lcm de los denominadores
+                                        --p' <- simplifyDiv u' lcu
+                                        --case p' of
+                                        --    Mul _ -> rationalSimplify' p'
+                                        --    _ -> return p'
         rationalSimplify' (Mul us) = do
                                         u' <- mapM rationalSimplify' us >>= simplifyProduct
                                         n <- Algebraic.expand $ numerator u'
