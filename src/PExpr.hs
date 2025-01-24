@@ -134,7 +134,6 @@ instance Show PExpr where
      -- = parenExpr x ++ "^2"
     show (Pow x y)
         | y == 1 = show x
-        | true $ isNegative y = "1/" ++ parenExpr (Pow x (negate y))
         | otherwise = parenExpr x ++ "^" ++ parenExpr y
         where
             parenExpr (Number s)
