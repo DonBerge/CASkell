@@ -1,10 +1,15 @@
 {-# OPTIONS_GHC -Wall #-}
 
+{-|
+Module: Number
+Description: Definición y operaciones para el tipo 'Number', que puede representar enteros, fracciones y números reales.
+-}
 module Number (
+    -- * Tipos
     Number(..),
+    -- * Funciones
     numerator,
     denominator,
-    isInteger,
     fromNumber
 ) where
 
@@ -14,6 +19,7 @@ import qualified Data.Ratio as R
 import Classes.Assumptions
 import TriBool
 
+-- | El tipo 'Number' puede representar un entero, una fracción o un número real.
 data Number = Int Integer | Fraction Rational | Real Double
 
 digitCount :: Integer -> Int
@@ -25,7 +31,7 @@ epsilon = 2**(-52)
 maxDigits :: Int
 maxDigits = 15
 
--- Realiza transformaciones entre los distintos tipos de números si es necesario
+-- | Simplifica un 'Number' transformándolo entre los distintos tipos si es necesario.
 simplify :: Number -> Number
 simplify (Fraction x) 
     | R.denominator x == 1 = Int (fromIntegral (R.numerator x))
@@ -46,17 +52,19 @@ simplify (Real x)
         dd = digitCount $ R.denominator f
 simplify x = x
 
+-- | Convierte un 'Number' a una fracción.
 toFraction :: Number -> Number
 toFraction (Int n) = Fraction (n%1)
 toFraction (Real n) = Fraction (R.approxRational n epsilon)
 toFraction x = x
 
+-- | Convierte un 'Number' a un número real.
 toReal :: Number -> Number
 toReal (Int n) = Real (fromIntegral n)
 toReal (Fraction n) = Real (fromRational n)
 toReal x = x
 
-
+-- | Función auxiliar para aplicar operaciones entre dos 'Number'.
 makeOp :: (Number -> Number -> t) -> Number -> Number -> t
 makeOp op a@(Int _) b@(Int _) = a `op` b
 makeOp op a@(Int _) b@(Fraction _) = toFraction a `op` b
@@ -66,6 +74,7 @@ makeOp op a@(Fraction _) b@(Fraction _) = a `op` b
 makeOp op a@(Fraction _) b@(Real _) = toReal a `op` b
 makeOp op a@(Real _) b = a `op` toReal b
 
+-- | Instancia de igualdad para 'Number'.
 instance Eq Number where
   Int a == Int b = a==b
   Fraction a == Fraction b = a==b
@@ -73,6 +82,7 @@ instance Eq Number where
 
   a==b = makeOp (==) a b
 
+-- | Instancia de orden para 'Number'.
 instance Ord Number where
     Int a <= Int b = a<=b
     Fraction a <= Fraction b = a<=b
@@ -80,14 +90,13 @@ instance Ord Number where
     
     a<=b = makeOp (<=) a b
 
+-- | Instancia de 'Show' para 'Number'.
 instance Show Number where
   show (Int n) = show n
   show (Fraction n) = show (R.numerator n) ++ "/" ++ show (R.denominator n)
   show (Real n) = show n
 
-
-----
-
+-- | Instancia de 'Num' para 'Number'.
 instance Num Number where
     fromInteger = Int
 
@@ -117,6 +126,7 @@ instance Num Number where
     signum (Fraction a) = Int $ R.numerator $ signum a
     signum (Real a) = Int $ truncate $ signum a
 
+-- | Instancia de 'Fractional' para 'Number'.
 instance Fractional Number where
     fromRational = simplify . Fraction
 
@@ -128,6 +138,7 @@ makeFun :: (Double -> Double) -> Number -> Number
 makeFun f (Real x) = simplify $ Real $ f x
 makeFun f x = makeFun f $ toReal x
 
+-- | Instancia de 'Floating' para 'Number'.
 instance Floating Number where
     pi = Real pi
     exp = makeFun exp
@@ -152,10 +163,12 @@ instance Floating Number where
     (Fraction x) ** (Real y) = simplify $ Real (fromRational x ** y)
     (Real x) ** (Real y) = simplify $ Real (x ** y)
 
+-- | Instancia de 'Real' para 'Number'.
 instance Real Number where
     toRational (Fraction a) = a
     toRational x = toRational $ toFraction x
 
+-- | Instancia de 'RealFrac' para 'Number'.
 instance RealFrac Number where
     properFraction (Int i) = (fromInteger i, 0)
     properFraction (Fraction x) = let
@@ -169,6 +182,7 @@ instance RealFrac Number where
 
 
 --- NOTA: Asume que el numero esta simplificado
+-- | Instancia de 'Assumptions' para 'Number'.
 instance Assumptions Number where
     isPositive (Int x) = liftBool $ x > 0
     isPositive (Fraction x) = liftBool $ x > 0
@@ -190,12 +204,15 @@ instance Assumptions Number where
     isInteger (Int _) = T
     isInteger _ = F
 
+-- | Obtiene el numerador de un 'Number'.
 numerator :: Number -> Integer
 numerator = R.numerator . toRational 
 
+-- | Obtiene el denominador de un 'Number'.
 denominator :: Number -> Integer
 denominator = R.denominator . toRational
 
+-- | Convierte un 'Number' a un 'Double'.
 fromNumber :: Number -> Double
 fromNumber (Int x) = fromIntegral x
 fromNumber (Fraction x) = fromRational x
