@@ -174,8 +174,14 @@ fu2 = TestCase $ assertEqual "fu: sin(50)**2 + cos(50)**2 + sin(pi/6)" (3/2) (fu
 fu3 :: Test
 fu3 = TestCase $ assertEqual "fu: 1- sin x ** 2" (sin x ** 2) (fu $ sin x * tan x / sec x)
 
+fu4 :: Test
+fu4 = TestCase $ assertEqual "fu: 1- sin x ** 2" (tan (4*x)) (fu $ (sin(x) + sin(3*x) + sin(5*x) + sin(7*x)) / (cos(x) + cos(3*x) + cos(5*x) + cos(7*x) ))
+
+fu5 :: Test
+fu5 = TestCase $ assertEqual "fu: 1- sin x ** 2" 1 (fu $ (sin((x+1)/(x+2))**2 + cos((x+1)/(x+2))**2))
+
 futests :: Test
-futests = TestLabel "Fu" $ TestList [fu1, fu2, fu3]
+futests = TestLabel "Fu" $ TestList [fu1, fu2, fu3, fu5]
 
 
 tests :: Test

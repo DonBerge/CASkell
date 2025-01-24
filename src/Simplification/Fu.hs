@@ -18,6 +18,9 @@ import qualified Simplification.Algebraic as Algebraic
 pattern Neg :: PExpr -> PExpr
 pattern Neg x <- Mul ((-1):x:_)
 
+addStepPExpr :: String -> PExpr -> EvalSteps PExpr
+addStepPExpr msg x = addStep msg >> return x
+
 bottomUp :: (PExpr -> Expr) -> PExpr -> Expr
 bottomUp f (Add xs) = mapM (bottomUp f) xs >>= simplifySum >>= f
 bottomUp f (Mul xs) = mapM (bottomUp f) xs >>= simplifyProduct >>= Algebraic.expand' >>= f
@@ -97,25 +100,34 @@ tr7 = bottomUp tr7'
 tr8 :: PExpr -> Expr
 tr8 = bottomUp tr8'
     where
-        --tr8Helper :: PExpr -> PExpr -> PExpr
-        tr8Helper f g x y = let
-                                a = simplifySum [x,y]
-                                b = simplifySub x y
-                            in
-                                (1/2) * (g a `f` g b)
+        simplifySum2 x y = simplifySum [x,y]
 
-        tr8' (Mul []) = 1
-        tr8' (Mul [x]) = return x
-        tr8' (Mul ((Sin x):(Cos y):xs)) = tr8Helper (+) sin x y  * tr8' (Mul xs)
-        tr8' (Mul ((Cos x):(Sin y):xs)) = tr8Helper (-) sin x y  * tr8' (Mul xs)
+        tr8Helper f g x y = do
+                                a <- simplifySum [x,y] >>= g >>= \a' -> simplifyProduct [1/2, a']
+                                b <- simplifySub x y >>= g >>= \b' -> simplifyProduct [1/2, b']
+                                f a b
 
-        tr8' (Mul ((Cos x):(Cos y):xs)) = tr8Helper (+) cos x y  * tr8' (Mul xs)
-        tr8' (Mul ((Sin x):(Sin y):xs)) = negate $ tr8Helper (-) cos x y  * tr8' (Mul xs)
+        separateSinCos [] = ([],[])
+        separateSinCos (x:xs) = let
+                                    (a,b) = separateSinCos xs
+                                in case x of
+                                    Sin _ -> (a,x:b)
+                                    Cos _ -> (a,x:b)
+                                    _ -> (x:a,b)
 
-        tr8' (Mul (x@(Sin _):y:xs)) = tr8' (Mul (x:xs)) >>= simplifyProduct . (:[y])
-        tr8' (Mul (x@(Cos _):y:xs)) = tr8' (Mul (x:xs)) >>= simplifyProduct . (:[y])
-        tr8' (Mul (x:xs)) = tr8' (Mul xs) >>= simplifyProduct . (:[x])
-        tr8' x = return x
+        tr8' (Mul us) = do
+                          let (r,s) = separateSinCos us
+                          s' <- tr8'' s
+                          simplifyProduct (r ++ s')
+        tr8' x = tr8' (Mul [x])
+
+        tr8'' [] = return []
+        tr8'' [x] = return [x]
+        tr8'' ((Sin x):(Cos y):xs) = liftA2 (:) (tr8Helper simplifySum2 (simplifyFun . Sin) x y)  (tr8'' xs)
+        tr8'' ((Cos x):(Sin y):xs) = liftA2 (:) (tr8Helper simplifySub (simplifyFun . Sin) x y)  (tr8'' xs)
+        tr8'' ((Cos x):(Cos y):xs) = liftA2 (:) (tr8Helper simplifySum2 (simplifyFun . Cos) x y)  (tr8'' xs)
+        tr8'' ((Sin x):(Sin y):xs) = liftA2 (:) (tr8Helper simplifySub (simplifyFun . Cos) x y >>= simplifyNegate) (tr8'' xs)
+        tr8'' (x:xs) = (x:) <$> tr8'' xs
 
 tr9 :: PExpr -> Expr
 tr9 = bottomUp tr9'
@@ -261,9 +273,6 @@ operations _ = 0
 
 measure :: PExpr -> (Int, Int)
 measure x = (trigFuns x, operations x)
-
-addStepPExpr :: String -> PExpr -> EvalSteps PExpr
-addStepPExpr msg x = addStep msg >> return x
 
 chain :: (Foldable t, Monad m) => t (a -> m a) -> (a -> m a)
 chain = foldl (>=>) return
