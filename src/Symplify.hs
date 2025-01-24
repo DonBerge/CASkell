@@ -231,7 +231,7 @@ freeOf u t
     | u == t = False
 freeOf (Symbol _) _ = True
 freeOf (Number _) _ = True
-freeOf u t = all (freeOf t) $ operands u
+freeOf u t = all (`freeOf` t) $ operands u
 
 
 linearForm :: PExpr -> PExpr -> EvalSteps (PExpr, PExpr)

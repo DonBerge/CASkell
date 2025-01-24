@@ -121,6 +121,17 @@ tr10tests = TestLabel "tr10" $ TestList [tr10t1, tr10t2, tr10t3]
 
 ----
 
+tr10it1 :: Test
+tr10it1 = TestCase $ assertEqual "tro10i: sin(x+y)" (cos(x+y)) ((cos x * cos y - sin x * sin y) >>= tr10i)
+
+tr10it2 :: Test
+tr10it2 = TestCase $ assertEqual "tro10i: cos(x+y)" (cos 3 + sin 4) ((cos 1 * sin 3 + sin 1 * cos 3 + cos 3) >>= tr10i)
+
+tr10itests :: Test
+tr10itests = TestLabel "tr10i" $ TestList [tr10it1, tr10it2]
+
+----
+
 tr11t1 :: Test
 tr11t1 = TestCase $ assertEqual "tr11: sin(2*x)" (2 * sin x * cos x ) (sin(2*x) >>= tr11)
 
@@ -168,4 +179,4 @@ futests = TestLabel "Fu" $ TestList [fu1, fu2, fu3]
 
 
 tests :: Test
-tests = TestLabel "Fu" $ TestList [tr1tests, tr2tests, tr5tests, tr6tests, tr7tests, tr8tests, tr9tests, tr10tests, tr11tests, tr12tests, tr13tests, futests]
+tests = TestLabel "Fu" $ TestList [tr1tests, tr2tests, tr5tests, tr6tests, tr7tests, tr8tests, tr9tests, tr10tests, tr10itests, tr11tests, tr12tests, tr13tests, futests]

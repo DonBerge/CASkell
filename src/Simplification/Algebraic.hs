@@ -1,5 +1,6 @@
 module Simplification.Algebraic (
-    expand
+    expand,
+    expand'
 ) where
 
 import PExpr

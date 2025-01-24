@@ -30,7 +30,7 @@ coefficientMonomialGPE u@(Mul us) x = mapM (`coefficientMonomialGPE` x) us >>= f
         combine (_, _) (_, m) = simplifyPow x (fromInteger m) >>= simplifyDiv u >>= \c -> return (c, m)
 coefficientMonomialGPE u x
     | freeOf u x = return (u,0)
-    | otherwise = fail "Not a general monomial expression"
+    | otherwise = fail $ show u ++ " is not a general monomial expression over " ++ show x
 
 degreeGPE :: PExpr -> PExpr -> EvalSteps Integer
 degreeGPE (Add us) x = foldM (\d u -> max d . snd <$> coefficientMonomialGPE u x) (-1) us --maximum $ map (`degreeGPE` x) us
@@ -292,6 +292,7 @@ lcmList :: [PExpr] -> EvalSteps PExpr
 lcmList us = do
                 n <- Algebraic.expand $ simplifyProduct us
                 let v = variables n
+                -- addStep $ "Calculating the lcm of " ++ show us ++ " with respect to " ++ show v
                 let d = removeEachElement us
                 d' <- mapM (Algebraic.expand . simplifyProduct) d >>= (`gcdList` v)
                 quotient n d' v

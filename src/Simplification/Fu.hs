@@ -11,13 +11,16 @@ import Control.Monad
 
 import Data.Function
 import Data.List ( minimumBy )
+import Simplification.PolyTools (rationalSimplify)
+
+import qualified Simplification.Algebraic as Algebraic
 
 pattern Neg :: PExpr -> PExpr
 pattern Neg x <- Mul ((-1):x:_)
 
 bottomUp :: (PExpr -> Expr) -> PExpr -> Expr
 bottomUp f (Add xs) = mapM (bottomUp f) xs >>= simplifySum >>= f
-bottomUp f (Mul xs) = mapM (bottomUp f) xs >>= simplifyProduct >>= f
+bottomUp f (Mul xs) = mapM (bottomUp f) xs >>= simplifyProduct >>= Algebraic.expand' >>= f
 bottomUp f (Pow x y) = do
                         x' <- bottomUp f x
                         y' <- bottomUp f y
@@ -25,8 +28,8 @@ bottomUp f (Pow x y) = do
 bottomUp f (Fun g xs) = mapM (bottomUp f) xs >>= simplifyFun . Fun g >>= f
 bottomUp _ x = return x
 
-tr0 :: PExpr -> Expr
-tr0 = return
+tr0 :: PExpr -> EvalSteps PExpr
+tr0 = rationalSimplify . return
 
 tr1 :: PExpr -> Expr
 tr1 = bottomUp tr1'
@@ -62,7 +65,8 @@ tr3' = return -- ya es manejado por autosimplificacion
 tr4 :: PExpr -> Expr
 tr4 = return -- ya es manejado por autosimplificacion
 
-tr5 :: PExpr -> Expr
+-- | Reemplaza sin^2(x) con 1-cos^2(x)
+tr5 :: PExpr -> EvalSteps PExpr
 tr5 = bottomUp tr5'
     where
         tr5' (Pow (Sin x) 2) = 1 - (Cos x `simplifyPow` 2)
@@ -161,8 +165,11 @@ tr10 = bottomUp tr10'
         
         tr10' x = return x
 
+-- | First expand all products
+-- | TR8 converts the product of two trigonometric functions into a sum of trigonometric functions
+-- | Autosimplification cancels equal terms
 tr10i :: PExpr -> Expr
-tr10i = return
+tr10i = Algebraic.expand' >=> tr8
 
 tr11 :: PExpr -> Expr
 tr11 = bottomUp tr11'
@@ -255,6 +262,8 @@ operations _ = 0
 measure :: PExpr -> (Int, Int)
 measure x = (trigFuns x, operations x)
 
+addStepPExpr :: String -> PExpr -> EvalSteps PExpr
+addStepPExpr msg x = addStep msg >> return x
 
 chain :: (Foldable t, Monad m) => t (a -> m a) -> (a -> m a)
 chain = foldl (>=>) return
@@ -301,4 +310,4 @@ fu x = x
         >>= 
        whenExists ["Sin", "Cos"] (choice [rl2, const x, tr8, return])
         >>=
-       choice [tr2i, return] 
+       choice [tr2i, return]
