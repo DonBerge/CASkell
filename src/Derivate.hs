@@ -1,61 +1,72 @@
-{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
+{-|
+Module      : Derivate
+Description : Derivar una expresion respecto a una variable
 
+Detailed description of the module's functionality, including any important
+details or usage examples.
+-}
 module Derivate where 
-import Expr
-
-import PExpr
-
 import Symplify
 
-expr :: PExpr -> Expr
-expr = return
+import Control.Monad ((>=>))
+  
+simplifySqrt :: PExpr -> EvalSteps PExpr
+simplifySqrt x = x `simplifyPow` (1/2)
 
-derivate :: Expr -> String -> Expr
-derivate f x = do
-                f' <- f
-                x' <- symbol x
-                derivate' f' x'
+notASymbol :: PExpr -> Bool
+notASymbol (Symbol _) = False
+notASymbol _ = True
 
-mapIndex :: Int -> (a->a) -> [a] -> [a]
-mapIndex _ _ [] = []
-mapIndex 0 f (x:xs) = f x : xs
-mapIndex n f (x:xs) = x : mapIndex (n-1) f xs
+derivate :: PExpr -> PExpr -> EvalSteps PExpr
+derivate u x
+    | notASymbol x = fail "La variable de derivacion no es un simbolo"
+    | u == x = return 1
+    | freeOf u x = return 0
+derivate u@(Pow v w) x = do
+                            dv <- derivate v x
+                            dw <- derivate v w
+                            vw' <- simplifySub w 1 >>= \subw -> simplifyPow v subw
+                            a <- simplifyProduct [w, vw', dv]
+                            b <- (simplifyFun . Log) v >>= \logv -> simplifyProduct [dw, u, logv]
+                            simplifySum [a,b]  
+derivate (Add us) x = mapM (`derivate` x) us >>= simplifySum
+derivate (Mul []) _ = return 0
+derivate (Mul (v:us)) x = do
+                            let w = Mul us
+                            dv <- derivate v x
+                            dw <- derivate w x
+                            a <- simplifyProduct [dv, w]
+                            b <- simplifyProduct [v, dw]
+                            simplifySum [a,b]
+-- derivation of functions
+derivate u@(Fun _ [v]) x = do
+                            df <- derivateFun u
+                            dv <- derivate v x
+                            simplifyProduct [df, dv]
+derivate u x = fail $ "No se puede derivar la expresion " ++ show u ++ " respecto a " ++ show x
 
-
-derivatives :: [(String, Expr -> Expr)]
-derivatives = [
-                ("Sin", \x -> cos x),
-                ("Cos", \x -> -sin x),
-                ("Tan", \x -> 1 / cos x ** 2),
-                ("Exp", \x -> exp x),
-                ("Log", \x -> 1 / x),
-                ("Sqrt", \x -> 1 / (2 * sqrt x)),
-                ("Asin", \x -> 1 / sqrt (1 - x ** 2)),
-                ("Acos", \x -> -1 / sqrt (1 - x ** 2)),
-                ("Atan", \x -> 1 / (1 + x ** 2)),
-                ("Sinh", \x -> cosh x),
-                ("Cosh", \x -> sinh x),
-                ("Tanh", \x -> 1 / cosh x ** 2),
-                ("Asinh", \x -> 1 / sqrt (x ** 2 + 1)),
-                ("Acosh", \x -> 1 / sqrt (x ** 2 - 1)),
-                ("Atanh", \x -> 1 / (1 - x ** 2))
-              ]
-
-derivate' :: PExpr -> PExpr -> Expr
-derivate' (Add ps) x = mapM (`derivate'` x) ps >>= simplifySum
---derivate' (Mul ps) x
-derivate' (Pow pa pb) x = let
-                            a = expr pa
-                            b = expr pb 
-                            a' = derivate' pa x
-                            b' = derivate' pb x
-                          in
-                            (a ** b) * (b' * log a + b * (a'/a))
-derivate' (Fun f [p]) x = let
-                            p' = derivate' p x
-                          in
-                            case lookup f derivatives of
-                              Just f' -> f' (expr p) * p'
-                              -- TODO: debe devolverse junto a un operador de derivada
-                              Nothing -> fail "Derivative of unknown function"
-derivate' s x = if s == x then return 1 else return 0
+derivateFun :: PExpr -> EvalSteps PExpr
+derivateFun (Sin v) = simplifyFun . Cos $ v -- cos(x)
+derivateFun (Cos v) = simplifyFun . Sin >=> simplifyNegate $ v -- -sin(x)
+derivateFun (Tan v) = simplifyFun . Tan >=> (`simplifyPow` 2) >=> simplifySum . (:[1]) $ v -- 1 + tan^2(x) = sec^2(x), derivada de tan(x) = sec^2(x)
+derivateFun (Cot v) = simplifyFun . Cot >=> (`simplifyPow` 2) >=> simplifySum . (:[1]) >=> simplifyNegate $ v -- -1 - cot^2(x) = -csc^2(x), derivada de cot(x) = -csc^2(x)
+derivateFun (Sec v) = do
+                        tg <- simplifyFun . Tan $ v
+                        sc <- simplifyFun . Sec $ v
+                        simplifyProduct [tg, sc] -- tan(x)sec(x)
+derivateFun (Csc v) = do
+                        ct <- simplifyFun . Cot $ v
+                        csc <- simplifyFun . Csc $ v
+                        simplifyProduct [ct, csc] >>= simplifyNegate -- -cot(x)csc(x)
+derivateFun (Asin v) = simplifyPow v 2 >>= simplifySub 1 >>= simplifySqrt >>= simplifyDiv 1 -- 1/(1-x^2)^(1/2)
+derivateFun (Acos v) = simplifyPow v 2 >>= simplifySub 1 >>= simplifySqrt >>= simplifyDiv 1 >>= simplifyNegate -- -1/(1-x^2)^(1/2) 
+derivateFun (Atan v) = simplifyPow v 2 >>= simplifySum . (:[1]) >>= simplifyDiv 1 -- 1/(1+x^2)
+derivateFun (Sinh v) = simplifyFun . Cosh $ v -- cosh(x)
+derivateFun (Cosh v) = simplifyFun . Sinh $ v -- sinh(x)
+derivateFun (Tanh v) = (simplifyFun . Cosh) v >>= (`simplifyPow` 2) >>= simplifyDiv 1  -- sech^2(x)
+derivateFun (Asinh v) = simplifyPow v 2 >>= simplifySum . (:[1]) >>= simplifySqrt >>= simplifyDiv 1 -- 1/(1+x^2)^(1/2)
+derivateFun (Acosh v) = simplifyPow v 2 >>= (`simplifySub` 1) >>= simplifySqrt >>= simplifyDiv 1 -- 1/(x^2-1)^(1/2)
+derivateFun (Atanh v) = simplifyPow v 2 >>= simplifySub 1 >>= simplifyDiv 1 -- 1/(1-x^2)
+derivateFun (Exp v) = return $ Exp v
+derivateFun (Log v) = simplifyDiv 1 v
+derivateFun u = fail $ "Se desconoce la derivada de la funcion " ++ show u

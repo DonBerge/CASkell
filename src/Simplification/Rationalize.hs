@@ -1,6 +1,4 @@
 module Simplification.Rationalize where
-
-import PExpr
 import Symplify
 
 rationalize :: PExpr -> EvalSteps PExpr
