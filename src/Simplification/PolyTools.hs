@@ -13,6 +13,10 @@ import Symplify
 import qualified Simplification.Algebraic as Algebraic
 
 import Data.List
+import Simplification.Rationalize (rationalize)
+import Classes.EvalSteps (addStep)
+import Data.List (unwords)
+
 
 isSymbol :: PExpr -> Bool
 isSymbol (Fun _ _) = True
@@ -336,28 +340,12 @@ rationalSimplify = (=<<) rationalSimplify'
         simplifyNumberAndSign n d v = do
                                         (n',d') <- simplfyNumbers n d
                                         simplifySign n' d' v
-
-        rationalSimplify' (Add us) = do
-                                        us' <- mapM rationalSimplify' us
-                                        lcu <- mapM denominator us' >>= lcmList
-                                        u' <- mapM (\u -> simplifyProduct [u, lcu]) us' >>= simplifySum -- Multiplico y divido por el lcm de los denominadores
-                                        p' <- simplifyDiv u' lcu
-                                        case p' of
-                                            Mul _ -> rationalSimplify' p'
-                                            _ -> return p'
-        rationalSimplify' (Mul us) = do
-                                        u' <- mapM rationalSimplify' us >>= simplifyProduct
-                                        n <- Algebraic.expand $ numerator u'
-                                        d <- Algebraic.expand $ denominator u'
-                                        let v = variables n `union` variables d
-                                        ggcd <- polyGCD n d v
-                                        n' <- quotient n ggcd v
-                                        d' <- quotient d ggcd v
-                                        simplifyNumberAndSign n' d' v
-        rationalSimplify' (Pow b e)
-            | true $ isInteger e = do
-                                      b' <- rationalSimplify' b
-                                      n <- numerator b' >>= (`simplifyPow` e)
-                                      d <- denominator b' >>= (`simplifyPow` e)
-                                      simplifyDiv n d
-        rationalSimplify' u = return u
+        rationalSimplify' u = do
+                                u' <- rationalize u
+                                n <- Algebraic.expand $ numerator u'
+                                d <- Algebraic.expand $ denominator u'
+                                let v = variables n `union` variables d
+                                ggcd <- polyGCD n d v
+                                n' <- quotient n ggcd v
+                                d' <- quotient d ggcd v
+                                simplifyNumberAndSign n' d' v
