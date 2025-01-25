@@ -7,6 +7,7 @@ import Expr
 import qualified Test.Algebraic as Algebraic
 import qualified Test.Fu as Fu
 import qualified Test.PolyTools as PolyTools
+import qualified Test.Derivate as Derivate
 
 x :: Expr
 x = symbol "x"
@@ -136,4 +137,4 @@ symplifyRadical :: Test
 symplifyRadical = TestLabel "Simplififcacion de radicales" $ TestList [sr1, sr2]
 
 main :: IO Counts
-main = runTestTT $ TestList [symplifyBasic, symplifyConst, symplifyFraction, symplifyRadical, simplifyTrigTests, Algebraic.tests, Fu.tests, PolyTools.tests]
+main = runTestTT $ TestList [symplifyBasic, symplifyConst, symplifyFraction, symplifyRadical, simplifyTrigTests, Algebraic.tests, Fu.tests, PolyTools.tests, Derivate.tests]

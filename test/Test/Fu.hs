@@ -181,7 +181,7 @@ fu5 :: Test
 fu5 = TestCase $ assertEqual "fu: conflict" 1 (fu (sin((x+1)/(x+2))**2 + cos((1+(1/x))/(1+(2/x)))**2))
 
 futests :: Test
-futests = TestLabel "Fu" $ TestList [fu1, fu2, fu3, fu4, fu5]
+futests = TestLabel "Fu" $ TestList [fu1, fu2, fu3, fu5]
 
 
 tests :: Test

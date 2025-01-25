@@ -65,6 +65,7 @@ library
                       Simplification.PolyTools
                       Simplification.Rationalize
                       Classes.EvalSteps
+                      Calculus
                       TriBool
                       Symplify
                       Expr
@@ -73,6 +74,7 @@ library
     other-modules:  Number
                     PExpr
                     Classes.Assumptions
+                    Calculus.Derivate
 
     -- LANGUAGE extensions used by modules in this package.
     other-extensions: PatternSynonyms
@@ -102,13 +104,14 @@ test-suite cas-test
                     Number
                     PExpr
                     Symplify
-                    Derivate
+                    Calculus
                     Simplification.Algebraic
                     Simplification.PolyTools
                     Simplification.Fu
                     Test.Algebraic
                     Test.PolyTools
                     Test.Fu
+                    Test.Derivate
                     Classes.Assumptions
                     Classes.EvalSteps
                     TriBool
@@ -124,6 +127,7 @@ test-suite cas-test
     hs-source-dirs:   test/Test
                       test
                       src
+                      src/Calculus
                       src/Simplification
                       src/Classes
 
