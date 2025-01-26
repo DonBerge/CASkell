@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 module Calculus where
 
 import Expr

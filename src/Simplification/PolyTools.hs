@@ -9,13 +9,11 @@ import Data.Bifunctor
 import qualified Number as N
 
 import Control.Monad (unless, foldM)
-import Symplify
 import qualified Simplification.Algebraic as Algebraic
 
-import Data.List
 import Simplification.Rationalize (rationalize)
-import Classes.EvalSteps (addStep)
-import Data.List (unwords)
+import Data.List (union)
+import Symplify
 
 
 isSymbol :: PExpr -> Bool
@@ -37,6 +35,7 @@ coefficientMonomialGPE u x
     | otherwise = fail $ show u ++ " is not a general monomial expression over " ++ show x
 
 degreeGPE :: PExpr -> PExpr -> EvalSteps Integer
+degreeGPE 0 _ = return (-1)
 degreeGPE (Add us) x = foldM (\d u -> max d . snd <$> coefficientMonomialGPE u x) (-1) us --maximum $ map (`degreeGPE` x) us
 degreeGPE u x = snd <$> coefficientMonomialGPE u x
 
@@ -166,21 +165,32 @@ remainder p q l = snd <$> polyDivide p q l
 
 ---
 
+{-|
+    Proceso similar a la division de polinomios que satisface la propiedad euclidiana
+    @
+        (q,r) = pseudoDivision u v => deg(r) < deg(v)
+    @
+    Gracias a que se satisface esta propiedad, es posible usar este proceso de division para computar
+    el maximo común divisor entre polinomios
+
+    Sea
+    @
+        \[p_0 = 0], \[s_0 = u\]
+    @
+-}
 pseudoDivision :: PExpr -> PExpr -> PExpr -> EvalSteps (PExpr, PExpr)
+pseudoDivision _ 0 _ = fail "Pseudo-division by zero"
 pseudoDivision u v x = do
-                        let p = 0
-                        let s = u
-                        m <- degreeGPE s x
+                        m <- degreeGPE u x
                         n <- degreeGPE v x
                         let delta = max (m-n+1) 0
-                        lcv <- coefficientGPE v x n
+                        lcv <- coefficientGPE v x n -- Equivalente a lcv = leadingCoefficient v x, pero mas eficiente porque el grado ya esta computado
                         let sigma = 0
-                        pseudoDivision' p s m n delta lcv sigma
+                        pseudoDivision' 0 u m n delta lcv sigma
     where
         pseudoDivision' p s m n delta lcv sigma
-            | m == 0 && n == 0 = polyDivide u v [x] -- both u and v do not have x as main variable
             | m >= n = do
-                        lcs <- coefficientGPE s x m -- 0
+                        lcs <- coefficientGPE s x m -- Equivalente a lcs = leadingCoefficient s x, pero mas eficiente porque el grado ya esta computado
                         x' <- simplifyPow x (fromInteger $ m-n) -- 1
                         p <- do
                                 a' <- simplifyProduct [lcv,p]
@@ -246,18 +256,15 @@ polyGCD u v l = polyGCDRec u v l >>= (`normalize` l)
                                     ppU <- quotient u contU l -- primitive part of u
                                     ppV <- quotient v contV l -- primitive part of v
 
-                                    rp <- gcdRec' x rest ppU ppV
+                                    rp <- gcdLoop x rest ppU ppV
 
                                     Algebraic.expand $ simplifyProduct [d,rp]
         
-        gcdRec' _ _ ppU 0 = return ppU
-        gcdRec' x rest ppU ppV = do
+        gcdLoop _ _ ppU 0 = return ppU
+        gcdLoop x rest ppU ppV = do
                                     r <- pseudoRem ppU ppV x
                                     ppR <- polyPrimitivePart r x rest
-                                    degU <- degreeGPE ppU x
-                                    if ppR == ppU && degU == 0 -- Avoids infinite recursion
-                                        then return 1
-                                        else gcdRec' x rest ppV ppR 
+                                    gcdLoop x rest ppV ppR 
 
 remainderSequence :: PExpr -> PExpr -> [PExpr] -> EvalSteps [PExpr]
 remainderSequence _ _ [] = error "Remainder sequence undefined for empty lists"
