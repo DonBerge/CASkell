@@ -11,6 +11,7 @@ import PExpr
 import Expr
 
 import Classes.EvalSteps
+import qualified Simplification.Algebraic as Algebraic
 import Simplification.PolyTools (leadingCoefficient)
 import Symplify (simplifyProduct, simplifyPow, simplifySum)
 
@@ -22,6 +23,13 @@ y = symbol "y"
 
 z :: Expr
 z = symbol "z"
+
+polGCD :: EvalSteps PExpr -> EvalSteps PExpr -> [EvalSteps PExpr] -> EvalSteps PExpr
+polGCD u v l = do
+                u' <- Algebraic.expand u
+                v' <- Algebraic.expand v
+                l' <- sequence l
+                polyGCD u' v' l'
 
 pseudoDivide :: EvalSteps PExpr -> EvalSteps PExpr -> EvalSteps PExpr -> EvalSteps (PExpr, PExpr)
 pseudoDivide u v x = do
