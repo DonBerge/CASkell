@@ -20,7 +20,17 @@ isSymbol :: PExpr -> Bool
 isSymbol (Fun _ _) = True
 isSymbol _ = False
 
--- The list [c, m] where m is the degree of the monomial and c is the coefficient of xm
+variables :: PExpr -> [PExpr]
+variables (Number _) = []
+variables u@(Pow v w)
+    | true (isInteger w &&& w > 1) = variables v
+    | otherwise = [u]
+variables (Add us) = foldl union [] $ map variables us
+variables (Mul us) = foldl union [] $ map variables us
+variables u = [u]
+
+-- * Manipulación de polinomios
+
 {-|
     Dada una expresion algebraica, si la expresion es un monomio sobre \(x\) entonces 
     devuelve el par \((c,m)\) donde \(c\) es el coeficiente del monomio y \(m\) es el grado del monomio.
@@ -137,8 +147,27 @@ leadingMonomial p symbols = do
                                     lm <- leadingMonomial' l c
                                     simplifyProduct [xm,lm]
 
+-- * Division de polinomios
 
+{-|
+    Algoritmo que permite obtener la division entre \(u\) y \(v\) donde ambos son polinomios
+    multivariables en \(\mathbb{Q}[x_1,x_2,...,x_n]\), la lista de simbolos \(l=[x_1,x_2,...,x_n]\) se pasa
+    como argumento junto a los polinomios a dividir. 
 
+    Se dice que el algoritmo es recursivo porque la division en terminos de la variable principal \(x_1\) depende
+    recursivamente de la division de polinomios en \(\mathbb{Q}[x_2,...,x_n]\).
+
+    Devuelve el par \((q,r)\) donde \(q\) es el cociente y \(r\) es el resto de la division de \(u\) entre \(v\). Los
+    cuales satisfacen:
+
+    \[ u = q\cdot v + r \]
+    \[ \operatorname{deg}(r,x) < \operatorname{deg}(v,x) \ \  \lor \ \ lc(v,x_1) \not| \ \  lc(r, x) \]
+    \[ \text{Si } u|v => r = 0\]
+
+    La propiedad \(\operatorname{deg}(r,x) < \operatorname{deg}(v,x)\) se denomina __propiedad euclidiana de la division polinomica__
+    y es fundamental para el calculo del maximo comun divisor entre polinomios. La propiedad euclideana siempre se satisface si los
+    coeficientes del polinomio forman un cuerpo. Si los coeficientes no forman un cuerpo, la propiedad euclideana puede o no cumplirse.
+-}
 recPolyDivide :: PExpr -> PExpr -> [PExpr] -> EvalSteps (PExpr, PExpr)
 recPolyDivide u v [] = do
                         udivv <- simplifyDiv u v
@@ -169,15 +198,35 @@ recPolyDivide u v (x:tl) = do
             | otherwise = recPolyDivideLoopReturn q r
 
 
+{-|
+    Equivalente a 'recPolyDivide' pero devuelve solo el cociente de la division de \(u\) y \(v\).
+-}
 recQuotient :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
 recQuotient u v l = fst <$> recPolyDivide u v l
 
+{-|
+    Equivalente a 'recPolyDivide' pero devuelve solo el resto de la division de \(u\) y \(v\).
+-}
 recRemainder :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
 recRemainder u v l = snd <$> recPolyDivide u v l
 
--- Division de polinomios basada en monomios
-polyDivide :: PExpr -> PExpr -> [PExpr] -> EvalSteps (PExpr, PExpr)
-polyDivide u v l = do
+{-|
+    Algoritmo alternativo para dividir polinomios multivariables en un conjunto de simbolos. Se basa en la estructura monomial de los polinomios
+    en lugar de su estructura recursiva. Puede determinar si \(u | v\), pero si \(u \! \! \! \not | v\) puede producir un resultado
+    distinto a la division recursiva.
+
+    Devuelve el par \((q,r)\) donde \(q\) es el cociente y \(r\) es el resto de la division de \(u\) entre \(v\). Los polinomios \(q\) y \(r\)
+    satisfacen varias propiedades, entre ellas:
+
+    1. \( u = q\cdot v + r \)
+    2. \(lm(v,l)\) no divide a ningún monomio de \(r\)
+    3. \(q\) y \(r\) son los únicos polinomios que satisfacen las propiedades anteriores, para el orden de las variables dado
+    4. Si \(u|v \implies r = 0\)
+
+    \(lm(v,l)\) es el monomio líder de \(v\) respecto a la lista de simbolos \(l\).
+-}
+mbPolyDivide :: PExpr -> PExpr -> [PExpr] -> EvalSteps (PExpr, PExpr)
+mbPolyDivide u v l = do
                     let q = 0
                         r = u
                     vl <- leadingMonomial v l
@@ -199,31 +248,14 @@ polyDivide u v l = do
                     if dw == 1
                         then return w'
                         else return 0
-    
-variables :: PExpr -> [PExpr]
-variables (Number _) = []
-variables u@(Pow v w)
-    | true (isInteger w &&& w > 1) = variables v
-    | otherwise = [u]
-variables (Add us) = foldl union [] $ map variables us
-variables (Mul us) = foldl union [] $ map variables us
-variables u = [u]
 
-divmod :: EvalSteps PExpr -> EvalSteps PExpr -> EvalSteps (PExpr, PExpr)
-divmod p q = do
-                p' <- Algebraic.expand p
-                q' <- Algebraic.expand q
-                let vars = variables q'
-                polyDivide p' q' vars
+-- | Equivalente a 'mbPolyDivide' pero devuelve solo el cociente de la division de \(u\) y \(v\).
+mbQuotient :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
+mbQuotient p q l = fst <$> mbPolyDivide p q l
 
-quotient :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
-quotient p q l = fst <$> polyDivide p q l
-
-remainder :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
-remainder p q l = snd <$> polyDivide p q l
-
-
----
+-- | Equivalente a 'mbPolyDivide' pero devuelve solo el resto de la division de \(u\) y \(v\).
+mbRemainder :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
+mbRemainder p q l = snd <$> mbPolyDivide p q l
 
 {-|
     Proceso similar a la división de polinomios donde el resto de la división satisface la propiedad euclidiana
@@ -232,7 +264,7 @@ remainder p q l = snd <$> polyDivide p q l
     Gracias a que se satisface esta propiedad, es factible usar este proceso de división para computar
     el máximo común divisor entre polinomios.
 
-    Retorna dos polinomios \(p\) y \(q\) denominados __pseudo-cociente__ y __pseudo-resto__ respectivamente, los cuales
+    Retorna dos polinomios \(q\) y \(r\) denominados __pseudo-cociente__ y __pseudo-resto__ respectivamente, los cuales
     satisfacen:
     
     \[ \operatorname{lc}(v,x)^\delta u = q\cdot v + r \]
@@ -286,6 +318,7 @@ pseudoDivision u v x = do
                             r <- Algebraic.expand $ simplifyProduct [lcv',s]
                             return (q,r)
 
+-- | Equivalente a 'pseudoDivision' pero devuelve solo el pseudo-resto de la division de \(u\) y \(v\).
 pseudoRem :: PExpr -> PExpr -> PExpr -> EvalSteps PExpr
 pseudoRem u v x = snd <$> pseudoDivision u v x
 
@@ -316,7 +349,7 @@ polyPrimitivePart :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
 polyPrimitivePart 0 _ _ = return 0
 polyPrimitivePart u x r = do
                             contU <- polyContent u x r
-                            quotient u contU (x:r)
+                            recQuotient u contU (x:r)
 
 polyGCD :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
 polyGCD 0 v l = normalize v l
@@ -330,8 +363,8 @@ polyGCD u v l = polyGCDRec u v l >>= (`normalize` l)
                                     
                                     d <- polyGCDRec contU contV rest
                                     
-                                    ppU <- quotient u contU l -- primitive part of u
-                                    ppV <- quotient v contV l -- primitive part of v
+                                    ppU <- recQuotient u contU l -- primitive part of u
+                                    ppV <- recQuotient v contV l -- primitive part of v
 
                                     rp <- gcdLoop x rest ppU ppV
 
@@ -383,7 +416,7 @@ lcmList us = do
                 -- addStep $ "Calculating the lcm of " ++ show us ++ " with respect to " ++ show v
                 let d = removeEachElement us
                 d' <- mapM (Algebraic.expand . simplifyProduct) d >>= (`gcdList` v)
-                quotient n d' v
+                recQuotient n d' v
             where
                 removeEachElement :: [a] -> [[a]]
                 removeEachElement xs = [take i xs ++ drop (i + 1) xs | i <- [0..length xs - 1]]
@@ -430,6 +463,6 @@ rationalSimplify = (=<<) rationalSimplify'
                                 d <- Algebraic.expand $ denominator u'
                                 let v = variables n `union` variables d
                                 ggcd <- polyGCD n d v
-                                n' <- quotient n ggcd v
-                                d' <- quotient d ggcd v
+                                n' <- recQuotient n ggcd v
+                                d' <- recQuotient d ggcd v
                                 simplifyNumberAndSign n' d' v

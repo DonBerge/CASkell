@@ -10,7 +10,6 @@ import PExpr
 import Symplify
 
 import Data.List
-import Simplification.PolyTools (rationalSimplify)
 
 import Simplification.Rationalize
 
