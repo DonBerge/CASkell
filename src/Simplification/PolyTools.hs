@@ -21,6 +21,11 @@ isSymbol (Fun _ _) = True
 isSymbol _ = False
 
 -- The list [c, m] where m is the degree of the monomial and c is the coefficient of xm
+{-|
+    Dada una expresion algebraica, si la expresion es un monomio sobre \(x\) entonces 
+    devuelve el par \((c,m)\) donde \(c\) es el coeficiente del monomio y \(m\) es el grado del monomio.
+    Si la expresion no es un monomio sobre \(x\) entonces devuelve un error.
+-}
 coefficientMonomialGPE :: PExpr -> PExpr -> EvalSteps (PExpr, Integer)
 coefficientMonomialGPE u x
     | u == x = return (1, 1)
@@ -32,13 +37,38 @@ coefficientMonomialGPE u@(Mul us) x = mapM (`coefficientMonomialGPE` x) us >>= f
         combine (_, _) (_, m) = simplifyPow x (fromInteger m) >>= simplifyDiv u >>= \c -> return (c, m)
 coefficientMonomialGPE u x
     | freeOf u x = return (u,0)
-    | otherwise = fail $ show u ++ " is not a general monomial expression over " ++ show x
+    | otherwise = fail $ show u ++ " no es un monomio sobre " ++ show x
 
+
+{-|
+    Devuelve el grado de una expresion algebraica \(u\) respecto a la variable \(x\), siempre y cuando \(u\) sea un polinomio
+    sobre \(x\). Si \(u\) no es un polinomio sobre \(x\) entonces devuelve un error.
+
+    Ejemplos:
+
+    > degreeGPE 0 x = -1
+    > degreeGPE (x^2 + 2*x + 1) x = 2
+    > degreeGPE (x**2 + 2*y*x) x = 2
+    > degreeGPE (x**2 + 2*y*x) y = 1
+    > degreeGPE (e^x) x = Undefined: e^x no es un monomio sobre x
+-}
 degreeGPE :: PExpr -> PExpr -> EvalSteps Integer
 degreeGPE 0 _ = return (-1)
 degreeGPE (Add us) x = foldM (\d u -> max d . snd <$> coefficientMonomialGPE u x) (-1) us --maximum $ map (`degreeGPE` x) us
 degreeGPE u x = snd <$> coefficientMonomialGPE u x
 
+{-|
+    Devuelve el coeficiente del monomio \(x^j) de una expresion algebraica (\u\), siempre y cuando \(u\) sea un polinomio
+    sobre \(x\). Si \(u\) no es un polinomio sobre \(x\) entonces devuelve un error.
+
+    Ejemplos:
+
+    > coefficientGPE 0 x 21 = 0 
+    > coefficientGPE (x^2 + 2*x + 1) x 2 = 1
+    > coefficientGPE (y*x**2 + 2*y*x) x 1 = 2*y
+    > coefficientGPE (y*x**2 + 2*y*x) y 1 = x**2 + 2*x
+    > coefficientGPE (e^x) x 2 = Undefined: e^x no es un monomio sobre x
+-}
 coefficientGPE :: PExpr -> PExpr -> Integer -> EvalSteps PExpr
 coefficientGPE u@(Add us) x j
     | u == x = if j == 1 then return 1 else return 0
@@ -55,21 +85,50 @@ coefficientGPE u x j = do
                             then return c
                             else return 0
 
+{-|
+    Devuelve la lista de los coeficientes del polinomio \(u\) sobre \(x\). Si \(u\) no es un polinomio sobre \(x\)
+    entonces devuelve un error.
+-}
 coefficientListGPE :: PExpr -> PExpr -> EvalSteps [PExpr]
 coefficientListGPE u x = do
                             m <- degreeGPE u x
                             mapM (coefficientGPE u x) [0..m]
 
+{-|
+    Devuelve el coeficiente lider del polinomio \(u\) sobre \(x\). EL coeficiente líder es el coeficiente del monomio
+    de mayor grado en \(u\). Si \(u\) no es un polinomio sobre \(x\) entonces devuelve un error.
+-}
 leadingCoefficient :: PExpr -> PExpr -> EvalSteps PExpr
+leadingCoefficient 0 _ = fail "leadingCoefficient: 0 no tiene coeficiente líder"
 leadingCoefficient u x = do
                             m <- degreeGPE u x
                             coefficientGPE u x m
 
+{-|
+    Devuelve el monomio líder del polinomio multivariable \(u\) sobre una lista de simbolos. Se define el monomio lider
+    como aquel que es mayor en orden lexicografico.
+
+    Un monomio \(u\) es menor lexicograficamente que un monomio \(v\) sobre una lista de simbolos \([x_1,x_2,\dots,x_n\)
+    si se cumple al menos una de 2 condiciones:
+
+        (1) \(\operatorname{deg}(u,x_1) < \operatorname{deg}(v,x_1)\)
+
+        (2) Para algún \(1<j\leq n\), \(\operatorname{deg}(u,x_i) = \operatorname{deg}(v,x_i)\) para \(i=1,2,\dots,j-1\),
+        y además \(\operatorname{deg}(u,x_j) < \operatorname{deg}(v,x_j)\)
+
+    El monomio lider depende del orden de las variables en la lista de simbolos.
+
+    > u = 3*x^2*y+4*x*y**2+y^3+x+1
+    > leadingMonomial u [x,y] = 3*x^2*y
+    > leadingMonomial u [y,x] = y^3
+
+-}
 leadingMonomial :: PExpr -> [PExpr] -> EvalSteps PExpr
 leadingMonomial p symbols = do
                                 unless (all isSymbol symbols) $ fail "leadingMonomial: not all arguments are symbols"
                                 leadingMonomial' symbols p
     where
+        leadingMonomial' _ 0 = fail "leadingCoefficient: 0 no tiene coeficiente líder"
         leadingMonomial' [] u = return u
         leadingMonomial' (x:l) u = do
                                     m <- degreeGPE u x
@@ -166,17 +225,34 @@ remainder p q l = snd <$> polyDivide p q l
 ---
 
 {-|
-    Proceso similar a la division de polinomios que satisface la propiedad euclidiana
-    @
-        (q,r) = pseudoDivision u v => deg(r) < deg(v)
-    @
-    Gracias a que se satisface esta propiedad, es posible usar este proceso de division para computar
-    el maximo común divisor entre polinomios
+    Proceso similar a la división de polinomios donde el resto de la división satisface la propiedad euclidiana
+    \[(q,r) = \operatorname{PseudoDivision}(u,v) \implies \operatorname{deg}(r) < \operatorname{deg}(v)\]
+    
+    Gracias a que se satisface esta propiedad, es factible usar este proceso de división para computar
+    el máximo común divisor entre polinomios.
 
-    Sea
-    @
-        \[p_0 = 0], \[s_0 = u\]
-    @
+    Retorna dos polinomios \(p\) y \(q\) denominados __pseudo-cociente__ y __pseudo-resto__ respectivamente, los cuales
+    satisfacen:
+    
+    \[ \operatorname{lc}(v,x)^\delta u = q\cdot v + r \]
+    \[ \operatorname{deg}(r,x) < \operatorname{deg}(v,x) \]
+
+    Donde:
+    
+        * \(\operatorname{lc}(v,x)\) es el coeficiente líder de \(v\) respecto a \(x\).
+
+        * \(\delta\) es \(\max(\operatorname{deg}(u,x) - \operatorname{deg}(v,x) + 1, 0)\).
+
+        * \(u\) y \(v\) son los polinomios a dividir.
+
+        * \(x\) es la variable respecto a la cual se realiza la división.
+    
+    Ejemplos:
+
+    > pseudoDivision (x^2 + 2*x + 1) (x + 1) x = (x + 1, 0) -- 1^(2) * (x^2 + 2*x + 1) = (x + 1)(x + 1) + 0
+    > pseudoDivision (2*x+2*y) 2 x = (4*x+4*y, 0) -- 2^2 * (2*x+2*y) = (4*x+4*y)*2 + 0
+    
+
 -}
 pseudoDivision :: PExpr -> PExpr -> PExpr -> EvalSteps (PExpr, PExpr)
 pseudoDivision _ 0 _ = fail "Pseudo-division by zero"
