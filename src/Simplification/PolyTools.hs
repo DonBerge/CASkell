@@ -137,35 +137,36 @@ leadingMonomial p symbols = do
                                     lm <- leadingMonomial' l c
                                     simplifyProduct [xm,lm]
 
--- division with integer coefficients
--- u and v are rational multivariate polynomials
--- l is a list of symbols
+
+
 recPolyDivide :: PExpr -> PExpr -> [PExpr] -> EvalSteps (PExpr, PExpr)
 recPolyDivide u v [] = do
                         udivv <- simplifyDiv u v
-                        if true (isInteger udivv)
-                            then return (udivv, 0)
-                            else return (0,u)
+                        return (udivv, 0)
 recPolyDivide u v (x:tl) = do 
-                                m <- degreeGPE u x
-                                n <- degreeGPE v x
-                                lcv <- leadingCoefficient v x
-                                recPolyDivideLoop lcv 0 u m n
+                            let r = u
+                            m <- degreeGPE u x
+                            n <- degreeGPE v x
+                            let q = 0
+                            lcv <- leadingCoefficient v x
+                            recPolyDivideLoop lcv q r m n
     where
+        recPolyDivideLoopReturn q r = Algebraic.expand' q >>= \q' -> return (q',r)
+
         recPolyDivideLoop lcv q r m n
             | m >= n = do
                         lcr <- leadingCoefficient r x
                         d <- recPolyDivide lcr lcv tl
                         if snd d /= 0
-                            then Algebraic.expand (return q) >>= \q' -> return (q',r)
+                            then recPolyDivideLoopReturn q r
                             else do
                                 let c = fst d
                                 xmn <- simplifyPow x (fromInteger $ m-n)
-                                q' <- simplifyProduct [c,xmn] >>= \t -> simplifySum [q,t] -- q' = q + c*x^(m-n)
-                                r' <- Algebraic.expand $ simplifyProduct [c,v, xmn] >>= simplifySub r -- r' = r - c*v*x^(m-n)
-                                m' <- degreeGPE r x
-                                recPolyDivideLoop lcv q' r' m' n
-            | otherwise = Algebraic.expand (return q) >>= \q' -> return (q',r)
+                                q <- simplifyProduct [c,xmn] >>= \t -> simplifySum [q,t] -- q' = q + c*x^(m-n)
+                                r <- simplifyProduct [c, v, xmn]  >>= simplifySub r >>= Algebraic.expand' -- r' = r - c*v*x^(m-n)
+                                m <- degreeGPE r x
+                                recPolyDivideLoop lcv q r m n
+            | otherwise = recPolyDivideLoopReturn q r
 
 
 recQuotient :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
