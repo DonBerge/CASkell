@@ -75,6 +75,7 @@ library
                     PExpr
                     Classes.Assumptions
                     Calculus.Derivate
+                    Calculus.Integrate
 
     -- LANGUAGE extensions used by modules in this package.
     other-extensions: PatternSynonyms

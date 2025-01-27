@@ -43,7 +43,7 @@ instance MonadFail EvalSteps where
 
 -- | Instancia de 'Alternative' para 'EvalSteps'.
 instance Alternative EvalSteps where
-    empty = fail "Unkown error"
+    empty = fail "Undefined value"
     EvalSteps (Left _, _) <|> b = b
     a <|> _ = a
 
