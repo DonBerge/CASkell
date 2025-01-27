@@ -11,7 +11,7 @@ import Control.Monad
 
 import Data.Function
 import Data.List ( minimumBy )
-import Simplification.PolyTools (rationalSimplify)
+import Simplification.Rationalize (rationalSimplify)
 
 import qualified Simplification.Algebraic as Algebraic
 

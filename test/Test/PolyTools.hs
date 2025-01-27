@@ -12,7 +12,7 @@ import Expr
 
 import Classes.EvalSteps
 import qualified Simplification.Algebraic as Algebraic
-import Simplification.PolyTools (leadingCoefficient)
+import Simplification.Rationalize
 import Symplify (simplifyProduct, simplifyPow, simplifySum)
 
 x :: Expr
