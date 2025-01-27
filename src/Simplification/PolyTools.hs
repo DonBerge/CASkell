@@ -342,15 +342,17 @@ normalized u l = do
                     return $ lc == 1 || lc == 0
 
 {-| 
-    El contenido de un polinomio en \(\mathbb{K}[x]\) se define como sigue:
+    El contenido de un polinomio \(u \in \mathbb{K}[x]\) se define como sigue:
         
         1. Si \(u\) es una suma de al menos 2 monomios distintos de cero, el contenido
         es el máximo común divisor de sus coeficientes distintos de cero(en \(\mathbb{K}\)).
     
-        2. Si \(u\) es un monomio, el contenido es el resultado de normalizar el coeficiente
+        2. Si \(u\) es un monomio no nulo, el contenido es el resultado de normalizar el coeficiente
         del monomio.
 
         3. Si \(u=0\), el contenido es \(0\).
+
+    Notar que si \(u \neq 0 \implies \operatorname{cont}(u,x) | u \)
 
     Esta función calcula el contenido del polinomio \(u\) con variable principal \(x\) y usa la
     lista de variables auxiliares \(r\) para calcular el máximo común divisor de los coeficientes.
@@ -362,7 +364,7 @@ polyContent u x r = do
 
 {-| 
     Se define la parte primitiva de un polinomio \(u\) en \(\mathbb{K}[x]\) como el resultado de dividir
-    \(u\) por su contenido. Esta función calcula la parte primitiva de \(u\) con respecto a la variable principal
+    \(u\) por su contenido(Si \(u=0\), la parte primitiva es \(0\)). Esta función calcula la parte primitiva de \(u\) con respecto a la variable principal
     \(x\) y la lista de variables auxiliares \(r\).	
 -}
 polyPrimitivePart :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
@@ -372,7 +374,7 @@ polyPrimitivePart u x r = do
                             recQuotient u contU (x:r)
 
 {-|
-    Calculo del maximo común divisor en el dominio de polinomios multivariados \(\mathbb{Q}[x_1,x_2,\dots,x_n\),
+    Calculo del maximo común divisor en el dominio de polinomios multivariados \(\mathbb{Q}[x_1,x_2,\dots,x_n]\),
     las variables \(x_1,x_2,\dots,x_n\) son pasadas como argumento en la lista @l@.
 
     El maximo común divisor entre 2 polinomios \(u\) y \(v\) en \(\mathbb{Q}[x_1,x_2,\dots,x_n]\) se define como el polinomio
@@ -380,7 +382,7 @@ polyPrimitivePart u x r = do
 
         1. \(d\) es un divisor común de \(u\) y \(v\), es decir, \(d|u\) y \(d|v\).
         2. Si \(e\) es un divisor común de \(u\) y \(v\), entonces \(e|d\).
-        3. \(d\) esta normalizado si es un polinomio o \(d=1\).
+        3. \(d\) esta normalizado.
     
     Si \(u\) y \(v\) son polinomios nulos, la definición de arriba no aplica, en este caso el maximo común divisor es 0.
 -}
@@ -403,6 +405,7 @@ polyGCD u v l = polyGCDRec u v l >>= (`normalize` l)
 
                                     Algebraic.expand $ simplifyProduct [d,rp]
         
+        -- Computar los restos primitivos y obtener el penultimo resto
         gcdLoop _ _ ppU 0 = return ppU
         gcdLoop x rest ppU ppV = do
                                     r <- pseudoRem ppU ppV x
@@ -417,11 +420,11 @@ polyGCD u v l = polyGCDRec u v l >>= (`normalize` l)
         \[R_1 = PolyPrimitivePart(v)\]
         \[R_{n+2} = PolyPrimitivePart(PseudoRemainder(R_n, R_{n+1}, x))\]
     
-    Dado que la pseudo-división satisface la propiedad euclidiana, la secuencia eventualmente converge a 0.
+    Dado que la pseudo-división satisface la propiedad euclidiana, la secuencia eventualmente converge a \(0\).
 
 -}
 remainderSequence :: PExpr -> PExpr -> [PExpr] -> EvalSteps [PExpr]
-remainderSequence _ _ [] = error "Remainder sequence undefined for empty lists"
+remainderSequence _ _ [] = error "Secuencia de restos no definida para lista vacia"
 remainderSequence u v (x:rest) = do
                                     ppU <- polyPrimitivePart u x rest
                                     ppV <- polyPrimitivePart v x rest
@@ -447,7 +450,9 @@ gcdList (p:ps) r = do
 
 {-|
     Calcula el minimo común multiplo entre una lista de polinomios multivariables en \(\mathbb{Q}[x_1,x_2,\dots,x_n]\).
-    La lista @l@ contiene las variables \(x_1,x_2,\dots,x_n\). El calculo se realiza aprovechando la siguiente propiedad:
+    La lista @l@ contiene las variables \(x_1,x_2,\dots,x_n\). 
+    
+    El calculo se realiza aprovechando la siguiente propiedad:
 
     \[\operatorname{lcm}(a_1,a_2,\dots,a_n) = \dfrac{\prod_{i=1}^n a_i}{\gcd(b_1,b_2,\dots,b_n)}\]
 

@@ -271,7 +271,7 @@ simplifySqrt x = simplifyPow x (1/2)
 
 ----------------
 
-handlePeriod :: (N.Number -> PExpr -> EvalSteps a) -> (a -> EvalSteps a) -> PExpr -> EvalSteps a
+handlePeriod :: (N.Number -> PExpr -> EvalSteps PExpr) -> (PExpr -> EvalSteps PExpr) -> PExpr -> EvalSteps PExpr
 handlePeriod cases onOddPi x = do
                     p <- linearForm x Pi
                     case p of
@@ -279,8 +279,8 @@ handlePeriod cases onOddPi x = do
                                             (m, r) = properFraction n
                                             q = cases r b
                                          in if even m
-                                                then q
-                                                else q >>= onOddPi
+                                                then q >>= automaticSymplify
+                                                else q >>= onOddPi >>= automaticSymplify
                         _ -> fail "Could not handle period"
 
 simplifyFun :: PExpr -> EvalSteps PExpr
