@@ -27,3 +27,18 @@ integrate u x = do
                   u' <- u
                   x' <- x
                   I.integrate u' x'
+
+{-|
+    Calcula la integral definida de una expresion usando la regla de barrow
+
+    \[\int_{a}^{b} u(x) \, dx = U(b) - U(a)\]
+
+    donde \(U(x)\) se consigue integrando \(u(x)\)
+-}
+definiteIntegral :: Expr -> Expr -> Expr -> Expr -> Expr
+definiteIntegral u x a b = do
+                              u' <- u
+                              x' <- x
+                              a' <- a
+                              b' <- b
+                              I.definiteIntegral u' x' a' b'
