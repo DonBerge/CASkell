@@ -3,6 +3,7 @@ module Calculus where
 
 import Expr
 import qualified Calculus.Derivate as D
+import qualified Calculus.Integrate as I
 
 derivate :: Expr -> Expr -> Expr
 derivate u x = do
@@ -20,3 +21,9 @@ derivateMultiple u x n = do
         loopDeriv u x n = do
                             dx <- D.derivate u x
                             loopDeriv dx x (n-1)
+
+integrate :: Expr -> Expr -> Expr
+integrate u x = do
+                  u' <- u
+                  x' <- x
+                  I.integrate u' x'

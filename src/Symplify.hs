@@ -267,7 +267,7 @@ mulByNeg (Add xs) = all mulByNeg xs
 mulByNeg x = true $ isNegative x
 
 simplifySqrt :: PExpr -> EvalSteps PExpr
-simplifySqrt x = simplifyPow x (1/2)
+simplifySqrt x = simplifyPow x 0.5
 
 ----------------
 
@@ -279,8 +279,8 @@ handlePeriod cases onOddPi x = do
                                             (m, r) = properFraction n
                                             q = cases r b
                                          in if even m
-                                                then q >>= automaticSymplify
-                                                else q >>= onOddPi >>= automaticSymplify
+                                                then q
+                                                else q >>= onOddPi
                         _ -> fail "Could not handle period"
 
 simplifyFun :: PExpr -> EvalSteps PExpr
