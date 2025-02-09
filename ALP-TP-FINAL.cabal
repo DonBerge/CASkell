@@ -67,6 +67,7 @@ library
                       Classes.EvalSteps
                       Calculus
                       TriBool
+                      Structure
                       Symplify
                       Expr
                       Evaluate.Numeric
@@ -89,6 +90,7 @@ library
     -- Directories containing source files.
     hs-source-dirs:   src
                       src/Calculus
+                      src/Structure
                       src/Simplification
                       src/Classes
     main-is:          Main.hs
@@ -133,6 +135,7 @@ test-suite cas-test
                       src
                       src/Calculus
                       src/Simplification
+                      src/Structure
                       src/Classes
 
     -- The entrypoint to the test suite.

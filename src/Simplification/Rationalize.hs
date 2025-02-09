@@ -1,9 +1,11 @@
+{-# LANGUAGE ViewPatterns #-}
+
 module Simplification.Rationalize (
     rationalize,
     rationalSimplify
 ) where
-import Symplify
 
+{-
 import Control.Monad
 import Data.Bifunctor
 
@@ -14,6 +16,27 @@ import qualified Number as N
 import qualified Simplification.Algebraic as Algebraic
 
 import Simplification.PolyTools
+-}
+
+import Expr
+import Structure
+
+rationalize :: Expr -> Expr
+rationalize (structure -> Pow x y) = (rationalize x) ** y
+rationalize (structure -> Mul xs) = product $ fmap rationalize xs
+rationalize u@(structure -> Add (f :|| _)) = let
+                                                g = rationalize f
+                                                h = rationalize (u - f)
+                                             in
+                                                rationalizeSum g h
+rationalize u = u
+
+rationalizeSum :: Expr -> Expr -> Expr
+rationalizeSum = undefined
+
+rationalSimplify :: Expr -> Expr
+rationalSimplify = undefined
+{-
 
 rationalize :: PExpr -> EvalSteps PExpr
 rationalize (Pow x y) = rationalize x >>= (`simplifyPow` y)
@@ -86,3 +109,4 @@ rationalSimplify = (=<<) rationalSimplify'
                                 n' <- recQuotient n ggcd v
                                 d' <- recQuotient d ggcd v
                                 simplifyNumberAndSign n' d' v
+-}

@@ -11,7 +11,7 @@ import Symplify
 
 import Data.List
 
-import Simplification.Rationalize
+-- import Simplification.Rationalize
 
 type Expr = EvalSteps PExpr
 
@@ -45,8 +45,8 @@ instance Fractional Expr where
     p / q = do
               p' <- p
               q' <- q
-              pdivq <- simplifyDiv p' q'
-              rationalize pdivq
+              simplifyDiv p' q'
+              -- rationalize pdivq
 
 makeFun :: (PExpr -> PExpr) -> Expr -> Expr
 makeFun f = (=<<) (simplifyFun . f)
