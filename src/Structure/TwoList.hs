@@ -6,10 +6,12 @@
 module TwoList (
   TwoList(..),
   NonEmpty( (:|) ),
+  toList
 )
 where
 
-import Data.List.NonEmpty
+import Data.List.NonEmpty ( NonEmpty(..) ) 
+import qualified Data.List.NonEmpty as NE
 
 data TwoList a = a :|| NonEmpty a
   deriving (Eq, Show)
@@ -28,3 +30,5 @@ instance Traversable TwoList where
 instance Semigroup (TwoList a) where
   (x :|| xs) <> (y :|| ys) = x :|| (xs <> (y :| []) <> ys)
 
+toList :: TwoList a -> [a]
+toList (x :|| xs) = x : NE.toList xs

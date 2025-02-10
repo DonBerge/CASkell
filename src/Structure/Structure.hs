@@ -15,16 +15,15 @@ module Structure (
 )
 where
 
-import TwoList
+import TwoList (TwoList(..))
 
 import qualified PExpr as P
-import qualified Symplify as S
 import qualified Number as N
 
 import Expr
 import Classes.EvalSteps (EvalSteps(unEvalSteps))
 import Symplify (simplifyFun)
-import Data.List.NonEmpty (toList)
+import Data.List.NonEmpty (toList, NonEmpty(..))
 
 data SExpr = Number N.Number | Symbol String | Add (TwoList Expr) | Mul (TwoList Expr) | Pow Expr Expr | Fun String (NonEmpty Expr) | Undefined
   deriving (Eq, Show)

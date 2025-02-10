@@ -1,7 +1,76 @@
+{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 module Simplification.PolyTools where
 import Prelude hiding (exponent)
 
+import Expr
+import Classes.Assumptions
+import Structure
+import qualified Simplification.Algebraic as Algebraic
+
+import qualified Number as N
+
+import Data.List
+
+isSymbol :: Expr -> Bool
+isSymbol (structure -> Symbol _) = True
+isSymbol _ = False
+
+variables :: Expr -> [Expr]
+variables (structure -> Number _) = []
+variables u@(structure -> Pow v w)
+    | true (isInteger w &&& isPositive (w - 1)) = variables v
+    | otherwise = [u]
+variables (structure -> Add us) = foldl union [] $ fmap variables us
+variables (structure -> Mul us) = foldl union [] $ fmap variables us
+variables u = [u]
+
+-- * Manipulación de polinomios
+
+{-|
+    Dada una expresion algebraica, si la expresion es un monomio sobre \(x\) entonces 
+    devuelve el par \((c,m)\) donde \(c\) es el coeficiente del monomio y \(m\) es el grado del monomio.
+    Si la expresion no es un monomio sobre \(x\) entonces devuelve un error.
+-}
+
+operands :: Expr -> [Expr]
+operands (structure -> Add us) = foldr (:) [] us
+operands (structure -> Mul us) = foldr (:) [] us
+operands (structure -> Pow b e) = [b,e]
+operands (structure -> Fun _ us) = foldr (:) [] us
+operands u = [u]
+
+freeOf :: Expr -> Expr -> Bool
+freeOf u t
+    | u == t = False
+freeOf (structure -> Symbol _) _ = True
+freeOf (structure -> Number _) _ = True
+freeOf u t = all (`freeOf` t) $ operands u
+
+coefficientMonomialGPE :: Expr -> Expr-> (Expr, Integer)
+coefficientMonomialGPE u x
+    | u == x = (1, 1)
+coefficientMonomialGPE (structure -> Pow base (structure -> Number exponent)) x
+    | true (base == x &&& isInteger exponent &&& exponent > 1) = (1, N.numerator exponent)
+coefficientMonomialGPE u@(structure -> Mul us) x = foldr combine (u,0) $ fmap (`coefficientMonomialGPE` x) us
+    where
+        combine (c,m) (_,0) = (c,m)
+        combine (_,_) (_,m) = (u / (x ** (fromInteger m)),m)
+coefficientMonomialGPE u x
+    | freeOf u x = (u,0)
+    | otherwise = error $ show u ++ " no es un monomio sobre " ++ show x
+    
+--coefficientMonomialGPE (Pow base (Number exponent)) x
+--    | true $ (base == x) &&& isInteger exponent &&& (exponent > 1) = return (1, N.numerator exponent)
+--coefficientMonomialGPE u@(Mul us) x = mapM (`coefficientMonomialGPE` x) us >>= foldM combine (u,0)
+--    where
+--        combine (c,m) (_,0) = return (c,m)
+--        combine (_, _) (_, m) = simplifyPow x (fromInteger m) >>= simplifyDiv u >>= \c -> return (c, m)
+--coefficientMonomialGPE u x
+--    | freeOf u x = return (u,0)
+--    | otherwise = fail $ show u ++ " no es un monomio sobre " ++ show x
+
+{-
 import PExpr
 
 import qualified Number as N
@@ -11,6 +80,7 @@ import qualified Simplification.Algebraic as Algebraic
 
 import Data.List (union)
 import Symplify
+
 
 
 isSymbol :: PExpr -> Bool
@@ -468,3 +538,4 @@ lcmList us = do
             where
                 removeEachElement :: [a] -> [[a]]
                 removeEachElement xs = [take i xs ++ drop (i + 1) xs | i <- [0..length xs - 1]]
+-}
