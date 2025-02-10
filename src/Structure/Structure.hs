@@ -1,3 +1,4 @@
+{-# LANGUAGE PatternSynonyms #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-|
@@ -8,7 +9,8 @@ module Structure (
     SExpr(..),
     structure,
     TwoList(..),
-    NonEmpty(..)
+    NonEmpty(..),
+    pattern Exp
 )
 where
 
@@ -50,3 +52,6 @@ structure x = case unEvalSteps x of
 
         structure' (P.Fun s []) = Symbol s
         structure' (P.Fun s (x:xs)) = Fun s (makeExpr x :| (map makeExpr xs))
+  
+pattern Exp :: Expr -> SExpr
+pattern Exp x = Fun "Exp" (x :| [])

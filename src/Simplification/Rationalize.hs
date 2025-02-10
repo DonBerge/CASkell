@@ -5,21 +5,30 @@ module Simplification.Rationalize (
     rationalSimplify
 ) where
 
-{-
-import Control.Monad
-import Data.Bifunctor
+import Expr
+import Structure
 
-import Data.List
+import Classes.Assumptions
 
 import qualified Number as N
 
-import qualified Simplification.Algebraic as Algebraic
+numerator :: Expr -> Expr
+numerator (structure -> Number n) = fromInteger $ N.numerator n
+numerator (structure -> Mul xs) = product $ fmap numerator xs
+numerator (structure -> Pow _ y)
+    | true $ isNegative y = 1
+numerator (structure -> Exp x)
+    | true $ isNegative x = 1
+numerator x = x
 
-import Simplification.PolyTools
--}
-
-import Expr
-import Structure
+denominator :: Expr -> Expr
+denominator (structure -> Number n) = fromInteger $ N.denominator n
+denominator (structure -> Mul xs) = product $ fmap denominator xs
+denominator u@(structure -> Pow _ y)
+    | true $ isNegative y = recip u
+denominator (structure -> Exp x)
+    | true $ isNegative x = exp (-x)
+denominator _ = 1
 
 rationalize :: Expr -> Expr
 rationalize (structure -> Pow x y) = (rationalize x) ** y
@@ -32,37 +41,25 @@ rationalize u@(structure -> Add (f :|| _)) = let
 rationalize u = u
 
 rationalizeSum :: Expr -> Expr -> Expr
-rationalizeSum = undefined
-
+rationalizeSum u v = let
+                        m = numerator u
+                        r = denominator u
+                        n = numerator v
+                        s = denominator v
+                      in
+                        if r == 1 && s == 1
+                            then u + v
+                            else (rationalizeSum (m*s) (n*r)) / (r*s)
 rationalSimplify :: Expr -> Expr
 rationalSimplify = undefined
+    where
+        numberCoefficientList (structure -> Number p) = [p]
+        numberCoefficientList (structure -> Mul ((structure -> Number p) :|| _)) = [p]
+        numberCoefficientList (structure -> Add us) = concatMap numberCoefficientList us
+        numberCoefficientList _ = [1]
+
+
 {-
-
-rationalize :: PExpr -> EvalSteps PExpr
-rationalize (Pow x y) = rationalize x >>= (`simplifyPow` y)
-rationalize (Mul xs) = mapM rationalize xs >>= simplifyProduct
-rationalize (Add []) = return 0
-rationalize (Add (x:xs)) = do
-                            g <- rationalize x
-                            h <- rationalize (Add xs)
-                            rationalizeSum g h
-rationalize u = return u
-rationalizeSum :: PExpr -> PExpr -> EvalSteps PExpr
-
-rationalizeSum u v = do
-                        m <- numerator u
-                        r <- denominator u
-                        n <- numerator v
-                        s <- denominator v
-                        if r == 1 && s == 1
-                            then simplifySum [u,v]
-                            else do
-                                    ms <- simplifyProduct [m,s]
-                                    nr <- simplifyProduct [n,r]
-                                    n' <- rationalizeSum ms nr
-                                    d' <- simplifyProduct [r,s]
-                                    simplifyDiv n' d'
-                                    -- (rationalizeSum ms nr) / (simplifyProduct [r,s])
 
 rationalSimplify :: EvalSteps PExpr -> EvalSteps PExpr
 rationalSimplify = (=<<) rationalSimplify'

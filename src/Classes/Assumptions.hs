@@ -7,7 +7,10 @@
 -- Este modulo permite definir una serie de funciones que permiten deducir estas propiedades. Soporta logica de 3 valores para el
 -- caso donde se desconoce si la propiedad se cumple o no.
 
-module Classes.Assumptions where
+module Classes.Assumptions (
+    Assumptions(..),
+    module TriBool
+) where
 
 import TriBool
 
