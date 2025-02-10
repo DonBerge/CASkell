@@ -17,7 +17,6 @@ import Data.Ratio ((%))
 import qualified Data.Ratio as R
 
 import Classes.Assumptions
-import TriBool
 
 -- | El tipo 'Number' puede representar un entero, una fracción o un número real.
 data Number = Int Integer | Fraction Rational | Real Double
