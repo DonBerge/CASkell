@@ -2,7 +2,9 @@
 
 module Simplification.Rationalize (
     rationalize,
-    rationalSimplify
+    rationalSimplify,
+    numerator,
+    denominator
 ) where
 
 import Expr

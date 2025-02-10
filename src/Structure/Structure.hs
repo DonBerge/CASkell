@@ -10,17 +10,21 @@ module Structure (
     structure,
     TwoList(..),
     NonEmpty(..),
-    pattern Exp
+    pattern Exp,
+    construct
 )
 where
 
 import TwoList
 
 import qualified PExpr as P
+import qualified Symplify as S
 import qualified Number as N
 
 import Expr
 import Classes.EvalSteps (EvalSteps(unEvalSteps))
+import Symplify (simplifyFun)
+import Data.List.NonEmpty (toList)
 
 data SExpr = Number N.Number | Symbol String | Add (TwoList Expr) | Mul (TwoList Expr) | Pow Expr Expr | Fun String (NonEmpty Expr) | Undefined
   deriving (Eq, Show)
@@ -52,6 +56,16 @@ structure x = case unEvalSteps x of
 
         structure' (P.Fun s []) = Symbol s
         structure' (P.Fun s (x:xs)) = Fun s (makeExpr x :| (map makeExpr xs))
-  
+
+construct :: SExpr -> Expr
+construct (Number n) = return $ P.Number n
+construct (Symbol s) = return $ P.Fun s []
+construct (Add xs) = sum xs
+construct (Mul xs) = product xs
+construct (Pow b e) = b ** e
+construct (Fun s xs) = sequence xs >>= simplifyFun . P.Fun s . toList
+construct (Undefined) = fail "Undefined expression"
+
+
 pattern Exp :: Expr -> SExpr
 pattern Exp x = Fun "Exp" (x :| [])

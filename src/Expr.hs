@@ -10,6 +10,7 @@ import PExpr
 import Symplify
 
 import Data.List
+import Number (Number)
 
 -- import Simplification.Rationalize
 
@@ -108,8 +109,8 @@ instance Assumptions Expr where
 
 -------
 
-number :: Rational -> Expr
-number = fromRational
+number :: Number -> Expr
+number = return . Number
 
 symbol :: String -> Expr
 symbol = pure . Symbol

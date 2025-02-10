@@ -1,81 +1,78 @@
+{-# LANGUAGE PatternGuards #-}
+{-# LANGUAGE ViewPatterns #-}
+{-# OPTIONS_GHC -Wno-type-defaults #-}
 module Simplification.Algebraic (
     expand,
     expand'
 ) where
 
-import PExpr
 
-import Symplify
+import Expr
+import Structure
 
+import Simplification.Rationalize
 import Math.Combinatorics.Exact.Binomial (choose)
 
-expand :: EvalSteps PExpr -> EvalSteps PExpr
-expand x = x >>= expand'
+expand' = expand . return
 
-expand' :: PExpr -> EvalSteps PExpr
-expand' (Add []) = return 0
-expand' (Add [x]) = expand' x >>= expandFraction
-expand' (Add (x:xs)) = do
-                        x' <- expand' x
-                        xs' <- expand' (Add xs)
-                        simplifySum [x',xs'] >>= expandFraction -- autosimplificacion puede generar terminos no expanadidos, por lo que hay que expnadir otra vez
+{-|
+    Expansión de expresiones, una expresion esta expandida si `variables` no contiene ninguna suma
+-}
+expand :: Expr -> Expr
+expand (structure -> Add xs) = expandFraction $ sum $ fmap expand xs
+expand (structure -> Mul xs) = foldr1 expandProduct $ fmap expand xs
+expand (structure -> Pow b e)
+    | Number f <- structure e = let
+                                    b' = expand b
+                                    (fl, m) = properFraction f
+                                 in 
+                                    expandProduct (expandPower b' fl) (b' ** (number m))
+    | otherwise = let
+                    b' = expand b
+                    e' = expand e
+                  in
+                    expandFraction $ b' ** e'
+expand (structure -> Fun f xs) = construct $ Fun f $ fmap expand xs
+expand u = u
 
-expand' (Mul []) = return 1
-expand' (Mul [x]) = expand' x >>= expandFraction
-expand' (Mul (x:xs)) = do
-                        x' <- expand' x
-                        xs' <- expand' (Mul xs)
-                        expandProduct x' xs'
+{-|
+    Expansion utilizando la propiedad distributiva
+    \[
+        a(\sum b_i) = \sum a\cdot b_i
+    \]
+-}
+expandProduct :: Expr -> Expr -> Expr
+expandProduct (structure -> Add rs) s = expand (sum $ fmap (`expandProduct` s) rs) -- auto simplificacion puede generar terminos no expandidos, hay que expandir de nuevo
+expandProduct r s@(structure -> Add _) = expandProduct s r
+expandProduct r s = expandFraction $ r * s 
 
-expand' (Pow b (Number f))
-    | f > 0 = let
-                (fl, m) = properFraction f
-              in do 
-                    b' <- expand' b
-                    t' <- if f == m 
-                        then return $ Pow b (Number m) 
-                        else expand $ simplifyPow b' (Number m)
-                    expandPower b' fl >>= expandProduct t'
+{-|
+    Expansion utilizando el binomio de Newton
+    \[
+        (a + b)^n = \sum_{k=0}^{n} \binom{n}{k} a^{n-k} b^k
+    \]
+-}
 
-expand' (Pow b e) = do
-                        b' <- expand' b
-                        e' <- expand' e
-                        expandFraction $ Pow b' e'
-
-expand' (Fun f xs) = (Fun f <$> mapM expand' xs) >>= expandFraction
-
-expand' u = expandFraction u
-
-expandFraction :: PExpr -> EvalSteps PExpr
-expandFraction x = do
-                    n <- numerator x
-                    d <- denominator x
-                    if d == 1
-                        then return x
-                        else expand' d >>= simplifyDiv n  --numerator x / expand' d
-
-expandProduct :: PExpr -> PExpr -> EvalSteps PExpr
-expandProduct (Add []) _ = return 0
-expandProduct (Add (r:rs)) s = do
-                                r' <- expandProduct r s
-                                rs' <- expandProduct (Add rs) s
-                                simplifySum [r',rs'] >>= expand' -- autosimplificacion puede generar terminos no expanadidos, por lo que hay que expnadir otra vez
-expandProduct r s@(Add _) = expandProduct s r
-expandProduct r s = simplifyProduct [r,s] >>= expandFraction
-
--- Se asume que n es no negativo
-expandPower :: PExpr -> Integer -> EvalSteps PExpr
-expandPower _ 0 = return 1
-expandPower u 1 = return u
-expandPower 0 _ = return 0
-expandPower (Add []) _ = return 0
-expandPower (Add [f]) n = simplifyPow f (fromInteger n) >>= expand'
-expandPower (Add (f:rs)) n = sequence [ do
-                                            cf' <- cf k
-                                            cr' <- expandPower (Add rs) (n-k)
-                                            expandProduct cf' cr'  | k <- [0..n] ] >>= simplifySum >>= expandFraction -- autosimplificacion puede generar terminos no expanadidos, por lo que hay que expnadir otra vez
+expandPower :: Expr -> Integer -> Expr
+expandPower u n
+    | n < 0 = 1 / expandPower u (-n)
+expandPower _ 0 = 1
+expandPower u 1 = u
+expandPower (structure -> Add (f :|| rs)) n = let
+                                                rs' = sum rs
+                                              in
+                                                sum [expandProduct (cf k) (expandPower rs' (n-k)) | k <- [0..n]]
     where
-        cf k = do
-                fk <- simplifyPow f (fromInteger k)
-                simplifyProduct [fromInteger (choose n k), fk]
-expandPower u n = simplifyPow u (fromInteger n) >>= expandFraction
+        cf k = (fromInteger $ choose n k) * f ** (fromInteger k)
+expandPower u n = u ** (fromInteger n)
+
+{-|
+    Expande el denominador de una expresion
+-}
+expandFraction :: Expr -> Expr
+expandFraction x = let
+                    n = numerator x
+                    d = denominator x
+                   in if d == 1
+                    then x
+                    else n / (expand d)
