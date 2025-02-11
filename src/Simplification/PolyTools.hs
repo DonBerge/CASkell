@@ -8,12 +8,13 @@ import Classes.Assumptions
 import Structure
 import qualified Simplification.Algebraic as Algebraic
 
-import Simplification.Rationalize (numerator, denominator)
+import Simplification.Rationalize (denominator)
 
 import qualified Number as N
 
 
 import Data.List
+import Debug.Trace (trace)
 
 isSymbol :: Expr -> Bool
 isSymbol (structure -> Symbol _) = True
@@ -63,7 +64,7 @@ coefficientMonomialGPE u x
     | u == x = (1, 1)
 coefficientMonomialGPE (structure -> Pow base (structure -> Number exponent)) x
     | true (base == x &&& isInteger exponent &&& exponent > 1) = (1, N.numerator exponent)
-coefficientMonomialGPE u@(structure -> Mul us) x = foldr combine (u,0) $ fmap (`coefficientMonomialGPE` x) us
+coefficientMonomialGPE u@(structure -> Mul us) x = foldl combine (u,0) $ fmap (`coefficientMonomialGPE` x) us
     where
         combine (c,m) (_,0) = (c,m)
         combine (_,_) (_,m) = (u / (x ** (fromInteger m)),m)
@@ -324,33 +325,26 @@ mbRemainder p q l = snd $ mbPolyDivide p q l
 pseudoDivision :: Expr -> Expr -> Expr -> (Expr, Expr)
 pseudoDivision _ 0 _ = error "Pseudo-division by zero"
 pseudoDivision u v x = let
+                        p = 0
+                        s = u
                         m = degreeGPE u x
                         n = degreeGPE v x
                         delta = max (m-n+1) 0
                         lcv = coefficientGPE v x n -- Equivalente a lcv = leadingCoefficient v x, pero mas eficiente porque el grado ya esta computado
                         sigma = 0
                        in 
-                        pseudoDivision' 0 u m n delta lcv sigma
+                        pseudoDivision' p s m n delta lcv sigma
     where
         pseudoDivision' p s m n delta lcv sigma
             | m >= n = let
                         lcs = coefficientGPE s x m -- Equivalente a lcs = leadingCoefficient s x, pero mas eficiente porque el grado ya esta computado
                         x' = x ** (fromInteger (m-n))
-                        --x' <- simplifyPow x (fromInteger $ m-n) -- 1
                         p' = lcv * p + lcs * x' 
-                        --p <- do
-                        --        a' <- simplifyProduct [lcv,p]
-                        --        b' <- simplifyProduct [lcs,x']
-                        --        simplifySum [a',b']
-                        s = Algebraic.expand $ lcv * s - lcs * v * x'
-                        --s <- do
-                        --        a' <- simplifyProduct [lcv, s]
-                        --        b' <- simplifyProduct [lcs, v, x']
-                        --        Algebraic.expand $ simplifySub a' b'
-                        -- let sigma = sigma + 1
-                        m = degreeGPE s x
+                        s' = Algebraic.expand $ lcv * s - lcs * v * x'
+                        sigma' = sigma+1
+                        m' = degreeGPE s' x
                         in
-                            pseudoDivision' p s m n delta lcv (sigma+1)
+                            pseudoDivision' p' s' m' n delta lcv sigma'
             | otherwise = let
                             lcv' = lcv ** (fromInteger (delta-sigma))-- simplifyPow lcv (fromInteger $ delta-sigma)
                             q = Algebraic.expand $ lcv'*p
@@ -374,14 +368,14 @@ pseudoRem u v x = snd $ pseudoDivision u v x
 normalize :: Foldable t => Expr -> t Expr -> Expr
 normalize 0 _ = return 0
 -- Dividir por el coeficiente lider entre todos los coeficientes y expandir
-normalize u l = Algebraic.expand $ u / (foldr leadingCoefficient u l)
+normalize u l = Algebraic.expand $ u / (foldl leadingCoefficient u l)
 
 {-|
     Verifica si un polinomio multivariable esta normalizado
 -}
 normalized :: Foldable t => Expr -> t Expr -> Bool
 normalized u l = let
-                    lc = foldr leadingCoefficient u l
+                    lc = foldl leadingCoefficient u l
                  in
                     lc == 1 || lc == 0
 
