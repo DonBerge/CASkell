@@ -14,8 +14,6 @@ module Symplify (
     mulByNeg,
     freeOf,
     linearForm,
-    numerator,
-    denominator,
     simplifyFun,
     module PExpr,
 ) where
@@ -330,24 +328,4 @@ simplifyFun x = return x
 
 
 ------------------
-
-numerator :: PExpr -> EvalSteps PExpr
-numerator (Number n) = return $ fromInteger $ N.numerator n
-numerator (Add []) = return 0
-numerator (Mul xs) = mapM numerator xs >>= simplifyProduct
-numerator (Pow _ y)
-    | true $ isNegative y = return 1
-numerator (Exp x)
-    | true $ isNegative x = return 1
-numerator x = return x    
-
-denominator :: PExpr -> EvalSteps PExpr
-denominator (Number n) = return $ fromInteger $ N.denominator n
-denominator (Mul xs) = mapM denominator xs >>= simplifyProduct
-denominator u@(Pow _ y)
-    | true $ isNegative y = simplifyPow u (-1)
-denominator (Exp x)
-    | true $ isNegative x = Exp <$> simplifyProduct [x,-1]
-denominator _ = return 1
-
 ----
