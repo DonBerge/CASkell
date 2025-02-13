@@ -1,6 +1,7 @@
 {-# LANGUAGE PatternSynonyms #-}
 module Simplification.Fu where
 
+{-
 import PExpr
 
 import Symplify
@@ -320,3 +321,4 @@ fu x = x
        whenExists ["Sin", "Cos"] (choice [rl2, const x, tr8, return])
         >>=
        choice [tr2i, return]
+-}
