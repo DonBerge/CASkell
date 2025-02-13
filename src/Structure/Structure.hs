@@ -11,6 +11,21 @@ module Structure (
     TwoList(..),
     NonEmpty(..),
     pattern Exp,
+    pattern Sin,
+    pattern Cos,
+    pattern Tan,
+    pattern Cot,
+    pattern Sec,
+    pattern Csc,
+    pattern Asin,
+    pattern Acos,
+    pattern Atan,
+    pattern Asinh,
+    pattern Acosh,
+    pattern Atanh,
+    pattern Sinh,
+    pattern Cosh,
+    pattern Tanh,
     construct
 )
 where
@@ -68,3 +83,48 @@ construct (Undefined) = fail "Undefined expression"
 
 pattern Exp :: Expr -> SExpr
 pattern Exp x = Fun "Exp" (x :| [])
+
+pattern Sin :: Expr -> SExpr
+pattern Sin x = Fun "Sin" (x :| [])
+
+pattern Cos :: Expr -> SExpr
+pattern Cos x = Fun "Cos" (x :| [])
+
+pattern Tan :: Expr -> SExpr
+pattern Tan x = Fun "Tan" (x :| [])
+
+pattern Cot :: Expr -> SExpr
+pattern Cot x = Fun "Cot" (x :| [])
+
+pattern Sec :: Expr -> SExpr
+pattern Sec x = Fun "Sec" (x :| [])
+
+pattern Csc :: Expr -> SExpr
+pattern Csc x = Fun "Csc" (x :| [])
+
+pattern Asin :: Expr -> SExpr
+pattern Asin x = Fun "Asin" (x :| [])
+
+pattern Acos :: Expr -> SExpr
+pattern Acos x = Fun "Acos" (x :| [])
+
+pattern Atan :: Expr -> SExpr
+pattern Atan x = Fun "Atan" (x :| [])
+
+pattern Asinh :: Expr -> SExpr
+pattern Asinh x = Fun "Asinh" (x :| [])
+
+pattern Acosh :: Expr -> SExpr
+pattern Acosh x = Fun "Acosh" (x :| [])
+
+pattern Atanh :: Expr -> SExpr
+pattern Atanh x = Fun "Atanh" (x :| [])
+
+pattern Sinh :: Expr -> SExpr
+pattern Sinh x = Fun "Sinh" (x :| [])
+
+pattern Cosh :: Expr -> SExpr
+pattern Cosh x = Fun "Cosh" (x :| [])
+
+pattern Tanh :: Expr -> SExpr
+pattern Tanh x = Fun "Tanh" (x :| [])

@@ -6,6 +6,8 @@ Detailed description of the module's functionality, including any important
 details or usage examples.
 -}
 module Calculus.Derivate where 
+
+{-
 import Symplify
 
 import Control.Monad ((>=>))
@@ -70,3 +72,4 @@ derivateFun (Atanh v) = simplifyPow v 2 >>= simplifySub 1 >>= simplifyDiv 1 -- 1
 derivateFun (Exp v) = return $ Exp v
 derivateFun (Log v) = simplifyDiv 1 v
 derivateFun u = fail $ "Se desconoce la derivada de la funcion " ++ show u
+-}
