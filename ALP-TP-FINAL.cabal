@@ -64,6 +64,7 @@ library
                       Simplification.Fu
                       Simplification.PolyTools
                       Simplification.Rationalize
+                      Simplification.Trigonometric
                       Classes.EvalSteps
                       Classes.StepTree
                       Calculus
@@ -81,8 +82,8 @@ library
                     Calculus.Integrate
 
     -- LANGUAGE extensions used by modules in this package.
-    other-extensions: PatternSynonyms
-                      NoImplicitPrelude
+    other-extensions: PatternSynonyms, 
+                      ViewPatterns
 
     -- Other library packages from which modules are imported.
     build-depends:    base,

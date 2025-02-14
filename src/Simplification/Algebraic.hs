@@ -3,6 +3,7 @@
 {-# OPTIONS_GHC -Wno-type-defaults #-}
 module Simplification.Algebraic (
     expand,
+    expandMainOp
 ) where
 
 
@@ -72,3 +73,15 @@ expandFraction x = let
                    in if d == 1
                     then x
                     else n / (expand d)
+
+{-|
+    Expande la expresion solo una vez, las subexpresiones no se expanden
+-}
+expandMainOp :: Expr -> Expr
+expandMainOp (structure -> Mul xs) = foldr1 expandProduct xs
+expandMainOp (structure -> Pow b e)
+    | Number f <- structure e = let
+                                    (fl, m) = properFraction f
+                                 in 
+                                    expandProduct (expandPower b fl) (b ** (number m))
+expandMainOp u = u
