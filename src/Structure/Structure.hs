@@ -1,3 +1,4 @@
+{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
@@ -10,7 +11,9 @@ module Structure (
     structure,
     TwoList(..),
     NonEmpty(..),
+    pattern Pi,
     pattern Exp,
+    pattern Log,
     pattern Sin,
     pattern Cos,
     pattern Tan,
@@ -26,6 +29,10 @@ module Structure (
     pattern Sinh,
     pattern Cosh,
     pattern Tanh,
+    pattern Derivative,
+    pattern Integral,
+    freeOf,
+    operands,
     construct
 )
 where
@@ -40,7 +47,7 @@ import Classes.EvalSteps (EvalSteps(unEvalSteps))
 import Symplify (simplifyFun)
 import Data.List.NonEmpty (toList, NonEmpty(..))
 
-data SExpr = Number N.Number | Symbol String | Add (TwoList Expr) | Mul (TwoList Expr) | Pow Expr Expr | Fun String (NonEmpty Expr) | Undefined
+data SExpr = Number N.Number | Symbol String | Add (TwoList Expr) | Mul (TwoList Expr) | Pow Expr Expr | Fun String (NonEmpty Expr) | Undefined String
   deriving (Eq, Show)
 
 makeExpr :: P.PExpr -> Expr
@@ -48,7 +55,7 @@ makeExpr = return
 
 structure :: Expr -> SExpr
 structure x = case unEvalSteps x of
-                (Left _, _) -> Undefined
+                (Left e, _) -> Undefined e
                 (Right x', _) -> structure' x'
 
     where
@@ -78,11 +85,30 @@ construct (Add xs) = sum xs
 construct (Mul xs) = product xs
 construct (Pow b e) = b ** e
 construct (Fun s xs) = sequence xs >>= simplifyFun . P.Fun s . toList
-construct (Undefined) = fail "Undefined expression"
+construct (Undefined error) = fail error
 
+freeOf :: Expr -> Expr -> Bool
+freeOf u t
+    | u == t = False
+freeOf (structure -> Symbol _) _ = True
+freeOf (structure -> Number _) _ = True
+freeOf u t = all (`freeOf` t) $ operands u
+
+operands :: Expr -> [Expr]
+operands (structure -> Add (x :|| y :| xs)) = x:y:xs
+operands (structure -> Mul (x :|| y :| xs)) = x:y:xs
+operands (structure -> Pow b e) = [b, e]
+operands (structure -> Fun _ xs) = toList xs
+operands _ = []
+
+pattern Pi :: SExpr
+pattern Pi = Symbol "Pi"
 
 pattern Exp :: Expr -> SExpr
 pattern Exp x = Fun "Exp" (x :| [])
+
+pattern Log :: Expr -> SExpr
+pattern Log x = Fun "Log" (x :| [])
 
 pattern Sin :: Expr -> SExpr
 pattern Sin x = Fun "Sin" (x :| [])
@@ -128,3 +154,9 @@ pattern Cosh x = Fun "Cosh" (x :| [])
 
 pattern Tanh :: Expr -> SExpr
 pattern Tanh x = Fun "Tanh" (x :| [])
+
+pattern Derivative :: Expr -> Expr -> SExpr
+pattern Derivative u x = Fun "Derivate" (u :| [x])
+
+pattern Integral :: Expr -> Expr -> SExpr
+pattern Integral u x = Fun "Integrate" (u :| [x])

@@ -36,28 +36,6 @@ variables u = [u]
     devuelve el par \((c,m)\) donde \(c\) es el coeficiente del monomio y \(m\) es el grado del monomio.
     Si la expresion no es un monomio sobre \(x\) entonces devuelve un error.
 -}
-
-operands :: Expr -> [Expr]
-operands (structure -> Add us) = foldr (:) [] us
-operands (structure -> Mul us) = foldr (:) [] us
-operands (structure -> Pow b e) = [b,e]
-operands (structure -> Fun _ us) = foldr (:) [] us
-operands u = [u]
-
-freeOf :: Expr -> Expr -> Bool
-freeOf u t
-    | u == t = False
-freeOf (structure -> Symbol _) _ = True
-freeOf (structure -> Number _) _ = True
-freeOf u t = all (`freeOf` t) $ operands u
-
--- * Manipulación de polinomios
-
-{-|
-    Dada una expresion algebraica, si la expresion es un monomio sobre \(x\) entonces 
-    devuelve el par \((c,m)\) donde \(c\) es el coeficiente del monomio y \(m\) es el grado del monomio.
-    Si la expresion no es un monomio sobre \(x\) entonces devuelve un error.
--}
 coefficientMonomialGPE :: Expr -> Expr-> (Expr, Integer)
 coefficientMonomialGPE 0 _ = (0,-1)
 coefficientMonomialGPE u x
