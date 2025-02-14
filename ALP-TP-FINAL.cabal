@@ -65,6 +65,7 @@ library
                       Simplification.PolyTools
                       Simplification.Rationalize
                       Classes.EvalSteps
+                      Classes.StepTree
                       Calculus
                       TriBool
                       Structure
@@ -90,10 +91,10 @@ library
     -- Directories containing source files.
     hs-source-dirs:   src
                       src/Calculus
+                      src/Classes/Monads
                       src/Structure
                       src/Simplification
                       src/Classes
-    main-is:          Main.hs
 
     -- Base language which the package is written in.
     default-language: Haskell2010

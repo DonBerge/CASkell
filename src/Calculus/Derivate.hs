@@ -29,7 +29,7 @@ derivate u@(structure -> Pow v w) x = let
                                         dw = derivate w x
                                       in
                                         w * v**(w-1) * dv + dw * u * log v
-derivate u@(structure -> Add _) x = mapStructure (`derivate` x) u
+derivate u@(structure -> Add _) x = mapStructure (`derivate` x) u -- addStep (du/dx) (suma derivadas) [u, du1, du2, ...]
 derivate u@(structure -> Mul us) x = sum $ fmap ((u*) . logder) us
     where
         logder f = (f `derivate` x) / f
@@ -48,7 +48,7 @@ derivate u x = makeUnevaluatedDerivative u x
 derivateFun :: Expr -> Expr -> Expr
 derivateFun (structure -> Sin v) _ = cos v
 derivateFun (structure -> Cos v) _ = negate $ sin v
-derivateFun (structure -> Tan v) _ = 1 + tan v ** 2
+derivateFun (structure -> Tan v) _ = 1/(cos v ** 2)
 derivateFun (structure -> Cot v) _ = negate $ 1 + cot v ** 2
 derivateFun (structure -> Sec v) _ = tan v * sec v
 derivateFun (structure -> Csc v) _ = negate $ cot v * csc v

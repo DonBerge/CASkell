@@ -12,6 +12,8 @@ import Simplification.PolyTools (variables)
 
 import Data.Bifunctor
 import TwoList (toList)
+import Calculus.Derivate (derivate)
+import Data.List (union)
 
 makeUnevaluatedIntegral :: Expr -> Expr -> Expr
 makeUnevaluatedIntegral u = construct . Integral u
@@ -127,6 +129,7 @@ linearProperties _ _ = fail "No se puede aplicar linealidad de la integral"
 
     Si no se consigue ninguna sustitución que elimine la variable x, la función devuelve Undefined.
 -}
+substitutionMethod :: Expr -> Expr -> Expr
 substitutionMethod f x = foldr ((<|>) . makeSubstitution) failSubstitution $ trialSubstituions f --do
                          --   let p = trialSubstituions f
                          --   foldr ((<|>) . makeSubstitution) failSubstitution p
@@ -146,45 +149,15 @@ substitutionMethod f x = foldr ((<|>) . makeSubstitution) failSubstitution $ tri
         getIntegrationVariable _ _ = fail "La variable de integración debe ser un simbolo"
 
         --makeSubstitution = undefined
-        makeSubstitution g = undefined
-        --makeSubstitution g = if g/=x && not (g `freeOf` x)
-        --                        then do
-        --                            f' <- derivate g x >>= simplifyDiv f -- f' = f / (dg/dx)
-        --                            let v = getIntegrationVariable f' x
-        --                            u <- substitute f' g v 
-        --                            if u `freeOf` x
-        --                                then do
-        --                                        i <- integrate u v
-        --                                        substitute i v g
-        --                                else failSubstitution
-        --                            
-        --                        else failSubstitution
-
-trialSubstituions = undefined
-
-integrate = undefined
-
-{-
-
-{-|
-    @integrate u x@ evalua la integral de la expresión @u@ respecto a @x@.
-
-    Realiza los siguientes pasos:
-
-        1. Intenta evaluar la expresión usando la función @integralTable@
-        2. Si esto falla, intenta aplica la linealidad de la integral, usando la función @linearProperties@
-        3. Si esto falla, intenta aplicar el metodo de sustitución usando la función @substitutionMethod@
-
-    Si todos los pasos fallan, no es posible evaluar la integral y la función devuelve Undefined
--}
-integrate :: PExpr -> PExpr -> EvalSteps PExpr
-integrate u x = integralTable u x
-                    <|>
-                linearProperties u x
-                    <|>
-                substitutionMethod u x
-                    <|>
-                fail "No se puede integrar la expresión"
+        makeSubstitution g = if g/=x && not (g `freeOf` x)
+                                then let
+                                        f' = f / (derivate g x)
+                                        v = getIntegrationVariable f' x
+                                        u = substitute f' g v
+                                     in if u `freeOf` x
+                                        then substitute (integrate u v) v g
+                                        else failSubstitution
+                                else failSubstitution
 
 ---
 
@@ -215,13 +188,33 @@ unionMap f = foldl (\a b -> a `union` f b) []
         3. Bases de potencias: \((x+1)\)
         4. Exponentes de potencias: \(2\)
 -}
-trialSubstituions :: PExpr -> [PExpr]
-trialSubstituions u@(Fun _ xs) = u : (xs `union` unionMap trialSubstituions xs)
-trialSubstituions (Pow a b) = [a,b] `union` trialSubstituions a `union` trialSubstituions b
-trialSubstituions (Mul us) = unionMap trialSubstituions us
-trialSubstituions (Add us) = unionMap trialSubstituions us
+trialSubstituions :: Expr -> [Expr]
+trialSubstituions u@(structure -> Fun _ (x:| xs)) = u : ((x:xs) `union` unionMap trialSubstituions (x:xs))
+trialSubstituions (structure -> Pow a b) = [a,b] `union` trialSubstituions a `union` trialSubstituions b
+trialSubstituions (structure -> Mul us) = unionMap trialSubstituions us
+trialSubstituions (structure -> Add us) = unionMap trialSubstituions us
 trialSubstituions _ = []
 
+
+{-|
+    @integrate u x@ evalua la integral de la expresión @u@ respecto a @x@.
+
+    Realiza los siguientes pasos:
+
+        1. Intenta evaluar la expresión usando la función @integralTable@
+        2. Si esto falla, intenta aplica la linealidad de la integral, usando la función @linearProperties@
+        3. Si esto falla, intenta aplicar el metodo de sustitución usando la función @substitutionMethod@
+
+    Si todos los pasos fallan, no es posible evaluar la integral y la función devuelve Undefined
+-}
+integrate :: Expr -> Expr -> Expr
+integrate u x = integralTable u x
+                    <|>
+                linearProperties u x
+                    <|>
+                substitutionMethod u x
+                    <|>
+                construct (Integral u x) -- Integral desconocida, devolver una integral sin evaluar
 ---
 
 {-|
@@ -231,10 +224,9 @@ trialSubstituions _ = []
     2. Crea dos expresiones @ub@ y @ua@ sustituyendo @x@ por @b@ y @a@ respectivamente
     3. Evalua la diferencia @ub - ua@
 -}
-definiteIntegral :: PExpr -> PExpr -> PExpr -> PExpr -> EvalSteps PExpr
-definiteIntegral u x a b = do
-                            u' <- integrate u x
-                            ub <- substitute u' x b
-                            ua <- substitute u' x a
-                            simplifySub ub ua
--}
+definiteIntegral :: Expr -> Expr -> Expr -> Expr -> Expr
+definiteIntegral u x a b = let
+                            u' = integrate u x
+                           in case structure u' of
+                                Integral _ _ -> construct $ DefiniteIntegral u x a b
+                                _ -> (substitute u' x b) - (substitute u' x a)

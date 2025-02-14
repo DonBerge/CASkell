@@ -31,6 +31,7 @@ module Structure (
     pattern Tanh,
     pattern Derivative,
     pattern Integral,
+    pattern DefiniteIntegral,
     freeOf,
     operands,
     construct,
@@ -168,3 +169,6 @@ pattern Derivative u x = Fun "Derivate" (u :| [x])
 
 pattern Integral :: Expr -> Expr -> SExpr
 pattern Integral u x = Fun "Integrate" (u :| [x])
+
+pattern DefiniteIntegral :: Expr -> Expr -> Expr -> Expr -> SExpr
+pattern DefiniteIntegral u x a b = Fun "Definite_Integral" (u:| [x,a,b])
