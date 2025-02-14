@@ -4,11 +4,15 @@ module Simplification.Trigonometric where
 
 import Expr
 import Structure
+
+import qualified Data.Matrix as Matrix
+
 import Classes.Assumptions
 import Data.Bifunctor (Bifunctor(first, second, bimap))
 import Simplification.Algebraic (expandMainOp)
 import Math.Combinatorics.Exact.Binomial (choose)
 import qualified Simplification.Algebraic as Algebraic
+import Calculus.Integrate (substitute)
 
 {-|
     Reemplaza las ocurrencias de 'tan', 'cot', 'sec' y 'csc' por sus equivalentes en seno y coseno.
@@ -59,19 +63,46 @@ trigExpand = trigExpand' . mapStructure trigExpand
         expandTrigRules u = (sin u, cos u)
 
 
-        multipleAngleSin n (structure -> Add us) = trigExpand $ sin $ sum $ fmap ((fromInteger n)*) us
-        multipleAngleSin n x
-            | n < 0 = - (multipleAngleSin (-n) x)
-        multipleAngleSin 0 _ = 0
-        multipleAngleSin 1 x = sin x
-        multipleAngleSin n x = 2 * cos x * (multipleAngleSin (n-1) x) - multipleAngleSin (n-2) x
-        
+        -- Calcular cos(n*x)
         multipleAngleCos n (structure -> Add us) = trigExpand $ cos $ sum $ fmap ((fromInteger n)*) us
-        multipleAngleCos n x
-            | n < 0 = multipleAngleCos (-n) x
         multipleAngleCos 0 _ = 1
         multipleAngleCos 1 x = cos x
-        multipleAngleCos n x = 2 * cos x * (multipleAngleCos (n-1) x) - multipleAngleCos (n-2) x
+        multipleAngleCos n x 
+            | n < 0 = multipleAngleCos (-n) x
+            | otherwise = let
+                            x' = symbol "_"
+                            f = cheby1 x' n
+                          in
+                           substitute f x' (cos x)
+
+        multipleAngleSin n (structure -> Add us) = trigExpand $ sin $ sum $ fmap ((fromInteger n)*) us -- distribuir n y expandir
+        multipleAngleSin 0 _ = 0
+        multipleAngleSin 1 x = sin x
+        multipleAngleSin n x
+            | n < 0 = - (multipleAngleSin (-n) x)
+            | otherwise = let
+                            x' = symbol "_"
+                            f = cheby2 x' (n-1)
+                          in
+                            Algebraic.expand $ (substitute f x' (cos x)) * sin x 
+
+
+{-|
+    Generación de polinomios de Chebyshev de primera clase, util para realizar la expansión de \(cos(n\cdot x)\)
+-}
+cheby1 :: Integral b => Expr -> b -> Expr
+cheby1 _ 0 = 1
+cheby1 x 1 = x
+cheby1 x n = Algebraic.expand $ Matrix.getElem 1 1 $ (Matrix.fromLists [[2*x,-1],[1,0]] ^ (n-1)) * Matrix.fromLists [[x], [1]]
+
+{-|
+    Generación de polinomios de Chebyshev de segunda clase, util para realizar la expansión de \(sin(n\cdot x)\)
+-}
+cheby2 :: Integral b => Expr -> b -> Expr
+cheby2 _ 0 = 1
+cheby2 x 1 = 2*x
+cheby2 x n = Algebraic.expand $ Matrix.getElem 1 1 $ (Matrix.fromLists [[2*x,-1],[1,0]] ^ n) * Matrix.fromLists [[1], [0]]
+
 
 {-|
     Contraccion de las funciones trigonometricas.

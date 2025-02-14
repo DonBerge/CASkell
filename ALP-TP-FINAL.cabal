@@ -85,6 +85,7 @@ library
 
     -- Other library packages from which modules are imported.
     build-depends:    base,
+                      matrix,
                       exact-combinatorics
 
     -- Directories containing source files.
