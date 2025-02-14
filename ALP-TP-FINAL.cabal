@@ -59,27 +59,25 @@ library
     import:           warnings
 
     -- Modules exported by the library.
-    exposed-modules:  Simplification.TrigExpand
-                      Simplification.Algebraic
-                      Simplification.Fu
+    exposed-modules:  Simplification.Algebraic
                       Simplification.PolyTools
                       Simplification.Rationalize
                       Simplification.Trigonometric
                       Classes.EvalSteps
                       Classes.StepTree
-                      Calculus
                       TriBool
                       Structure
                       Symplify
                       Expr
+                      TwoList
+                      Calculus.Derivate
+                      Calculus.Integrate
                       Evaluate.Numeric
 
     -- Modules included in this library but not exported.
     other-modules:  Number
                     PExpr
                     Classes.Assumptions
-                    Calculus.Derivate
-                    Calculus.Integrate
 
     -- LANGUAGE extensions used by modules in this package.
     other-extensions: PatternSynonyms, 

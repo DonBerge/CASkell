@@ -8,9 +8,14 @@ import Classes.Assumptions
 import Data.Bifunctor (Bifunctor(first, second, bimap))
 import Simplification.Algebraic (expandMainOp)
 import Math.Combinatorics.Exact.Binomial (choose)
+import qualified Simplification.Algebraic as Algebraic
 
 {-|
-    Reemplaza las ocurrencias de tan, cot, sec y csc por sus equivalentes en seno y coseno.
+    Reemplaza las ocurrencias de 'tan', 'cot', 'sec' y 'csc' por sus equivalentes en seno y coseno.
+
+    > trigSubstitute (tan x) = sin x / cos xç
+    > trigSubstitute (cot x) = cos x / sin x
+    > trigSubstitute (cosec x + sec y) = 1 / sin x + 1 / cos y
 -}
 trigSubstitute :: Expr -> Expr
 trigSubstitute = mapStructure trigSubstitute . trigSubstitute'
@@ -22,10 +27,15 @@ trigSubstitute = mapStructure trigSubstitute . trigSubstitute'
         trigSubstitute' x = x
 
 {-|
-    Expansion de las funciones trigonometricas.
+    Convierte expresiones en su forma trigonometrica expandida.
+
+    Una expresion esta en forma trigonometrica expandida si cada argumento de un seno o coseno cumple que:
+        1. No es una suma;
+        2. No es un producto con un operando que es un entero.
+
 -}
 trigExpand :: Expr -> Expr
-trigExpand = mapStructure trigExpand . trigExpand'
+trigExpand = trigExpand' . mapStructure trigExpand
     where
         trigExpand' (structure -> Sin x) = fst $ expandTrigRules x
         trigExpand' (structure -> Cos x) = snd $ expandTrigRules x
