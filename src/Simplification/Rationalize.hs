@@ -9,28 +9,12 @@ module Simplification.Rationalize (
 
 import Expr
 import Structure
-
-import Classes.Assumptions
+import Simplification.PolyTools
+import Data.Bifunctor
+import Data.List
 
 import qualified Number as N
-
-numerator :: Expr -> Expr
-numerator (structure -> Number n) = fromInteger $ N.numerator n
-numerator (structure -> Mul xs) = product $ fmap numerator xs
-numerator (structure -> Pow _ y)
-    | true $ isNegative y = 1
-numerator (structure -> Exp x)
-    | true $ isNegative x = 1
-numerator x = x
-
-denominator :: Expr -> Expr
-denominator (structure -> Number n) = fromInteger $ N.denominator n
-denominator (structure -> Mul xs) = product $ fmap denominator xs
-denominator u@(structure -> Pow _ y)
-    | true $ isNegative y = recip u
-denominator (structure -> Exp x)
-    | true $ isNegative x = exp (-x)
-denominator _ = 1
+import qualified Simplification.Algebraic as Algebraic
 
 rationalize :: Expr -> Expr
 rationalize (structure -> Pow x y) = (rationalize x) ** y
@@ -53,59 +37,45 @@ rationalizeSum u v = let
                             then u + v
                             else (rationalizeSum (m*s) (n*r)) / (r*s)
 rationalSimplify :: Expr -> Expr
-rationalSimplify = undefined
+rationalSimplify u = let
+                        u' = rationalize u
+                        n = Algebraic.expand $ numerator u'
+                        d = Algebraic.expand $ denominator u'
+                        v = variables n `union` variables d
+                        ggcd = polyGCD n d v
+                        n' = recQuotient n ggcd v
+                        d' = recQuotient d ggcd v
+                    in
+                        simplifyNumberAndSign n' d' v
     where
+        -- Obtener los coeficientes que sean numeros
         numberCoefficientList (structure -> Number p) = [p]
         numberCoefficientList (structure -> Mul ((structure -> Number p) :|| _)) = [p]
         numberCoefficientList (structure -> Add us) = concatMap numberCoefficientList us
         numberCoefficientList _ = [1]
 
+        -- signNormalized = normalized
 
-{-
-
-rationalSimplify :: EvalSteps PExpr -> EvalSteps PExpr
-rationalSimplify = (=<<) rationalSimplify'
-    where
-        numberCoefficientList (Number p) = [p]
-        numberCoefficientList (Mul []) = [0]
-        numberCoefficientList (Mul (Number p:_)) = [p]
-        numberCoefficientList (Add us) = concatMap numberCoefficientList us
-        numberCoefficientList _ = [1]
-
-        signNormalized p v = do
-                                lcp <- foldM leadingCoefficient p v
-                                return (lcp == 1 || lcp == 0)
-
-        simplfyNumbers _ 0 = fail "Division by zero"
-        simplfyNumbers 0 _ = return (0,1)
-        simplfyNumbers n d = let
+        simplifyNumbers _ 0 = (fail "Division by zero", fail "Division by zero")
+        simplifyNumbers 0 _ = (0,1)
+        simplifyNumbers n d = let
                                 c = numberCoefficientList n ++ numberCoefficientList d
+                                -- Obtener el lcm de los denominadores y el gcd de los numeradores
                                 (n',d') = foldr (\x -> bimap (gcd (N.numerator x)) (lcm (N.denominator x))) (0,1) c  -- n' is lcm of the denominators and d' is the gcd of the numerators
-                             in do
-                                  c' <- simplifyDiv (fromInteger n') (fromInteger d')
-                                  n'' <- simplifyDiv n c'
-                                  d'' <- simplifyDiv d c'
-                                  return (n'',d'')
-
-        simplifySign n d v = do
-                                normn <- signNormalized n v
-                                normd <- signNormalized d v
-                                n' <- if normn then return n else simplifyNegate n
-                                d' <- if normd then return d else simplifyNegate d
-                                if normn == normd -- if both n and d had the same sign, do nothing otherwise negate the quotient
-                                    then simplifyDiv n' d'
-                                    else simplifyDiv n' d' >>= simplifyNegate
+                                c' = fromInteger n' / fromInteger d'
+                             in 
+                                (n / c', d / c')
         
-        simplifyNumberAndSign n d v = do
-                                        (n',d') <- simplfyNumbers n d
+        simplifySign n d v = let
+                                normn = normalized n v
+                                normd = normalized d v
+                                n' = if normn then n else negate n
+                                d' = if normd then d else negate d
+                             in
+                                if normn == normd -- if both n and d had the same sign, do nothing otherwise negate the quotient
+                                    then n' / d'
+                                    else negate (n' / d')
+        simplifyNumberAndSign n d v = let
+                                        (n',d') = simplifyNumbers n d
+                                      in
                                         simplifySign n' d' v
-        rationalSimplify' u = do
-                                u' <- rationalize u
-                                n <- Algebraic.expand $ numerator u'
-                                d <- Algebraic.expand $ denominator u'
-                                let v = variables n `union` variables d
-                                ggcd <- polyGCD n d v
-                                n' <- recQuotient n ggcd v
-                                d' <- recQuotient d ggcd v
-                                simplifyNumberAndSign n' d' v
--}

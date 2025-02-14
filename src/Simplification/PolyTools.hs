@@ -8,13 +8,10 @@ import Classes.Assumptions
 import Structure
 import qualified Simplification.Algebraic as Algebraic
 
-import Simplification.Rationalize (denominator)
-
 import qualified Number as N
 
 
 import Data.List
-import Debug.Trace (trace)
 
 isSymbol :: Expr -> Bool
 isSymbol (structure -> Symbol _) = True
@@ -338,6 +335,12 @@ pseudoRem u v x = snd $ pseudoDivision u v x
 -- * Maximo común divisor
 
 {-|
+    Obtiene el coeficiente lider entre todos los coeficientes
+-}
+mostLeadingCoefficient :: Foldable t => Expr -> t Expr -> Expr
+mostLeadingCoefficient = foldl leadingCoefficient
+
+{-|
     Normaliza un polinomio multivariable. Un polinomio multivariable sobre \(\mathbb{Q}[x_1,x_2,\dots,x_n]\) esta normalizado si,
     al verlo como un polinomio con coeficientes en \(\mathbb{Q}[x_2,\dots,x_n]\), el coeficiente líder esta normalizado.
 
@@ -346,14 +349,14 @@ pseudoRem u v x = snd $ pseudoDivision u v x
 normalize :: Foldable t => Expr -> t Expr -> Expr
 normalize 0 _ = return 0
 -- Dividir por el coeficiente lider entre todos los coeficientes y expandir
-normalize u l = Algebraic.expand $ u / (foldl leadingCoefficient u l)
+normalize u l = Algebraic.expand $ u / (mostLeadingCoefficient u l)
 
 {-|
     Verifica si un polinomio multivariable esta normalizado
 -}
 normalized :: Foldable t => Expr -> t Expr -> Bool
 normalized u l = let
-                    lc = foldl leadingCoefficient u l
+                    lc = mostLeadingCoefficient u l
                  in
                     lc == 1 || lc == 0
 

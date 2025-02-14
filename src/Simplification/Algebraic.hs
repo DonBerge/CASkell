@@ -3,17 +3,13 @@
 {-# OPTIONS_GHC -Wno-type-defaults #-}
 module Simplification.Algebraic (
     expand,
-    expand'
 ) where
 
 
 import Expr
 import Structure
 
-import Simplification.Rationalize
 import Math.Combinatorics.Exact.Binomial (choose)
-
-expand' = expand . return
 
 {-|
     Expansión de expresiones, una expresion esta expandida si `variables` no contiene ninguna suma
