@@ -29,7 +29,7 @@ derivate u@(structure -> Pow v w) x = let
                                         dw = derivate w x
                                       in
                                         w * v**(w-1) * dv + dw * u * log v
-derivate (structure -> Add us) x = sum $ fmap (`derivate` x) us
+derivate u@(structure -> Add _) x = mapStructure (`derivate` x) u
 derivate u@(structure -> Mul us) x = sum $ fmap ((u*) . logder) us
     where
         logder f = (f `derivate` x) / f

@@ -1,28 +1,29 @@
+{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module Calculus.Integrate where
-import Symplify
-import Data.List
-import Data.Bifunctor
+
+import Expr
+import Structure
 
 import Control.Applicative
-import Calculus.Derivate (derivate)
+
 import Simplification.PolyTools (variables)
+
+import Data.Bifunctor
+import TwoList (toList)
+
+makeUnevaluatedIntegral :: Expr -> Expr -> Expr
+makeUnevaluatedIntegral u = construct . Integral u
 
 {-|
     Sustitucion de expresiones dentro de otra expresion
 -}
-substitute :: PExpr -> PExpr -> PExpr -> EvalSteps PExpr
+substitute :: Expr -> Expr -> Expr -> Expr
 substitute u t r
-    | u == t = return r
-substitute u@(Number _) _ _ = return u
-substitute (Add us) t r = mapM (\u -> substitute u t r) us >>= simplifySum
-substitute (Mul us) t r = mapM (\u -> substitute u t r) us >>= simplifyProduct
-substitute (Pow u v) t r = do
-    u' <- substitute u t r
-    v' <- substitute v t r
-    simplifyPow u' v'
-substitute (Fun f us) t r = mapM (\u -> substitute u t r) us >>= simplifyFun . Fun f
+    | u == t = r
+    | otherwise = mapStructure (\u' -> substitute u' t r) u
+
 
 {-| 
     @integralTable e x@ realiza la integración de expresiones conocidas respecto a la variable @x@
@@ -39,55 +40,32 @@ substitute (Fun f us) t r = mapM (\u -> substitute u t r) us >>= simplifyFun . F
     > integralTable (x^2) = 1/3 * x^3
     > integralTable (2 * sin x * cos x) x = Undefined: Integral desconocida
 -}
-integralTable :: PExpr -> PExpr -> EvalSteps PExpr
--- Expresiones libres de x(constantes)
+integralTable :: Expr -> Expr -> Expr
 integralTable e x
-    | e `freeOf` x = simplifyProduct [e,x]
-    | e == x = simplifyPow x 2 >>= \x' -> simplifyProduct [1/2, x']
+    | e `freeOf` x = e * x -- Expresiones libres de x(constantes)
+    | e == x = 1/2 * x ** 2 -- Integral de x
 -- x^n con n libre de x
-integralTable (Pow a n) x
+integralTable (structure -> Pow a n) x
     | a == x && n `freeOf` x = case n of
-                                 -1 -> simplifyFun $ Log x
-                                 _ -> do
-                                    do 
-                                        n' <- simplifySum [n,1] 
-                                        x' <- simplifyPow x n'
-                                        simplifyDiv x' n'
+                                 -1 -> log x
+                                 _ -> x**(n+1) / (n+1)
 -- e^x, log x, b^x con b libre de x
-integralTable (Exp a) x
-    | a == x = return $ Exp a
-integralTable (Log a) x
-    | a == x = simplifyProduct [Log x, x]
-integralTable (Pow b a) x
-    | a == x && b `freeOf` x = do
-                                x' <- simplifySum [x,1]
-                                a' <- simplifyPow a x'
-                                simplifyDiv a' x'
+integralTable u@(structure -> Exp a) x
+    | a == x = u
+integralTable (structure -> Log a) x
+    | a == x = x * log x --simplifyProduct [Log x, x]
 -- Funciones trigonometricas
-integralTable f@(Fun _ [a]) x
-    | a == x = integrateFun f
+integralTable f@(structure -> Fun _ (a:|[])) x
+    | a == x = integrateFun (structure f)
     where
-        integrateFun (Sin x) = (simplifyFun . Cos) x >>= simplifyNegate
-        integrateFun (Cos x) = simplifyFun $ Sin x
-        integrateFun (Tan x) = simplifyFun (Cos x) >>= simplifyFun . Log >>= simplifyNegate
-        integrateFun (Sec x) = do
-                                tx <- simplifyFun $ Tan x
-                                sx <- simplifyFun $ Sec x
-                                simplifySum [tx,sx] >>= simplifyFun . Log
-        integrateFun (Csc x) = simplifyDiv x 2 >>= simplifyFun . Tan >>= simplifyFun . Log
-        integrateFun (Cot x) = simplifyFun (Sin x) >>= simplifyFun . Log
-        integrateFun _ = fail "Integral desconocida"
--- Expresiones mas complicadas
--- integralTable (SecTan a) x = return $ Sec x
-integralTable (Mul [Sec a, Tan b]) x
-    | a==x && b==x = return $ Sec x
-integralTable (Mul [Tan a, Sec b]) x
-    | a==x && b==x = return $ Sec x
-integralTable (Mul [Csc a, Cot b]) x
-    | a==x && b==x = return $ Csc x
-integralTable (Mul [Cot a, Csc b]) x
-    | a==x && b==x = return $ Csc x
-integralTable _ _ = fail "Integral desconocida"
+        integrateFun (Sin x) = - cos x
+        integrateFun (Cos x) = sin x
+        integrateFun (Tan x) = -log(cos x)
+        integrateFun (Sec x) = log(tan x + sec x)
+        integrateFun (Csc x) = -log(cot x + csc x)
+        integrateFun (Cot x) = log(sin x)
+        integrateFun _ = fail "Integral no aparece en la tabla de integrales"
+integralTable _ _ = fail "Integral no aparece en la tabla de integrales"
 
 ---
 
@@ -101,13 +79,9 @@ integralTable _ _ = fail "Integral desconocida"
     > separateFactors 21 x = (21,1)
     > separateFactors (2*x*y) x = (2*y,x)
 -}
-separateFactors :: PExpr -> PExpr -> (PExpr, PExpr)
-separateFactors (Mul us) x = bimap mkMul mkMul $ partitionMul us
+separateFactors :: Expr -> Expr -> (Expr, Expr)
+separateFactors (structure -> Mul us) x = bimap product product $ partitionMul $ toList us
     where
-        mkMul [] = 1
-        mkMul [u] = u
-        mkMul us = Mul us
-
         partitionMul [] = ([],[])
         partitionMul (u:us)
             | u `freeOf` x = first (u:) $ partitionMul us
@@ -115,6 +89,9 @@ separateFactors (Mul us) x = bimap mkMul mkMul $ partitionMul us
 separateFactors u x
     | u `freeOf` x = (u,1)
     | otherwise = (1,u)
+
+
+
 
 {-|
     @linearProperties u x@ aplica la linealidad de la integral a la expresion \(u\) respecto a la variable \(x\)
@@ -131,15 +108,13 @@ separateFactors u x
 
     Si no es posible aplicar linealidad, la función devuelve Undefined
 -}
-linearProperties :: PExpr -> PExpr -> EvalSteps PExpr
-linearProperties u@(Mul _) x = do
+linearProperties :: Expr -> Expr -> Expr
+linearProperties u@(structure -> Mul _) x = do
                                 let (free,dependent) = separateFactors u x 
                                 if free == 1
                                     then fail "No se puede aplicar linealidad de la integral"
-                                    else do
-                                            i <- integrate dependent x
-                                            simplifyProduct [free,i]
-linearProperties (Add us) x = mapM (`integrate` x) us >>= simplifySum
+                                    else free * (integrate dependent x)
+linearProperties u@(structure -> Add _) x = mapStructure (`integrate` x) u
 linearProperties _ _ = fail "No se puede aplicar linealidad de la integral"
 
 {-|
@@ -152,36 +127,44 @@ linearProperties _ _ = fail "No se puede aplicar linealidad de la integral"
 
     Si no se consigue ninguna sustitución que elimine la variable x, la función devuelve Undefined.
 -}
-substitutionMethod :: PExpr -> PExpr -> EvalSteps PExpr
-substitutionMethod f x = do
-                            let p = trialSubstituions f
-                            foldr ((<|>) . makeSubstitution) failSubstitution p
+substitutionMethod f x = foldr ((<|>) . makeSubstitution) failSubstitution $ trialSubstituions f --do
+                         --   let p = trialSubstituions f
+                         --   foldr ((<|>) . makeSubstitution) failSubstitution p
     where
         failSubstitution = fail "No se puede aplicar sustitución"
 
         -- Obtiene un nombre de variable de integración que no este en la expresion
-        getIntegrationVariable u (Symbol x) = getIntegrationVariable' x
+        getIntegrationVariable u (structure -> Symbol x) = getIntegrationVariable' x
             where
                 vars = variables u
                 getIntegrationVariable' x = let
                                                 _x = '_' : x
-                                            in if Symbol _x `elem` vars
+                                                symbol_x  = construct $ Symbol $ _x
+                                            in if symbol_x `elem` vars
                                                 then getIntegrationVariable' _x
-                                                else Symbol _x
-        getIntegrationVariable _ _ = error "La variable de integración debe ser un simbolo"
+                                                else symbol_x
+        getIntegrationVariable _ _ = fail "La variable de integración debe ser un simbolo"
 
-        makeSubstitution g = if g/=x && not (g `freeOf` x)
-                                then do
-                                    f' <- derivate g x >>= simplifyDiv f -- f' = f / (dg/dx)
-                                    let v = getIntegrationVariable f' x
-                                    u <- substitute f' g v 
-                                    if u `freeOf` x
-                                        then do
-                                                i <- integrate u v
-                                                substitute i v g
-                                        else failSubstitution
-                                    
-                                else failSubstitution
+        --makeSubstitution = undefined
+        makeSubstitution g = undefined
+        --makeSubstitution g = if g/=x && not (g `freeOf` x)
+        --                        then do
+        --                            f' <- derivate g x >>= simplifyDiv f -- f' = f / (dg/dx)
+        --                            let v = getIntegrationVariable f' x
+        --                            u <- substitute f' g v 
+        --                            if u `freeOf` x
+        --                                then do
+        --                                        i <- integrate u v
+        --                                        substitute i v g
+        --                                else failSubstitution
+        --                            
+        --                        else failSubstitution
+
+trialSubstituions = undefined
+
+integrate = undefined
+
+{-
 
 {-|
     @integrate u x@ evalua la integral de la expresión @u@ respecto a @x@.
@@ -254,3 +237,4 @@ definiteIntegral u x a b = do
                             ub <- substitute u' x b
                             ua <- substitute u' x a
                             simplifySub ub ua
+-}

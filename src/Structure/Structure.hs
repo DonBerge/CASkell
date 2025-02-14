@@ -33,7 +33,8 @@ module Structure (
     pattern Integral,
     freeOf,
     operands,
-    construct
+    construct,
+    mapStructure
 )
 where
 
@@ -100,6 +101,13 @@ operands (structure -> Mul (x :|| y :| xs)) = x:y:xs
 operands (structure -> Pow b e) = [b, e]
 operands (structure -> Fun _ xs) = toList xs
 operands _ = []
+
+mapStructure :: (Expr -> Expr) -> Expr -> Expr
+mapStructure f (structure -> Add xs) = construct $ Add $ fmap f xs
+mapStructure f (structure -> Mul xs) = construct $ Mul $ fmap f xs
+mapStructure f (structure -> Pow b e) = construct $ Pow (f b) (f e)
+mapStructure f (structure -> Fun s xs) = construct $ Fun s $ fmap f xs
+mapStructure _ x = x 
 
 pattern Pi :: SExpr
 pattern Pi = Symbol "Pi"
