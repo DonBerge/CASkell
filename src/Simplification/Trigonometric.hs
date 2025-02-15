@@ -34,7 +34,9 @@ trigSubstitute = mapStructure trigSubstitute . trigSubstitute'
     Convierte expresiones en su forma trigonometrica expandida.
 
     Una expresion esta en forma trigonometrica expandida si cada argumento de un seno o coseno cumple que:
+
         1. No es una suma;
+
         2. No es un producto con un operando que es un entero.
 
 -}
@@ -49,8 +51,8 @@ trigExpand = trigExpand' . mapStructure trigExpand
             let
                 f = expandTrigRules x
                 r = expandTrigRules (u - x)
-                s = (fst f) * (snd r) + (snd f) * (fst r)
-                c = (snd f) * (snd r) - (fst f) * (fst r)
+                s = fst f * snd r + snd f * fst r
+                c = snd f * snd r - fst f * fst r
             in
                 (s,c)
         expandTrigRules u@(structure -> Mul (f :|| _)) = case structure f of
@@ -64,7 +66,7 @@ trigExpand = trigExpand' . mapStructure trigExpand
 
 
         -- Calcular cos(n*x)
-        multipleAngleCos n (structure -> Add us) = trigExpand $ cos $ sum $ fmap ((fromInteger n)*) us
+        multipleAngleCos n u@(structure -> Add _) = trigExpand $ cos $ Algebraic.expandMainOp $ fromInteger n * u
         multipleAngleCos 0 _ = 1
         multipleAngleCos 1 x = cos x
         multipleAngleCos n x 
@@ -75,7 +77,7 @@ trigExpand = trigExpand' . mapStructure trigExpand
                           in
                            substitute f x' (cos x)
 
-        multipleAngleSin n (structure -> Add us) = trigExpand $ sin $ sum $ fmap ((fromInteger n)*) us -- distribuir n y expandir
+        multipleAngleSin n u@(structure -> Add _) = trigExpand $ sin $ Algebraic.expandMainOp $ fromInteger n * u
         multipleAngleSin 0 _ = 0
         multipleAngleSin 1 x = sin x
         multipleAngleSin n x
@@ -88,7 +90,12 @@ trigExpand = trigExpand' . mapStructure trigExpand
 
 
 {-|
-    Generación de polinomios de Chebyshev de primera clase, util para realizar la expansión de \(cos(n\cdot x)\)
+    Generación de polinomios de Chebyshev de primera clase.
+
+    Los polinomios de Chebyshev de primera clase cumplen la siguiente propiedad:
+        \[T_n(\cos x) = \cos(n \cdot x)\]
+    
+    Por lo que son utiles para realizar la expansión de \(\cos(n \cdot x)\)
 -}
 cheby1 :: Integral b => Expr -> b -> Expr
 cheby1 _ 0 = 1
@@ -96,7 +103,12 @@ cheby1 x 1 = x
 cheby1 x n = Algebraic.expand $ Matrix.getElem 1 1 $ (Matrix.fromLists [[2*x,-1],[1,0]] ^ (n-1)) * Matrix.fromLists [[x], [1]]
 
 {-|
-    Generación de polinomios de Chebyshev de segunda clase, util para realizar la expansión de \(sin(n\cdot x)\)
+    Generación de polinomios de Chebyshev de segunda clase.
+
+    Los polinomios de Chebyshev de segunda clase cumplen la siguiente propiedad:
+        \[U_n(\cos x)\sin x = {\sin((n+1)x)}\]
+
+    Por lo que son utiles para realizar la expansión de \(\sin(n \cdot x)\)
 -}
 cheby2 :: Integral b => Expr -> b -> Expr
 cheby2 _ 0 = 1
@@ -105,7 +117,14 @@ cheby2 x n = Algebraic.expand $ Matrix.getElem 1 1 $ (Matrix.fromLists [[2*x,-1]
 
 
 {-|
-    Contraccion de las funciones trigonometricas.
+    Conversión de expresiones trigonometricas a su forma trigonometrica contraida.
+
+    Una expresion esta en forma trigonometrica contraida si satisface que:
+
+        1. Cualquier producto en la expresión tiene como mucho un operando que es un seno o coseno;
+        2. Una potencia con exponente entero positivo no tiene como base a un seno o coseno;
+        3. Cualquier subexpresión esta en forma expandida.
+
 -}
 contractTrig :: Expr -> Expr
 contractTrig = mapStructure contractTrig . contractTrig'
