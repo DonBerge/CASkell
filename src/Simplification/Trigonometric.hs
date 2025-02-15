@@ -141,41 +141,60 @@ contractTrig = mapStructure contractTrig . contractTrig'
     contractTrig' v@(structure -> Mul _) = contractTrigRules $ expandMainOp v
     contractTrig' v = v
 
-    contractTrigRules v@(structure -> Pow _ _) = contractTrigPower v
-    contractTrigRules v@(structure -> Mul _) =
-      let (c, d) = separateSinCos v
-       in if d == 1
-            then v
-            else case structure d of
-              Sin _ -> v
-              Cos _ -> v
-              Pow _ _ -> expandMainOp (c * contractTrigPower d)
-              Mul _ -> expandMainOp (c * contractTrigProduct d)
-              _ -> fail "Contract trig rules: Unreachable case"
-    contractTrigRules (structure -> Add us) = sum $ fmap trigRules us
-      where
-        trigRules v@(structure -> Pow _ _) = contractTrigRules v
-        trigRules v@(structure -> Mul _) = contractTrigRules v
-        trigRules v = v
-    contractTrigRules v = v
+contractTrigRules :: Expr -> Expr
+contractTrigRules v@(structure -> Pow _ _) = contractTrigPower v
+contractTrigRules v@(structure -> Mul _) =
+  let (c, d) = separateSinCos v
+   in if d == 1
+        then v
+        else case structure d of
+          Sin _ -> v
+          Cos _ -> v
+          Pow _ _ -> expandMainOp (c * contractTrigPower d)
+          Mul ds -> expandMainOp (c * contractTrigProduct ds)
+          _ -> fail "Contract trig rules: Unreachable case"
+contractTrigRules (structure -> Add us) = sum $ fmap trigRules us
+  where
+    trigRules v@(structure -> Pow _ _) = contractTrigRules v
+    trigRules v@(structure -> Mul _) = contractTrigRules v
+    trigRules v = v
+contractTrigRules v = v
 
-    isSinOrCos (structure -> Sin _) = True
-    isSinOrCos (structure -> Cos _) = True
-    isSinOrCos (structure -> Pow v w)
-      | true $ isSinOrCos v &&& isInteger w = True
-    isSinOrCos _ = False
+-- |
+--    Verifica que la expresión dada es un seno, coseno o una potencia entera de un seno o coseno
+isSinOrCos :: Expr -> Bool
+isSinOrCos (structure -> Sin _) = True
+isSinOrCos (structure -> Cos _) = True
+isSinOrCos (structure -> Pow v w)
+  | true $ isSinOrCos v &&& isInteger w = True
+isSinOrCos _ = False
 
-    separateSinCos (structure -> Mul (u :|| v :| us)) = bimap product product $ separateSinCos' (u : v : us)
-      where
-        separateSinCos' [] = ([], [])
-        separateSinCos' (u : us)
-          | isSinOrCos u = second (u :) $ separateSinCos' us
-          | otherwise = first (u :) $ separateSinCos' us
-    separateSinCos u
-      | isSinOrCos u = (1, u)
-      | otherwise = (u, 1)
+-- |
+--    Dada una expresión @u@, 'separateSinCos' separa los senos y cosenos de los demás términos.
+separateSinCos :: Expr -> (Expr, Expr)
+separateSinCos (structure -> Mul (u :|| v :| us)) = bimap product product $ separateSinCos' (u : v : us)
+  where
+    separateSinCos' [] = ([], [])
+    separateSinCos' (u : us)
+      | isSinOrCos u = second (u :) $ separateSinCos' us
+      | otherwise = first (u :) $ separateSinCos' us
+separateSinCos u
+  | isSinOrCos u = (1, u)
+  | otherwise = (u, 1)
 
-    contractTrigProduct = undefined
+-- |
+--   Contraccion de productos de funciones trigonometricas.
+contractTrigProduct :: TwoList Expr -> Expr
+contractTrigProduct (a :|| b :| [])
+  | Pow _ _ <- structure a = contractTrigRules $ (contractTrigPower a) * b
+  | Pow _ _ <- structure b = contractTrigRules $ a * contractTrigPower b
+  | otherwise = case (structure a, structure b) of -- a y b son funciones trigonometricas
+                  (Sin p, Sin q) -> cos(p-q)/2 - cos(p+q)/2
+                  (Cos p, Cos q) -> cos(p-q)/2 + cos(p+q)/2
+                  (Sin p, Cos q) -> sin(p+q)/2 + sin(p-q)/2
+                  (Cos p, Sin q) -> sin(p+q)/2 - sin(q-p)/2
+                  _ -> a * b -- este caso no deberia darse
+contractTrigProduct (a :|| b :| c : cs) = contractTrigRules $ a * contractTrigProduct (b :|| c :| cs)
 
 -- |
 --    Contraccion de potencias de funciones trigonometricas.
