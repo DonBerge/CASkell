@@ -11,6 +11,7 @@ import Expr
 import Structure
 
 import Math.Combinatorics.Exact.Binomial (choose)
+import Classes.Assumptions (true, Assumptions (isInteger))
 
 {-|
     Expansión de expresiones, una expresion esta expandida si `variables` no contiene ninguna suma
@@ -76,12 +77,17 @@ expandFraction x = let
 
 {-|
     Expande la expresion solo una vez, las subexpresiones no se expanden
+
+    Ejemplos:
+        > expandMainOp (x*(2+(1+x)²)) = x*2 + x*(1+x)²
+        > expandMainOP ((x+(1+x)²)²) = x² + 2*x*(1+x)² + (1+x)⁴ 
 -}
 expandMainOp :: Expr -> Expr
-expandMainOp (structure -> Mul xs) = foldr1 expandProduct xs
+expandMainOp (structure -> Mul xs) = foldr1 expandProduct' xs
+    where
+        expandProduct' u (structure -> Add us) = sum $ fmap (u*) us
+        expandProduct' u@(structure -> Add _) v = expandProduct v u
+        expandProduct' u v = u * v
 expandMainOp (structure -> Pow b e)
-    | Number f <- structure e = let
-                                    (fl, m) = properFraction f
-                                 in 
-                                    expandProduct (expandPower b fl) (b ** (number m))
+    | Number f <- structure e, true (isInteger f) = expandPower b (toInteger f)
 expandMainOp u = u
