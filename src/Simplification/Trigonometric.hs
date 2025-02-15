@@ -13,6 +13,8 @@ import Simplification.Algebraic (expandMainOp)
 import qualified Simplification.Algebraic as Algebraic
 import Structure
 
+-- * Substitucion de funciones trigonometricas
+
 -- |
 --    Reemplaza las ocurrencias de 'tan', 'cot', 'sec' y 'csc' por sus equivalentes en seno y coseno.
 --
@@ -27,6 +29,8 @@ trigSubstitute = mapStructure trigSubstitute . trigSubstitute'
     trigSubstitute' (structure -> Sec x) = 1 / cos x
     trigSubstitute' (structure -> Csc x) = 1 / sin x
     trigSubstitute' x = x
+
+-- * Expansion de expresiones trigonometricas
 
 -- |
 --    Convierte expresiones en su forma trigonometrica expandida.
@@ -43,41 +47,58 @@ trigExpand = trigExpand' . mapStructure trigExpand
     trigExpand' (structure -> Cos x) = snd $ expandTrigRules x
     trigExpand' x = x
 
-    expandTrigRules u@(structure -> Add (x :|| _)) =
-      let f = expandTrigRules x
-          r = expandTrigRules (u - x)
-          s = fst f * snd r + snd f * fst r
-          c = snd f * snd r - fst f * fst r
-       in (s, c)
-    expandTrigRules u@(structure -> Mul (f :|| _)) = case structure f of
-      Number f'
-        | true (isInteger f') ->
-            let f'' = toInteger f'
-                u' = u / f
-             in (multipleAngleSin f'' u', multipleAngleCos f'' u')
-      _ -> (sin u, cos u)
-    expandTrigRules u = (sin u, cos u)
+-- |
+--  Dada una expresión @u@, 'expandTrigRules' calcula la forma trigonometrica expandida de @sin u@ y @cos u@.
+--
+--  La expansión se calcula utilizando las siguientes propiedades
+--
+--  - Si @u=v+w@ entonces la forma expandida se calcula usando las siguientes propiedades
+--    \[\sin(v+w) = \sin(v)\cos(w)+\cos(v)\sin(w)\]
+--    \[\cos(v+w) = \cos(v)\cos(w)-\sin(v)\sin(w)\]
+--
+--  - Si @u=n*v@ con @n@ un entero, entonces la forma expandida se calcula utilizando 'multipleAngleCos' y 'multipleAngleSin'
+expandTrigRules :: Expr -> (Expr, Expr)
+-- u = v + w
+expandTrigRules u@(structure -> Add (x :|| _)) =
+  let f = expandTrigRules x
+      r = expandTrigRules (u - x)
+      s = fst f * snd r + snd f * fst r
+      c = snd f * snd r - fst f * fst r
+   in (s, c)
+expandTrigRules u@(structure -> Mul (f :|| _))
+  | Number f' <- structure f,
+    true (isInteger f') -- u = n * v
+    =
+      let f'' = toInteger f'
+          u' = u / f
+       in (multipleAngleSin f'' u', multipleAngleCos f'' u')
+expandTrigRules u = (sin u, cos u)
 
-    -- Calcular cos(n*x)
-    multipleAngleCos n u@(structure -> Add _) = trigExpand $ cos $ Algebraic.expandMainOp $ fromInteger n * u
-    multipleAngleCos 0 _ = 1
-    multipleAngleCos 1 x = cos x
-    multipleAngleCos n x
-      | n < 0 = multipleAngleCos (-n) x
-      | otherwise =
-          let x' = symbol "_"
-              f = cheby1 x' n
-           in substitute f x' (cos x)
+-- |
+--  Expansión de \(\cos(n \cdot x)\), utilizando los polinomios de Chebyshev de primera clase.
+multipleAngleCos :: Integer -> Expr -> Expr
+multipleAngleCos n u@(structure -> Add _) = trigExpand $ cos $ Algebraic.expandMainOp $ fromInteger n * u
+multipleAngleCos 0 _ = 1
+multipleAngleCos 1 x = cos x
+multipleAngleCos n x
+  | n < 0 = multipleAngleCos (-n) x
+  | otherwise =
+      let x' = symbol "_"
+          f = cheby1 x' n
+       in substitute f x' (cos x)
 
-    multipleAngleSin n u@(structure -> Add _) = trigExpand $ sin $ Algebraic.expandMainOp $ fromInteger n * u
-    multipleAngleSin 0 _ = 0
-    multipleAngleSin 1 x = sin x
-    multipleAngleSin n x
-      | n < 0 = -(multipleAngleSin (-n) x)
-      | otherwise =
-          let x' = symbol "_"
-              f = cheby2 x' (n - 1)
-           in Algebraic.expand $ (substitute f x' (cos x)) * sin x
+-- |
+--  Expansión de \(\sin(n \cdot x)\), utilizando los polinomios de Chebyshev de segunda clase.
+multipleAngleSin :: Integer -> Expr -> Expr
+multipleAngleSin n u@(structure -> Add _) = trigExpand $ sin $ Algebraic.expandMainOp $ fromInteger n * u
+multipleAngleSin 0 _ = 0
+multipleAngleSin 1 x = sin x
+multipleAngleSin n x
+  | n < 0 = -(multipleAngleSin (-n) x)
+  | otherwise =
+      let x' = symbol "_"
+          f = cheby2 x' (n - 1)
+       in Algebraic.expand $ (substitute f x' (cos x)) * sin x
 
 -- |
 --    Generación de polinomios de Chebyshev de primera clase.
@@ -102,6 +123,8 @@ cheby2 :: (Integral b) => Expr -> b -> Expr
 cheby2 _ 0 = 1
 cheby2 x 1 = 2 * x
 cheby2 x n = Algebraic.expand $ Matrix.getElem 1 1 $ (Matrix.fromLists [[2 * x, -1], [1, 0]] ^ n) * Matrix.fromLists [[1], [0]]
+
+-- * Contracion de expresiones trigonometricas
 
 -- |
 --    Conversión de expresiones trigonometricas a su forma trigonometrica contraida.
@@ -155,36 +178,29 @@ contractTrig = mapStructure contractTrig . contractTrig'
     contractTrigProduct = undefined
 
 -- |
---    Contraccion de potencias de senos y cosenos usando las siguientes identidades
---
---        \[
---            \cos^n(\theta) = \begin{cases}
---                \frac{\binom{n}{n/2}}{2^n} + \sum_{j=0}^{n/2-1} \binom{n}{j} \cos((n-2j)\theta), & \text{si } n \text{ es par} \\
---                \frac{1}{2^{n-1}} \sum_{j=0}^{\lfloor n/2 \rfloor} \binom{n}{j} \cos((n-2j)\theta), & \text{si } n \text{ es impar}
---            \end{cases}
---        \]
+--    Contraccion de potencias de funciones trigonometricas.
 contractTrigPower :: Expr -> Expr
 contractTrigPower a@(structure -> Pow u (structure -> Number n))
   | true $ isInteger n &&& isPositive n = case structure u of
-      Sin u' -> makeSin (toInteger n) u'
-      Cos u' -> makeCos (toInteger n) u'
+      Sin u' -> contractSinPower (toInteger n) u'
+      Cos u' -> contractCosPower (toInteger n) u'
       _ -> a
   where
+    -- Calcular el binomio en los enteros y convertirlo a una expresión
     exprBinom n k = fromInteger $ choose n k
 
-    -- contraer
-    makeCos :: Integer -> Expr -> Expr
-    makeCos n x
-      | n < 0 = (cos x) ** (fromInteger n)
+    contractCosPower :: Integer -> Expr -> Expr
+    contractCosPower  n x
+      | n < 0 = cos x ** fromInteger n
       | even n = (exprBinom n (n `div` 2)) / 2 ^ n + 2 ^^ (1 - n) * sum [makeSumExpr j | j <- [0 .. (n `div` 2 - 1)]]
       | otherwise = 2 ^^ (1 - n) * sum [makeSumExpr j | j <- [0 .. n `div` 2]]
       where
-        makeSumExpr j = exprBinom n j * cos (fromInteger (n - 2 * j)) * x
+        makeSumExpr j = exprBinom n j * cos (fromInteger (n - 2 * j) * x)
 
-    makeSin :: Integer -> Expr -> Expr
-    makeSin n x
+    contractSinPower :: Integer -> Expr -> Expr
+    contractSinPower n x
       | n < 0 = (sin x) ** (fromInteger n)
-      | even n = (-1 / 2) ^ n * (exprBinom n (n `div` 2)) / 2 ^ n + (-1) ^ (n `div` 2) * (2 ^^ (1 - n)) * sum [makeSumExpr cos j | j <- [0 .. (n `div` 2 - 1)]]
+      | even n = (-1 / 2) ^ n * exprBinom n (n `div` 2) + (-1) ^ (n `div` 2) * (2 ^^ (1 - n)) * sum [makeSumExpr cos j | j <- [0 .. (n `div` 2 - 1)]]
       | otherwise = (-1) ^ ((n - 1) `div` 2) * 2 ^^ (1 - n) * sum [makeSumExpr sin j | j <- [0 .. n `div` 2]]
       where
         makeSumExpr f j = (-1) ^ j * exprBinom n j * (f ((fromInteger (n - 2 * j)) * x))
