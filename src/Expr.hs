@@ -138,35 +138,15 @@ showStruct (EvalSteps (Right e, _)) = showStruct' e
         showStruct' (Pow x y) = "Pow (" ++ showStruct' x ++ "), (" ++ showStruct' y ++ ")"
         showStruct' (Fun f xs) ="Fun " ++ unquote f ++ " " ++ intercalate "," (map showStruct' xs)
 
-{-
-numerator :: Expr -> Expr
-numerator (structure -> Number n) = fromInteger $ N.numerator n
-numerator (structure -> Mul xs) = product $ fmap numerator xs
-numerator (structure -> Pow _ y)
-    | true $ isNegative y = 1
-numerator (structure -> Exp x)
-    | true $ isNegative x = 1
-numerator x = x
-
-denominator :: Expr -> Expr
-denominator (structure -> Number n) = fromInteger $ N.denominator n
-denominator (structure -> Mul xs) = product $ fmap denominator xs
-denominator u@(structure -> Pow _ y)
-    | true $ isNegative y = recip u
-denominator (structure -> Exp x)
-    | true $ isNegative x = exp (-x)
-denominator _ = 1
--}
-
 numerator :: Expr -> Expr
 numerator = (=<<) numerator'
     where
         numerator' (Number n) = fromInteger $ N.numerator n
         numerator' (Mul xs) = mapM numerator' xs >>= simplifyProduct --product $ fmap numerator' xs
         numerator' (Pow _ y)
-            | true $ isNegative y = return 1
+            | mulByNeg y = return 1
         numerator' (Exp x)
-            | true $ isNegative x = return 1
+            | mulByNeg x = return 1
         numerator' x = return x
 
 denominator :: Expr -> Expr
@@ -175,7 +155,7 @@ denominator = (=<<) denominator'
         denominator' (Number n) = fromInteger $ N.denominator n
         denominator' (Mul xs) = mapM denominator' xs >>= simplifyProduct --product $ fmap denominator' xs
         denominator' u@(Pow _ y)
-            | true $ isNegative y = simplifyDiv 1 u
+            | mulByNeg y = simplifyDiv 1 u
         denominator' (Exp x)
-            | true $ isNegative x = simplifyNegate x >>= simplifyFun . Exp
+            | mulByNeg x = simplifyNegate x >>= simplifyFun . Exp
         denominator' _ = return 1

@@ -66,6 +66,7 @@ library
                       Classes.EvalSteps
                       Classes.StepTree
                       TriBool
+                      Print.Show
                       Structure
                       Symplify
                       Expr
@@ -86,11 +87,13 @@ library
     -- Other library packages from which modules are imported.
     build-depends:    base,
                       matrix,
+                      prettyprinter,
                       exact-combinatorics
 
     -- Directories containing source files.
     hs-source-dirs:   src
                       src/Calculus
+                      src/Print
                       src/Classes/Monads
                       src/Structure
                       src/Simplification
