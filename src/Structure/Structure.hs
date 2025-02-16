@@ -183,5 +183,5 @@ pattern MonomialTerm x n <- Pow x (positiveIntegerDegree -> Just n)
   
 positiveIntegerDegree :: Expr -> Maybe Integer -- Se asume que el argumento es un exponente, por autosimplificación no puede ser 0
 positiveIntegerDegree (structure -> Number n)
-  | true (isInteger n &&& n > 1) = Just $ N.numerator n
+  | true (isInteger n &&& n > 1) = Just $ toInteger n
 positiveIntegerDegree _ = Nothing

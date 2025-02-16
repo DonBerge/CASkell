@@ -189,27 +189,27 @@ contractTrigProduct (a :|| b :| [])
   | Pow _ _ <- structure a = contractTrigRules $ (contractTrigPower a) * b
   | Pow _ _ <- structure b = contractTrigRules $ a * contractTrigPower b
   | otherwise = case (structure a, structure b) of -- a y b son funciones trigonometricas
-                  (Sin p, Sin q) -> cos(p-q)/2 - cos(p+q)/2
-                  (Cos p, Cos q) -> cos(p-q)/2 + cos(p+q)/2
-                  (Sin p, Cos q) -> sin(p+q)/2 + sin(p-q)/2
-                  (Cos p, Sin q) -> sin(p+q)/2 - sin(q-p)/2
-                  _ -> a * b -- este caso no deberia darse
+      (Sin p, Sin q) -> cos (p - q) / 2 - cos (p + q) / 2
+      (Cos p, Cos q) -> cos (p - q) / 2 + cos (p + q) / 2
+      (Sin p, Cos q) -> sin (p + q) / 2 + sin (p - q) / 2
+      (Cos p, Sin q) -> sin (p + q) / 2 - sin (q - p) / 2
+      _ -> a * b -- este caso no deberia darse
 contractTrigProduct (a :|| b :| c : cs) = contractTrigRules $ a * contractTrigProduct (b :|| c :| cs)
 
 -- |
 --    Contraccion de potencias de funciones trigonometricas.
 contractTrigPower :: Expr -> Expr
-contractTrigPower a@(structure -> Pow u (structure -> Number n))
-  | true $ isInteger n &&& isPositive n = case structure u of
-      Sin u' -> contractSinPower (toInteger n) u'
-      Cos u' -> contractCosPower (toInteger n) u'
-      _ -> a
+contractTrigPower a@(structure -> MonomialTerm u n) =
+  case structure u of
+    Sin u' -> contractSinPower n u'
+    Cos u' -> contractCosPower n u'
+    _ -> a
   where
     -- Calcular el binomio en los enteros y convertirlo a una expresión
     exprBinom n k = fromInteger $ choose n k
 
     contractCosPower :: Integer -> Expr -> Expr
-    contractCosPower  n x
+    contractCosPower n x
       | n < 0 = cos x ** fromInteger n
       | even n = (exprBinom n (n `div` 2)) / 2 ^ n + 2 ^^ (1 - n) * sum [makeSumExpr j | j <- [0 .. (n `div` 2 - 1)]]
       | otherwise = 2 ^^ (1 - n) * sum [makeSumExpr j | j <- [0 .. n `div` 2]]
