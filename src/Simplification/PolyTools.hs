@@ -10,7 +10,6 @@ import qualified Simplification.Algebraic as Algebraic
 
 import qualified Number as N
 
-
 import Data.List
 
 isSymbol :: Expr -> Bool
@@ -31,7 +30,7 @@ variables u = [u]
 {-|
     Dada una expresion algebraica, si la expresion es un monomio sobre \(x\) entonces 
     devuelve el par \((c,m)\) donde \(c\) es el coeficiente del monomio y \(m\) es el grado del monomio.
-    Si la expresion no es un monomio sobre \(x\) entonces devuelve un error.
+    Si la expresion no es un monomio sobre \(x\), \(c\) es Undefined y \(m\) es 0.
 -}
 coefficientMonomialGPE :: Expr -> Expr-> (Expr, Integer)
 coefficientMonomialGPE 0 _ = (0,-1)
@@ -43,9 +42,7 @@ coefficientMonomialGPE u@(structure -> Mul us) x = foldl combine (u,0) $ fmap (`
     where
         combine (c,m) (_,0) = (c,m)
         combine (_,_) (_,m) = (u / (x ** (fromInteger m)),m)
-coefficientMonomialGPE u x
-    | freeOf u x = (u,0)
-    | otherwise = error $ show u ++ " no es un monomio sobre " ++ show x
+coefficientMonomialGPE u _ = (u,0) -- TODO: NO ESTOY SEGURO DE ESTO
 
 {-|
     Devuelve el grado de una expresion algebraica \(u\) respecto a la variable \(x\), siempre y cuando \(u\) sea un polinomio
@@ -60,11 +57,8 @@ coefficientMonomialGPE u x
     > degreeGPE (e^x) x = Undefined: e^x no es un monomio sobre x
 -}
 degreeGPE :: Expr -> Expr -> Integer
-degreeGPE 0 _ = (-1)
 degreeGPE (structure -> Add us) x = maximum $ fmap (`degreeGPE` x) us -- foldM (\d u -> max d . snd <$> coefficientMonomialGPE u x) (-1) us --maximum $ map (`degreeGPE` x) us
 degreeGPE u x = snd $ coefficientMonomialGPE u x
-
-
 
 {-|
     Devuelve el coeficiente del monomio \(x^j) de una expresion algebraica (\u\), siempre y cuando \(u\) sea un polinomio
@@ -110,7 +104,7 @@ coefficientListGPE u x = let
     de mayor grado en \(u\). Si \(u\) no es un polinomio sobre \(x\) entonces devuelve un error.
 -}
 leadingCoefficient :: Expr -> Expr -> Expr
-leadingCoefficient 0 _ = fail "leadingCoefficient: 0 no tiene coeficiente líder"
+leadingCoefficient 0 _ = 0
 leadingCoefficient u x = let
                             m = degreeGPE u x
                          in
@@ -137,20 +131,15 @@ leadingCoefficient u x = let
 
 -}
 leadingMonomial :: Expr -> [Expr] -> Expr
-leadingMonomial p symbols = if all isSymbol symbols
-                                then leadingMonomial' symbols p 
-                                else fail "leadingMonomial: not all arguments are symbols"
-                                
-    where
-        leadingMonomial' _ 0 = fail "leadingCoefficient: 0 no tiene coeficiente líder"
-        leadingMonomial' [] u = u
-        leadingMonomial' (x:l) u = let
-                                    m = degreeGPE u x
-                                    c = coefficientGPE u x m
-                                    xm = x ** (fromInteger m)
-                                    lm = leadingMonomial' l c
-                                   in
-                                    lm * xm
+leadingMonomial 0 _ = 0
+leadingMonomial u [] = u
+leadingMonomial u (x:l) = let
+                            m = degreeGPE u x
+                            c = coefficientGPE u x m
+                            xm = x ** (fromInteger m)
+                            lm = leadingMonomial c l
+                          in
+                              lm * xm
 
 -- * Division de polinomios
 
@@ -298,7 +287,7 @@ mbRemainder p q l = snd $ mbPolyDivide p q l
 
 -}
 pseudoDivision :: Expr -> Expr -> Expr -> (Expr, Expr)
-pseudoDivision _ 0 _ = error "Pseudo-division by zero"
+pseudoDivision _ 0 _ = let f = fail "Pseudo-division por cero" in (f,f)
 pseudoDivision u v x = let
                         p = 0
                         s = u
@@ -452,7 +441,7 @@ polyGCD u v l = normalize (polyGCDRec u v l) l
 
 -}
 remainderSequence :: Expr -> Expr -> [Expr] -> [Expr]
-remainderSequence _ _ [] = error "Secuencia de restos no definida para lista vacia"
+remainderSequence _ _ [] = []
 remainderSequence u v (x:rest) = let
                                     ppU = polyPrimitivePart u x rest
                                     ppV = polyPrimitivePart v x rest

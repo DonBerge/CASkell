@@ -32,6 +32,7 @@ module Structure (
     pattern Derivative,
     pattern Integral,
     pattern DefiniteIntegral,
+    pattern MonomialTerm,
     freeOf,
     operands,
     construct,
@@ -172,3 +173,6 @@ pattern Integral u x = Fun "Integrate" (u :| [x])
 
 pattern DefiniteIntegral :: Expr -> Expr -> Expr -> Expr -> SExpr
 pattern DefiniteIntegral u x a b = Fun "Definite_Integral" (u:| [x,a,b])
+
+pattern MonomialTerm :: Expr -> N.Number -> SExpr
+pattern MonomialTerm x n <- Pow x (structure -> Number n)
