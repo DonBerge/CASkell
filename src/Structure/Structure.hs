@@ -47,6 +47,7 @@ import qualified Number as N
 
 import Expr
 import Classes.EvalSteps (EvalSteps(unEvalSteps))
+import Classes.Assumptions
 import Symplify (simplifyFun)
 import Data.List.NonEmpty (toList, NonEmpty(..))
 
@@ -174,5 +175,13 @@ pattern Integral u x = Fun "Integrate" (u :| [x])
 pattern DefiniteIntegral :: Expr -> Expr -> Expr -> Expr -> SExpr
 pattern DefiniteIntegral u x a b = Fun "Definite_Integral" (u:| [x,a,b])
 
-pattern MonomialTerm :: Expr -> N.Number -> SExpr
-pattern MonomialTerm x n <- Pow x (structure -> Number n)
+-- |
+-- PatternSynoym for a monomial term
+pattern MonomialTerm :: Expr -> Integer -> SExpr
+pattern MonomialTerm x n <- Pow x (positiveIntegerDegree -> Just n)
+
+  
+positiveIntegerDegree :: Expr -> Maybe Integer -- Se asume que el argumento es un exponente, por autosimplificación no puede ser 0
+positiveIntegerDegree (structure -> Number n)
+  | true (isInteger n &&& n > 1) = Just $ N.numerator n
+positiveIntegerDegree _ = Nothing

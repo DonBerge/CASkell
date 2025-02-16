@@ -36,8 +36,8 @@ coefficientMonomialGPE :: Expr -> Expr-> (Expr, Integer)
 coefficientMonomialGPE 0 _ = (0,-1)
 coefficientMonomialGPE u x
     | u == x = (1, 1)
-coefficientMonomialGPE (structure -> Pow base (structure -> Number exponent)) x
-    | true (base == x &&& isInteger exponent &&& exponent > 1) = (1, N.numerator exponent)
+coefficientMonomialGPE (structure -> MonomialTerm base exponent) x
+    | base == x = (1, exponent)
 coefficientMonomialGPE u@(structure -> Mul us) x = foldl combine (u,0) $ fmap (`coefficientMonomialGPE` x) us
     where
         combine (c,m) (_,0) = (c,m)
