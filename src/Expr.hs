@@ -10,8 +10,10 @@ import PExpr
 import Symplify
 
 import Data.List
+import Number (Number)
+import qualified Number as N
 
-import Simplification.Rationalize
+-- import Simplification.Rationalize
 
 type Expr = EvalSteps PExpr
 
@@ -45,8 +47,8 @@ instance Fractional Expr where
     p / q = do
               p' <- p
               q' <- q
-              pdivq <- simplifyDiv p' q'
-              rationalize pdivq
+              simplifyDiv p' q'
+              -- rationalize pdivq
 
 makeFun :: (PExpr -> PExpr) -> Expr -> Expr
 makeFun f = (=<<) (simplifyFun . f)
@@ -108,8 +110,8 @@ instance Assumptions Expr where
 
 -------
 
-number :: Rational -> Expr
-number = fromRational
+number :: Number -> Expr
+number = return . Number
 
 symbol :: String -> Expr
 symbol = pure . Symbol
@@ -135,3 +137,25 @@ showStruct (EvalSteps (Right e, _)) = showStruct' e
         showStruct' (Add xs) = "Add ( (" ++ intercalate ") , (" (map showStruct' xs) ++ ") )"
         showStruct' (Pow x y) = "Pow (" ++ showStruct' x ++ "), (" ++ showStruct' y ++ ")"
         showStruct' (Fun f xs) ="Fun " ++ unquote f ++ " " ++ intercalate "," (map showStruct' xs)
+
+numerator :: Expr -> Expr
+numerator = (=<<) numerator'
+    where
+        numerator' (Number n) = fromInteger $ N.numerator n
+        numerator' (Mul xs) = mapM numerator' xs >>= simplifyProduct --product $ fmap numerator' xs
+        numerator' (Pow _ y)
+            | mulByNeg y = return 1
+        numerator' (Exp x)
+            | mulByNeg x = return 1
+        numerator' x = return x
+
+denominator :: Expr -> Expr
+denominator = (=<<) denominator'
+    where
+        denominator' (Number n) = fromInteger $ N.denominator n
+        denominator' (Mul xs) = mapM denominator' xs >>= simplifyProduct --product $ fmap denominator' xs
+        denominator' u@(Pow _ y)
+            | mulByNeg y = simplifyDiv 1 u
+        denominator' (Exp x)
+            | mulByNeg x = simplifyNegate x >>= simplifyFun . Exp
+        denominator' _ = return 1

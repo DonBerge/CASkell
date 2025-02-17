@@ -1,29 +1,26 @@
+{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 module Simplification.PolyTools where
 import Prelude hiding (exponent)
 
-import PExpr
-
-import qualified Number as N
-
-import Control.Monad (unless, foldM)
+import Expr
+import Classes.Assumptions
+import Structure
 import qualified Simplification.Algebraic as Algebraic
 
-import Data.List (union)
-import Symplify
+import Data.List
 
-
-isSymbol :: PExpr -> Bool
-isSymbol (Fun _ _) = True
+isSymbol :: Expr -> Bool
+isSymbol (structure -> Symbol _) = True
 isSymbol _ = False
 
-variables :: PExpr -> [PExpr]
-variables (Number _) = []
-variables u@(Pow v w)
-    | true (isInteger w &&& w > 1) = variables v
+variables :: Expr -> [Expr]
+variables (structure -> Number _) = []
+variables u@(structure -> Pow v w)
+    | true (isInteger w &&& isPositive (w - 1)) = variables v
     | otherwise = [u]
-variables (Add us) = foldl union [] $ map variables us
-variables (Mul us) = foldl union [] $ map variables us
+variables (structure -> Add us) = foldl union [] $ fmap variables us
+variables (structure -> Mul us) = foldl union [] $ fmap variables us
 variables u = [u]
 
 -- * Manipulación de polinomios
@@ -31,21 +28,19 @@ variables u = [u]
 {-|
     Dada una expresion algebraica, si la expresion es un monomio sobre \(x\) entonces 
     devuelve el par \((c,m)\) donde \(c\) es el coeficiente del monomio y \(m\) es el grado del monomio.
-    Si la expresion no es un monomio sobre \(x\) entonces devuelve un error.
+    Si la expresion no es un monomio sobre \(x\), \(c\) es Undefined y \(m\) es 0.
 -}
-coefficientMonomialGPE :: PExpr -> PExpr -> EvalSteps (PExpr, Integer)
+coefficientMonomialGPE :: Expr -> Expr-> (Expr, Integer)
+coefficientMonomialGPE 0 _ = (0,-1)
 coefficientMonomialGPE u x
-    | u == x = return (1, 1)
-coefficientMonomialGPE (Pow base (Number exponent)) x
-    | true $ (base == x) &&& isInteger exponent &&& (exponent > 1) = return (1, N.numerator exponent)
-coefficientMonomialGPE u@(Mul us) x = mapM (`coefficientMonomialGPE` x) us >>= foldM combine (u,0)
+    | u == x = (1, 1)
+coefficientMonomialGPE (structure -> MonomialTerm base exponent) x
+    | base == x = (1, exponent)
+coefficientMonomialGPE u@(structure -> Mul us) x = foldl combine (u,0) $ fmap (`coefficientMonomialGPE` x) us
     where
-        combine (c,m) (_,0) = return (c,m)
-        combine (_, _) (_, m) = simplifyPow x (fromInteger m) >>= simplifyDiv u >>= \c -> return (c, m)
-coefficientMonomialGPE u x
-    | freeOf u x = return (u,0)
-    | otherwise = fail $ show u ++ " no es un monomio sobre " ++ show x
-
+        combine (c,m) (_,0) = (c,m)
+        combine (_,_) (_,m) = (u / (x ** (fromInteger m)),m)
+coefficientMonomialGPE u _ = (u,0) -- TODO: NO ESTOY SEGURO DE ESTO
 
 {-|
     Devuelve el grado de una expresion algebraica \(u\) respecto a la variable \(x\), siempre y cuando \(u\) sea un polinomio
@@ -59,10 +54,12 @@ coefficientMonomialGPE u x
     > degreeGPE (x**2 + 2*y*x) y = 1
     > degreeGPE (e^x) x = Undefined: e^x no es un monomio sobre x
 -}
-degreeGPE :: PExpr -> PExpr -> EvalSteps Integer
-degreeGPE 0 _ = return (-1)
-degreeGPE (Add us) x = foldM (\d u -> max d . snd <$> coefficientMonomialGPE u x) (-1) us --maximum $ map (`degreeGPE` x) us
-degreeGPE u x = snd <$> coefficientMonomialGPE u x
+degreeGPE :: Expr -> Expr -> Integer
+degreeGPE (structure -> Add us) x = maximum $ fmap (`degreeGPE` x) us -- foldM (\d u -> max d . snd <$> coefficientMonomialGPE u x) (-1) us --maximum $ map (`degreeGPE` x) us
+degreeGPE u x = snd $ coefficientMonomialGPE u x
+
+multidegree :: [Expr] -> Expr -> [Integer]
+multidegree vars u = map (degreeGPE u) vars
 
 {-|
     Devuelve el coeficiente del monomio \(x^j) de una expresion algebraica (\u\), siempre y cuando \(u\) sea un polinomio
@@ -76,40 +73,44 @@ degreeGPE u x = snd <$> coefficientMonomialGPE u x
     > coefficientGPE (y*x**2 + 2*y*x) y 1 = x**2 + 2*x
     > coefficientGPE (e^x) x 2 = Undefined: e^x no es un monomio sobre x
 -}
-coefficientGPE :: PExpr -> PExpr -> Integer -> EvalSteps PExpr
-coefficientGPE u@(Add us) x j
-    | u == x = if j == 1 then return 1 else return 0
-    | otherwise = foldM combine 0 us
+coefficientGPE :: Expr -> Expr -> Integer -> Expr
+coefficientGPE u@(structure -> Add us) x j
+    | u == x = if j == 1 then 1 else 0
+    | otherwise = foldl combine 0 us
         where
-            combine c mon = do
-                                (c', m) <- coefficientMonomialGPE mon x
-                                if m == j
-                                    then simplifySum [c,c']
-                                    else return c
-coefficientGPE u x j = do
-                        (c,m) <- coefficientMonomialGPE u x
+            combine c mon = let
+                                (c', m) = coefficientMonomialGPE mon x
+                            in if m==j
+                                then c + c'
+                                else c
+coefficientGPE u x j = let
+                        (c,m) = coefficientMonomialGPE u x
+                       in
                         if j == m
-                            then return c
-                            else return 0
+                            then c
+                            else 0
 
 {-|
     Devuelve la lista de los coeficientes del polinomio \(u\) sobre \(x\). Si \(u\) no es un polinomio sobre \(x\)
     entonces devuelve un error.
 -}
-coefficientListGPE :: PExpr -> PExpr -> EvalSteps [PExpr]
-coefficientListGPE u x = do
-                            m <- degreeGPE u x
-                            mapM (coefficientGPE u x) [0..m]
+coefficientListGPE :: Expr -> Expr -> [Expr]
+coefficientListGPE u x = let
+                            m = degreeGPE u x
+                         in
+                            fmap (coefficientGPE u x) [0..m]
 
 {-|
     Devuelve el coeficiente lider del polinomio \(u\) sobre \(x\). EL coeficiente líder es el coeficiente del monomio
     de mayor grado en \(u\). Si \(u\) no es un polinomio sobre \(x\) entonces devuelve un error.
 -}
-leadingCoefficient :: PExpr -> PExpr -> EvalSteps PExpr
-leadingCoefficient 0 _ = fail "leadingCoefficient: 0 no tiene coeficiente líder"
-leadingCoefficient u x = do
-                            m <- degreeGPE u x
+leadingCoefficient :: Expr -> Expr -> Expr
+leadingCoefficient 0 _ = 0
+leadingCoefficient u x = let
+                            m = degreeGPE u x
+                         in
                             coefficientGPE u x m
+
 
 {-|
     Devuelve el monomio líder del polinomio multivariable \(u\) sobre una lista de simbolos. Se define el monomio lider
@@ -130,19 +131,16 @@ leadingCoefficient u x = do
     > leadingMonomial u [y,x] = y^3
 
 -}
-leadingMonomial :: PExpr -> [PExpr] -> EvalSteps PExpr
-leadingMonomial p symbols = do
-                                unless (all isSymbol symbols) $ fail "leadingMonomial: not all arguments are symbols"
-                                leadingMonomial' symbols p
-    where
-        leadingMonomial' _ 0 = fail "leadingCoefficient: 0 no tiene coeficiente líder"
-        leadingMonomial' [] u = return u
-        leadingMonomial' (x:l) u = do
-                                    m <- degreeGPE u x
-                                    c <- coefficientGPE u x m
-                                    xm <- simplifyPow x (fromInteger m)
-                                    lm <- leadingMonomial' l c
-                                    simplifyProduct [xm,lm]
+leadingMonomial :: Expr -> [Expr] -> Expr
+leadingMonomial 0 _ = 0
+leadingMonomial u [] = u
+leadingMonomial u (x:l) = let
+                            m = degreeGPE u x
+                            c = coefficientGPE u x m
+                            xm = x ** (fromInteger m)
+                            lm = leadingMonomial c l
+                          in
+                              lm * xm
 
 -- * Division de polinomios
 
@@ -165,47 +163,48 @@ leadingMonomial p symbols = do
     y es fundamental para el calculo del maximo comun divisor entre polinomios. La propiedad euclideana siempre se satisface si los
     coeficientes del polinomio forman un cuerpo. Si los coeficientes no forman un cuerpo, la propiedad euclideana puede o no cumplirse.
 -}
-recPolyDivide :: PExpr -> PExpr -> [PExpr] -> EvalSteps (PExpr, PExpr)
-recPolyDivide u v [] = do
-                        udivv <- simplifyDiv u v
-                        return (udivv, 0)
-recPolyDivide u v (x:tl) = do 
-                            let r = u
-                            m <- degreeGPE u x
-                            n <- degreeGPE v x
-                            let q = 0
-                            lcv <- leadingCoefficient v x
+recPolyDivide :: Expr -> Expr -> [Expr] -> (Expr, Expr)
+recPolyDivide u v [] = (u/v, 0)
+recPolyDivide u v (x:tl) = let
+                            r = u
+                            m = degreeGPE u x
+                            n = degreeGPE v x
+                            q = 0
+                            lcv = leadingCoefficient v x
+                           in
                             recPolyDivideLoop lcv q r m n
     where
-        recPolyDivideLoopReturn q r = Algebraic.expand' q >>= \q' -> return (q',r)
+        recPolyDivideLoopReturn q r = (Algebraic.expand q,r)
 
         recPolyDivideLoop lcv q r m n
-            | m >= n = do
-                        lcr <- leadingCoefficient r x
-                        d <- recPolyDivide lcr lcv tl
+            | m >= n = let
+                        lcr = leadingCoefficient r x
+                        d = recPolyDivide lcr lcv tl
+                       in
                         if snd d /= 0
                             then recPolyDivideLoopReturn q r
-                            else do
-                                let c = fst d
-                                xmn <- simplifyPow x (fromInteger $ m-n)
-                                q <- simplifyProduct [c,xmn] >>= \t -> simplifySum [q,t] -- q' = q + c*x^(m-n)
-                                r <- simplifyProduct [c, v, xmn]  >>= simplifySub r >>= Algebraic.expand' -- r' = r - c*v*x^(m-n)
-                                m <- degreeGPE r x
-                                recPolyDivideLoop lcv q r m n
+                            else let
+                                    c = fst d
+                                    xmn = x ** (fromInteger $ m-n)
+                                    q' = q + c*xmn
+                                    r' = Algebraic.expand $ r - c*v*xmn
+                                    m' = degreeGPE r' x
+                                  in
+                                    recPolyDivideLoop lcv q' r' m' n
             | otherwise = recPolyDivideLoopReturn q r
 
 
 {-|
     Equivalente a 'recPolyDivide' pero devuelve solo el cociente de la division de \(u\) y \(v\).
 -}
-recQuotient :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
-recQuotient u v l = fst <$> recPolyDivide u v l
+recQuotient :: Expr -> Expr -> [Expr] -> Expr
+recQuotient u v l = fst $ recPolyDivide u v l
 
 {-|
     Equivalente a 'recPolyDivide' pero devuelve solo el resto de la division de \(u\) y \(v\).
 -}
-recRemainder :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
-recRemainder u v l = snd <$> recPolyDivide u v l
+recRemainder :: Expr -> Expr -> [Expr] -> Expr
+recRemainder u v l = snd $ recPolyDivide u v l
 
 {-|
     Algoritmo alternativo para dividir polinomios multivariables en un conjunto de simbolos. Se basa en la estructura monomial de los polinomios
@@ -222,37 +221,41 @@ recRemainder u v l = snd <$> recPolyDivide u v l
 
     \(lm(v,l)\) es el monomio líder de \(v\) respecto a la lista de simbolos \(l\).
 -}
-mbPolyDivide :: PExpr -> PExpr -> [PExpr] -> EvalSteps (PExpr, PExpr)
-mbPolyDivide u v l = do
-                    let q = 0
+mbPolyDivide :: Expr -> Expr -> [Expr] -> (Expr, Expr)
+mbPolyDivide u v l = let
+                        q = 0
                         r = u
-                    vl <- leadingMonomial v l
-                    f <- g r vl
-                    polyDivide' q r f vl
+                        vl = leadingMonomial v l
+                        f = g r vl
+                      in
+                        polyDivide' q r f vl
     where
         polyDivide' q r f vl
-            | f /= 0 = do
-                        q <- simplifySum [q,f]
-                        r <- Algebraic.expand $ simplifySub r =<< simplifyProduct [f,v]
-                        f <- g r vl
-                        polyDivide' q r f vl
-            | otherwise = return (q,r)
+            | f /= 0 =  let
+                            q' = q+f
+                            r' = Algebraic.expand $ r - f*v
+                            f' = g r' vl
+                        in
+                            polyDivide' q' r' f' vl
+            | otherwise = (q,r)
 
-        g (Add us) vm = mapM (`g` vm) us >>= simplifySum  -- g = sum ui / vm, donde ui es divisible por vm
-        g w wm = do
-                    w' <- simplifyDiv w wm
-                    dw <- denominator w'
-                    if dw == 1
-                        then return w'
-                        else return 0
+
+        g (structure -> Add us) vm = sum $ fmap (`g` vm) us --mapM (`g` vm) us >>= simplifySum  -- g = sum ui / vm, donde ui es divisible por vm
+        g w wm = let
+                    w' = w / wm
+                    dw = denominator w'
+                 in if dw == 1
+                      then w'
+                      else 0
 
 -- | Equivalente a 'mbPolyDivide' pero devuelve solo el cociente de la division de \(u\) y \(v\).
-mbQuotient :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
-mbQuotient p q l = fst <$> mbPolyDivide p q l
+mbQuotient :: Expr -> Expr -> [Expr] -> Expr
+mbQuotient p q l = fst $ mbPolyDivide p q l
 
 -- | Equivalente a 'mbPolyDivide' pero devuelve solo el resto de la division de \(u\) y \(v\).
-mbRemainder :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
-mbRemainder p q l = snd <$> mbPolyDivide p q l
+mbRemainder :: Expr -> Expr -> [Expr] -> Expr
+mbRemainder p q l = snd $ mbPolyDivide p q l
+
 
 {-|
     Proceso similar a la división de polinomios donde el resto de la división satisface la propiedad euclidiana
@@ -284,43 +287,48 @@ mbRemainder p q l = snd <$> mbPolyDivide p q l
     
 
 -}
-pseudoDivision :: PExpr -> PExpr -> PExpr -> EvalSteps (PExpr, PExpr)
-pseudoDivision _ 0 _ = fail "Pseudo-division by zero"
-pseudoDivision u v x = do
-                        m <- degreeGPE u x
-                        n <- degreeGPE v x
-                        let delta = max (m-n+1) 0
-                        lcv <- coefficientGPE v x n -- Equivalente a lcv = leadingCoefficient v x, pero mas eficiente porque el grado ya esta computado
-                        let sigma = 0
-                        pseudoDivision' 0 u m n delta lcv sigma
+pseudoDivision :: Expr -> Expr -> Expr -> (Expr, Expr)
+pseudoDivision _ 0 _ = let f = fail "Pseudo-division por cero" in (f,f)
+pseudoDivision u v x = let
+                        p = 0
+                        s = u
+                        m = degreeGPE u x
+                        n = degreeGPE v x
+                        delta = max (m-n+1) 0
+                        lcv = coefficientGPE v x n -- Equivalente a lcv = leadingCoefficient v x, pero mas eficiente porque el grado ya esta computado
+                        sigma = 0
+                       in 
+                        pseudoDivision' p s m n delta lcv sigma
     where
         pseudoDivision' p s m n delta lcv sigma
-            | m >= n = do
-                        lcs <- coefficientGPE s x m -- Equivalente a lcs = leadingCoefficient s x, pero mas eficiente porque el grado ya esta computado
-                        x' <- simplifyPow x (fromInteger $ m-n) -- 1
-                        p <- do
-                                a' <- simplifyProduct [lcv,p]
-                                b' <- simplifyProduct [lcs,x']
-                                simplifySum [a',b']
-                        s <- do
-                                a' <- simplifyProduct [lcv, s]
-                                b' <- simplifyProduct [lcs, v, x']
-                                Algebraic.expand $ simplifySub a' b'
-                        -- let sigma = sigma + 1
-                        m <- degreeGPE s x
-                        pseudoDivision' p s m n delta lcv (sigma+1)
-            | otherwise = do
-                            lcv' <- simplifyPow lcv (fromInteger $ delta-sigma)
-                            q <- Algebraic.expand $ simplifyProduct [lcv',p]
-                            r <- Algebraic.expand $ simplifyProduct [lcv',s]
-                            return (q,r)
+            | m >= n = let
+                        lcs = coefficientGPE s x m -- Equivalente a lcs = leadingCoefficient s x, pero mas eficiente porque el grado ya esta computado
+                        x' = x ** (fromInteger (m-n))
+                        p' = lcv * p + lcs * x' 
+                        s' = Algebraic.expand $ lcv * s - lcs * v * x'
+                        sigma' = sigma+1
+                        m' = degreeGPE s' x
+                        in
+                            pseudoDivision' p' s' m' n delta lcv sigma'
+            | otherwise = let
+                            lcv' = lcv ** (fromInteger (delta-sigma))-- simplifyPow lcv (fromInteger $ delta-sigma)
+                            q = Algebraic.expand $ lcv'*p
+                            r = Algebraic.expand $ lcv'*s
+                          in
+                            (q,r)
+
 
 -- | Equivalente a 'pseudoDivision' pero devuelve solo el pseudo-resto de la division de \(u\) y \(v\).
-pseudoRem :: PExpr -> PExpr -> PExpr -> EvalSteps PExpr
-pseudoRem u v x = snd <$> pseudoDivision u v x
-
+pseudoRem :: Expr -> Expr -> Expr -> Expr
+pseudoRem u v x = snd $ pseudoDivision u v x
 
 -- * Maximo común divisor
+
+{-|
+    Obtiene el coeficiente lider entre todos los coeficientes
+-}
+mostLeadingCoefficient :: Foldable t => Expr -> t Expr -> Expr
+mostLeadingCoefficient = foldl leadingCoefficient
 
 {-|
     Normaliza un polinomio multivariable. Un polinomio multivariable sobre \(\mathbb{Q}[x_1,x_2,\dots,x_n]\) esta normalizado si,
@@ -328,18 +336,20 @@ pseudoRem u v x = snd <$> pseudoDivision u v x
 
     Un polinomio en \(\mathbb{Q}[x]\) esta normalizado si es 0 o si su coeficiente lider es 1.
 -}
-normalize :: Foldable t => PExpr -> t PExpr -> EvalSteps PExpr
+normalize :: Foldable t => Expr -> t Expr -> Expr
 normalize 0 _ = return 0
 -- Dividir por el coeficiente lider entre todos los coeficientes y expandir
-normalize u l = foldM leadingCoefficient u l  >>= simplifyDiv u >>= Algebraic.expand'
+normalize u l = Algebraic.expand $ u / (mostLeadingCoefficient u l)
 
 {-|
     Verifica si un polinomio multivariable esta normalizado
 -}
-normalized :: Foldable t => PExpr -> t PExpr -> EvalSteps Bool
-normalized u l = do
-                    lc <- foldM leadingCoefficient u l
-                    return $ lc == 1 || lc == 0
+normalized :: Foldable t => Expr -> t Expr -> Bool
+normalized u l = let
+                    lc = mostLeadingCoefficient u l
+                 in
+                    lc == 1 || lc == 0
+
 
 {-| 
     El contenido de un polinomio \(u \in \mathbb{K}[x]\) se define como sigue:
@@ -357,21 +367,26 @@ normalized u l = do
     Esta función calcula el contenido del polinomio \(u\) con variable principal \(x\) y usa la
     lista de variables auxiliares \(r\) para calcular el máximo común divisor de los coeficientes.
 -}
-polyContent :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
-polyContent u x r = do
-                      cfl <- coefficientListGPE u x 
-                      gcdList cfl r
+polyContent :: Expr -> Expr -> [Expr] -> Expr
+polyContent u x r = let
+                      cfl = coefficientListGPE u x 
+                    in
+                        gcdList cfl r
+
+
 
 {-| 
     Se define la parte primitiva de un polinomio \(u\) en \(\mathbb{K}[x]\) como el resultado de dividir
     \(u\) por su contenido(Si \(u=0\), la parte primitiva es \(0\)). Esta función calcula la parte primitiva de \(u\) con respecto a la variable principal
     \(x\) y la lista de variables auxiliares \(r\).	
 -}
-polyPrimitivePart :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
-polyPrimitivePart 0 _ _ = return 0
-polyPrimitivePart u x r = do
-                            contU <- polyContent u x r
+polyPrimitivePart :: Expr -> Expr -> [Expr] -> Expr
+polyPrimitivePart 0 _ _ = 0
+polyPrimitivePart u x r = let
+                            contU = polyContent u x r
+                          in
                             recQuotient u contU (x:r)
+
 
 {-|
     Calculo del maximo común divisor en el dominio de polinomios multivariados \(\mathbb{Q}[x_1,x_2,\dots,x_n]\),
@@ -386,31 +401,34 @@ polyPrimitivePart u x r = do
     
     Si \(u\) y \(v\) son polinomios nulos, la definición de arriba no aplica, en este caso el maximo común divisor es 0.
 -}
-polyGCD :: PExpr -> PExpr -> [PExpr] -> EvalSteps PExpr
+polyGCD :: Expr -> Expr -> [Expr] -> Expr
 polyGCD 0 v l = normalize v l
 polyGCD u 0 l = normalize u l
-polyGCD u v l = polyGCDRec u v l >>= (`normalize` l)
+polyGCD u v l = normalize (polyGCDRec u v l) l
     where
-        polyGCDRec _ _ [] = return 1 -- gcd(u,v) where u and v are non-zero rationals is 1
-        polyGCDRec u v l@(x:rest) = do
-                                    contU <- polyContent u x rest
-                                    contV <- polyContent v x rest
+        polyGCDRec _ _ [] = 1 -- gcd(u,v) where u and v are non-zero rationals is 1
+        polyGCDRec u v l@(x:rest) = let
+                                    contU = polyContent u x rest
+                                    contV = polyContent v x rest
                                     
-                                    d <- polyGCDRec contU contV rest
+                                    d = polyGCDRec contU contV rest
                                     
-                                    ppU <- recQuotient u contU l -- primitive part of u
-                                    ppV <- recQuotient v contV l -- primitive part of v
+                                    ppU = recQuotient u contU l -- primitive part of u
+                                    ppV = recQuotient v contV l -- primitive part of v
 
-                                    rp <- gcdLoop x rest ppU ppV
+                                    rp = gcdLoop x rest ppU ppV
 
-                                    Algebraic.expand $ simplifyProduct [d,rp]
+                                    in
+                                        Algebraic.expand $ d*rp
         
         -- Computar los restos primitivos y obtener el penultimo resto
-        gcdLoop _ _ ppU 0 = return ppU
-        gcdLoop x rest ppU ppV = do
-                                    r <- pseudoRem ppU ppV x
-                                    ppR <- polyPrimitivePart r x rest
+        gcdLoop _ _ ppU 0 = ppU
+        gcdLoop x rest ppU ppV = let
+                                    r = pseudoRem ppU ppV x
+                                    ppR = polyPrimitivePart r x rest
+                                 in
                                     gcdLoop x rest ppV ppR 
+
 {-|
     Computa la secuencia de restos primitivos, la cual se utiliza para computar el maximo común divisor entre polinomios
     multivariables.
@@ -423,30 +441,33 @@ polyGCD u v l = polyGCDRec u v l >>= (`normalize` l)
     Dado que la pseudo-división satisface la propiedad euclidiana, la secuencia eventualmente converge a \(0\).
 
 -}
-remainderSequence :: PExpr -> PExpr -> [PExpr] -> EvalSteps [PExpr]
-remainderSequence _ _ [] = error "Secuencia de restos no definida para lista vacia"
-remainderSequence u v (x:rest) = do
-                                    ppU <- polyPrimitivePart u x rest
-                                    ppV <- polyPrimitivePart v x rest
+remainderSequence :: Expr -> Expr -> [Expr] -> [Expr]
+remainderSequence _ _ [] = []
+remainderSequence u v (x:rest) = let
+                                    ppU = polyPrimitivePart u x rest
+                                    ppV = polyPrimitivePart v x rest
+                                 in
                                     remainderSequence' ppU ppV
     where
-        remainderSequence' ppU 0 = return [ppU, 0]
-        remainderSequence' ppU ppV = do
-                                        r <- pseudoRem ppU ppV x
-                                        ppR <- polyPrimitivePart r x rest
-                                        rs <- remainderSequence' ppV ppR
-                                        return $ ppU:rs
+        remainderSequence' ppU 0 = [ppU, 0]
+        remainderSequence' ppU ppV = let
+                                        r = pseudoRem ppU ppV x
+                                        ppR = polyPrimitivePart r x rest 
+                                     in
+                                        ppU : (remainderSequence' ppV ppR)
 
 {-|
     Calcula el maximo común divisor entre una lista de polinomios multivariables en \(\mathbb{Q}[x_1,x_2,\dots,x_n]\).
     La lista @l@ contiene las variables \(x_1,x_2,\dots,x_n\).
 -}
-gcdList :: [PExpr] -> [PExpr] -> EvalSteps PExpr
-gcdList [] _ = return 0
+gcdList :: [Expr] -> [Expr] -> Expr
+gcdList [] _ = 0
 gcdList [p] l = normalize p l 
-gcdList (p:ps) r = do
-                    ps' <- gcdList ps r
+gcdList (p:ps) r = let
+                    ps' = gcdList ps r
+                   in
                     polyGCD p ps' r
+
 
 {-|
     Calcula el minimo común multiplo entre una lista de polinomios multivariables en \(\mathbb{Q}[x_1,x_2,\dots,x_n]\).
@@ -458,13 +479,17 @@ gcdList (p:ps) r = do
 
     \[b_i = \prod_{j=1,j\neq i}^n a_j\]
 -}
-lcmList :: [PExpr] -> EvalSteps PExpr
-lcmList us = do
-                n <- Algebraic.expand $ simplifyProduct us
-                let v = variables n
-                let d = removeEachElement us
-                d' <- mapM (Algebraic.expand . simplifyProduct) d >>= (`gcdList` v)
+lcmList :: [Expr] -> Expr
+lcmList us = let
+                n = Algebraic.expand $ product us
+                v = variables n
+                d = removeEachElement us
+                d' = (fmap (Algebraic.expand . product) d) `gcdList` v
+             in
                 recQuotient n d' v
             where
                 removeEachElement :: [a] -> [[a]]
                 removeEachElement xs = [take i xs ++ drop (i + 1) xs | i <- [0..length xs - 1]]
+
+{-
+-}

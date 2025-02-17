@@ -13,7 +13,7 @@ import Expr
 import Classes.EvalSteps
 import qualified Simplification.Algebraic as Algebraic
 import Simplification.Rationalize
-import Symplify (simplifyProduct, simplifyPow, simplifySum)
+import Simplification.PolyTools
 
 x :: Expr
 x = symbol "x"
@@ -24,19 +24,6 @@ y = symbol "y"
 z :: Expr
 z = symbol "z"
 
-polGCD :: EvalSteps PExpr -> EvalSteps PExpr -> [EvalSteps PExpr] -> EvalSteps PExpr
-polGCD u v l = do
-                u' <- Algebraic.expand u
-                v' <- Algebraic.expand v
-                l' <- sequence l
-                polyGCD u' v' l'
-
-pseudoDivide :: EvalSteps PExpr -> EvalSteps PExpr -> EvalSteps PExpr -> EvalSteps (PExpr, PExpr)
-pseudoDivide u v x = do
-                        u' <- u
-                        v' <- v
-                        x >>= pseudoDivision u' v'
-
 mkp :: Monad m => m a -> m b -> m (a, b)
 mkp u v = do
             u' <- u
@@ -45,41 +32,25 @@ mkp u v = do
 
 -- coefficientGPE
 
-coeffGPE :: EvalSteps PExpr -> EvalSteps PExpr -> Integer -> EvalSteps PExpr
-coeffGPE u v n = do
-                    u' <- u
-                    v' <- v
-                    coefficientGPE u' v' n
-
--- coefft1 :: Test
--- coefft1 = TestCase $ assertEqual "coefficientGPE: 4*y(poly) x(monomial) " 1 (coeffGPE (4*y) x 0)
-
-
 pdt1 :: Test
-pdt1 = TestCase $ assertEqual "pseudo division: (x^2 + 2x + 1)/x" (mkp (y*x+y) 0) (pseudoDivide (x**2*y+2*x*y+y) (x+1) x)
+pdt1 = TestCase $ assertEqual "pseudo division: (x^2 + 2x + 1)/x" (mkp (y*x+y) 0) (pseudoDivision (x**2*y+2*x*y+y) (x+1) x)
 
 pdt2 :: Test
-pdt2 = TestCase $ assertEqual "pseudo division: (2*x+2*y)/2" (mkp (4*x+4*y) 0) (pseudoDivide (2*x+2*y) 2 x)
+pdt2 = TestCase $ assertEqual "pseudo division: (2*x+2*y)/2" (mkp (4*x+4*y) 0) (pseudoDivision (2*x+2*y) 2 x)
 
 pdt3 :: Test
-pdt3 = TestCase $ assertEqual "pseudo division: (x^2 + 2x + 1)/x" (mkp (y**2+2*y+1) 1) (pseudoDivide (y**2+2*y+1) y x)
+pdt3 = TestCase $ assertEqual "pseudo division: (x^2 + 2x + 1)/x" (mkp (y**2+2*y+1) 1) (pseudoDivision (y**2+2*y+1) y x)
 
 pdtests :: Test
 pdtests = TestList [ pdt1, pdt2] --pdt3 ]
 
 --- normalize
-
-normalize' :: Traversable t => EvalSteps PExpr -> t (EvalSteps PExpr) -> EvalSteps PExpr
-normalize' u l = do
-                l' <- sequence l
-                u' <- u
-                normalize u' l'
     
 nt1 :: Test
-nt1 = TestCase $ assertEqual "normalize: 2x + 3x" (7*x-2*x*y-5+y**2) (normalize' (7*x-2*x*y-5+y**2) [y,x])
+nt1 = TestCase $ assertEqual "normalize: 2x + 3x" (7*x-2*x*y-5+y**2) (normalize (7*x-2*x*y-5+y**2) [y,x])
 
 nt2 :: Test
-nt2 = TestCase $ assertEqual "normalize: 2x + 3x" ((-7/2)*x + x*y + 5/2 -(1/2)*y**2) (normalize' (7*x-2*x*y-5+y**2) [x,y])
+nt2 = TestCase $ assertEqual "normalize: 2x + 3x" ((-7/2)*x + x*y + 5/2 -(1/2)*y**2) (normalize (7*x-2*x*y-5+y**2) [x,y])
 
 nt3 :: Test
 nt3 = TestCase $ assertEqual "normalize: 2x + 3x" 1 (normalize' 10 [y,x])

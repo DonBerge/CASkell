@@ -33,6 +33,7 @@ import Data.List
 
 import Classes.Assumptions
 import TriBool
+import qualified Data.Char as Char
 
 -- Las PExpre construyen a partir de un conjunto de simbolos y constantes numericas
 data PExpr = Number Number 
@@ -87,10 +88,6 @@ instance Ord PExpr where
 
     u <= v = u<v || u==v
 
-unquote :: String -> String
-unquote ('"':s) | last s == '"' = init s
-unquote s = s
-
 paren :: String -> String
 paren s = "(" ++ s ++ ")"
 
@@ -107,7 +104,6 @@ instance Show PExpr where
         where
             parenExpr (Number s)
                 | s < 0 || false (isInteger s) = paren $ show s
-                | otherwise = show s
             parenExpr s@(Add _) = paren $ show s
             parenExpr s = show s
     show (Add []) = "0"
@@ -127,24 +123,22 @@ instance Show PExpr where
             parenExpr s@(Add _) = paren $ show s
             parenExpr s = show s
     
-    show (Pow x (Number a))
-        | a == 1/2 = "√" ++ "(" ++ show x ++ ")"
-        | a == 1/3 = "∛" ++ "(" ++ show x ++ ")"
-        | a == 1/4 = "∜" ++ "(" ++ show x ++ ")"
-     -- = parenExpr x ++ "^2"
-    show (Pow x y)
-        | y == 1 = show x
-        | otherwise = parenExpr x ++ "^" ++ parenExpr y
+    show (Pow x y) = parenExpr x ++ "^" ++ parenExpr y
         where
             parenExpr (Number s)
-                | s < 0 || false (isInteger s) = paren $ show s
+                | false (s >= 0 ||| isInteger s) = paren $ show s
                 | otherwise = show s
             parenExpr s@(Add _) = "(" ++ show s ++ ")"
             parenExpr s@(Mul _) = "(" ++ show s ++ ")"
             parenExpr s@(Pow _ _) = "(" ++ show s ++ ")"
             parenExpr s = show s
-    show (Fun f []) = unquote $ show f
-    show (Fun f xs) = unquote (show f) ++ "(" ++ intercalate "," (map show xs) ++ ")"
+    show (Fun f []) = concatMap capitalize $ intersperse "_" $ words f
+        where
+            capitalize [] = []
+            capitalize (x:xs) = Char.toUpper x:xs
+    show (Fun f xs) = showFunName f ++ "(" ++ intercalate "," (map show xs) ++ ")"
+        where
+            showFunName = intercalate "_" . words
 
 instance Assumptions PExpr where
     isPositive (Number x) = isPositive x

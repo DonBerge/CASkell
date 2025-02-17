@@ -6,6 +6,7 @@ module Classes.EvalSteps where
 
 import Control.Applicative
 import Data.Bifunctor
+import Data.Either
 
 -- | Alias de tipo para mensajes de error.
 type Error = String
@@ -53,6 +54,9 @@ instance Show a => Show (EvalSteps a) where
                                     Left e -> "Undefined: " ++ e
                                     Right a -> show a
     show (EvalSteps (x, logs)) = unlines logs ++ "\n" ++ show (EvalSteps (x, []))
+
+isUndefined :: EvalSteps a -> Bool
+isUndefined = isLeft . fst . unEvalSteps
 
 -- | Función para agregar un mensaje de traza.
 -- Agrega un mensaje de registro a la computación 'EvalSteps'.

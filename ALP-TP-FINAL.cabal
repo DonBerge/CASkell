@@ -59,39 +59,45 @@ library
     import:           warnings
 
     -- Modules exported by the library.
-    exposed-modules:  Simplification.TrigExpand
-                      Simplification.Algebraic
-                      Simplification.Fu
+    exposed-modules:  Simplification.Algebraic
                       Simplification.PolyTools
                       Simplification.Rationalize
+                      Simplification.Trigonometric
                       Classes.EvalSteps
-                      Calculus
+                      Classes.StepTree
                       TriBool
+                      Print.Show
+                      Structure
                       Symplify
                       Expr
+                      TwoList
+                      Calculus.Derivate
+                      Calculus.Integrate
                       Evaluate.Numeric
 
     -- Modules included in this library but not exported.
     other-modules:  Number
                     PExpr
                     Classes.Assumptions
-                    Calculus.Derivate
-                    Calculus.Integrate
 
     -- LANGUAGE extensions used by modules in this package.
-    other-extensions: PatternSynonyms
-                      NoImplicitPrelude
+    other-extensions: PatternSynonyms, 
+                      ViewPatterns
 
     -- Other library packages from which modules are imported.
     build-depends:    base,
+                      matrix,
+                      prettyprinter,
                       exact-combinatorics
 
     -- Directories containing source files.
     hs-source-dirs:   src
                       src/Calculus
+                      src/Print
+                      src/Classes/Monads
+                      src/Structure
                       src/Simplification
                       src/Classes
-    main-is:          Main.hs
 
     -- Base language which the package is written in.
     default-language: Haskell2010
@@ -133,6 +139,7 @@ test-suite cas-test
                       src
                       src/Calculus
                       src/Simplification
+                      src/Structure
                       src/Classes
 
     -- The entrypoint to the test suite.

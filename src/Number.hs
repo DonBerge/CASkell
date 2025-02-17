@@ -17,7 +17,7 @@ import Data.Ratio ((%))
 import qualified Data.Ratio as R
 
 import Classes.Assumptions
-import TriBool
+import Data.Bifunctor (Bifunctor(bimap))
 
 -- | El tipo 'Number' puede representar un entero, una fracción o un número real.
 data Number = Int Integer | Fraction Rational | Real Double
@@ -203,6 +203,18 @@ instance Assumptions Number where
 
     isInteger (Int _) = T
     isInteger _ = F
+
+instance Enum Number where
+    toEnum = Int . toInteger
+    fromEnum (Int x) = fromInteger x
+    fromEnum _ = error "fromEnum: Not an Int"
+
+instance Integral Number where
+    quotRem (Int a) (Int b) = bimap Int Int (quotRem a b)
+    quotRem _ _ = error "quotRem: Not an Int"
+
+    toInteger (Int x) = x
+    toInteger _ = error "toInteger: Not an Int"
 
 -- | Obtiene el numerador de un 'Number'.
 numerator :: Number -> Integer
