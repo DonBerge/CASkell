@@ -8,8 +8,6 @@ import Classes.Assumptions
 import Structure
 import qualified Simplification.Algebraic as Algebraic
 
-import qualified Number as N
-
 import Data.List
 
 isSymbol :: Expr -> Bool
@@ -59,6 +57,9 @@ coefficientMonomialGPE u _ = (u,0) -- TODO: NO ESTOY SEGURO DE ESTO
 degreeGPE :: Expr -> Expr -> Integer
 degreeGPE (structure -> Add us) x = maximum $ fmap (`degreeGPE` x) us -- foldM (\d u -> max d . snd <$> coefficientMonomialGPE u x) (-1) us --maximum $ map (`degreeGPE` x) us
 degreeGPE u x = snd $ coefficientMonomialGPE u x
+
+multidegree :: [Expr] -> Expr -> [Integer]
+multidegree vars u = map (degreeGPE u) vars
 
 {-|
     Devuelve el coeficiente del monomio \(x^j) de una expresion algebraica (\u\), siempre y cuando \(u\) sea un polinomio

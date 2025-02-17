@@ -138,10 +138,7 @@ instance Show PExpr where
             capitalize (x:xs) = Char.toUpper x:xs
     show (Fun f xs) = showFunName f ++ "(" ++ intercalate "," (map show xs) ++ ")"
         where
-            showFunName = intercalate "_" . map capitalize . words
-            
-            capitalize [] = []
-            capitalize (y:ys) = Char.toUpper y:ys
+            showFunName = intercalate "_" . words
 
 instance Assumptions PExpr where
     isPositive (Number x) = isPositive x

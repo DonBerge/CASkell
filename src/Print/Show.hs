@@ -20,12 +20,6 @@ import TwoList (sortBy, reverse)
 import Data.Function
 import Data.Char (toLower)
 
--- |
--- Obtiene el grado de cada variable de la lista
--- TODO: USAR ORDEN MONOMIAL
-multidegree :: [Expr] -> Expr -> [Integer]
-multidegree vars p = map (degreeGPE p) vars
-
 numberFactor :: Expr -> Expr
 numberFactor n@(structure -> Number _) = n
 numberFactor (structure -> Mul vs) = product $ fmap numberFactor vs

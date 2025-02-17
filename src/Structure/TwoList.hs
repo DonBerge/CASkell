@@ -27,7 +27,7 @@ data TwoList a = a :|| NonEmpty a
 infixr 5 :||
 
 instance Functor TwoList where
-  fmap f (x :|| xs) = f x :|| fmap f xs
+  fmap f = lift (fmap f)
 
 instance Foldable TwoList where
   foldMap f (x :|| xs) = f x <> foldMap f xs
