@@ -34,9 +34,9 @@ maxDigits = 7
 -- | Simplifica un 'Number' transformándolo entre los distintos tipos si es necesario.
 simplify :: Number -> Number
 simplify (Fraction x) 
-    | R.denominator x == 1 = Int (fromIntegral (R.numerator x))
+    | R.denominator x == 1 = Int $ R.numerator x
     | dn <= maxDigits && dd <= maxDigits = Fraction x
-    | otherwise = Real (fromRational x)
+    | otherwise = Real $ fromRational x
     where
         dn = digitCount $ R.numerator x
         dd = digitCount $ R.denominator x
