@@ -34,7 +34,7 @@ derivate u@(structure -> Mul us) x = sum $ fmap ((u*) . logder) us
     where
         logder f = (f `derivate` x) / f
 derivate u@(structure -> Fun _ (v:|[])) x = let
-                                              df = derivateFun u x
+                                              df = derivateFun u v -- TODO VER ESTO
                                               dv = derivate v x
                                             in
                                               df * dv

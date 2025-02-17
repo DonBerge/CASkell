@@ -78,6 +78,7 @@ library
     -- Modules included in this library but not exported.
     other-modules:  Number
                     PExpr
+                    Parser
                     Classes.Assumptions
 
     -- LANGUAGE extensions used by modules in this package.
@@ -88,12 +89,14 @@ library
     build-depends:    base,
                       matrix,
                       prettyprinter,
+                      array,
                       exact-combinatorics
 
     -- Directories containing source files.
     hs-source-dirs:   src
                       src/Calculus
                       src/PrettyPrint
+                      src/Parser
                       src/Classes/Monads
                       src/Structure
                       src/Simplification
