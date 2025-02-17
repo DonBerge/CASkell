@@ -33,7 +33,6 @@ import Data.List
 
 import Classes.Assumptions
 import TriBool
-import qualified Data.Char as Char
 
 -- Las PExpre construyen a partir de un conjunto de simbolos y constantes numericas
 data PExpr = Number Number 
@@ -102,24 +101,11 @@ instance Show PExpr where
     show (Mul []) = "1"
     show (Mul xs) = intercalate "*" $ map parenExpr xs
         where
-            parenExpr (Number s)
-                | s < 0 || false (isInteger s) = paren $ show s
             parenExpr s@(Add _) = paren $ show s
             parenExpr s = show s
     show (Add []) = "0"
-    show (Add xs) = foldl (\x y -> case x of
-                                    "" -> show y
-                                    _ | mulByNeg y -> x ++ "-" ++ show (negate y)
-                                    _ -> x ++ "+" ++ parenExpr y
-                            ) "" xs --intercalate "+" $ map parenExpr xs
+    show (Add xs) = intercalate "+" $ map parenExpr xs
         where
-            mulByNeg (Number a) = a < 0
-            mulByNeg (Mul ((Number a):_)) = a < 0
-            mulByNeg _ = False
-
-            parenExpr (Number s)
-                | s < 0 || false (isInteger s) = paren $ show s
-                | otherwise = show s
             parenExpr s@(Add _) = paren $ show s
             parenExpr s = show s
     
@@ -132,13 +118,8 @@ instance Show PExpr where
             parenExpr s@(Mul _) = "(" ++ show s ++ ")"
             parenExpr s@(Pow _ _) = "(" ++ show s ++ ")"
             parenExpr s = show s
-    show (Fun f []) = concatMap capitalize $ intersperse "_" $ words f
-        where
-            capitalize [] = []
-            capitalize (x:xs) = Char.toUpper x:xs
-    show (Fun f xs) = showFunName f ++ "(" ++ intercalate "," (map show xs) ++ ")"
-        where
-            showFunName = intercalate "_" . words
+    show (Fun f []) = f
+    show (Fun f xs) = f ++ "(" ++ intercalate "," (map show xs) ++ ")"
 
 instance Assumptions PExpr where
     isPositive (Number x) = isPositive x
