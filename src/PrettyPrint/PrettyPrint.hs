@@ -3,7 +3,7 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Print.Show (
+module PrettyPrint (
     pretty,
 ) where
 
@@ -18,7 +18,7 @@ import Structure
 import Data.Foldable (toList)
 import TwoList (sortBy, reverse)
 import Data.Function
-import Data.Char (toLower)
+import Data.Char (toLower, toUpper)
 
 numberFactor :: Expr -> Expr
 numberFactor n@(structure -> Number _) = n
@@ -62,6 +62,12 @@ instance Pretty Expr where
           then pretty' n
           else pretty' n <+> slash <+> pretty' d
     where
+      pretty' v
+        | mulByNeg v = pretty "-" <> mkPretty (negate v)
+        where
+          mkPretty u@(structure -> Add _) = parens $ pretty u
+          mkPretty u = pretty u
+
       pretty' (structure -> Number n) = viaShow n
       
       pretty' u'@(structure -> Add us) = 
@@ -78,8 +84,6 @@ instance Pretty Expr where
       pretty' (structure -> Mul vs) = concatWith (surround (pretty "∙")) $ fmap mkPretty $ toList vs
         where
           -- Cerrar entre parentesis si no es entero positivo o es una suma
-          mkPretty (structure -> Number s)
-            | s < 0 || false (isInteger s) = parens $ viaShow s
           mkPretty v@(structure -> Add _) = parens $ pretty v
           mkPretty v = pretty v
 
@@ -91,10 +95,8 @@ instance Pretty Expr where
             mkPretty u@(structure -> Fun _ _) = pretty u
             mkPretty u = parens $ pretty u
       
-      pretty' (structure -> Pow x y) = mkPretty x <+> pretty "^" <+> mkPretty y
+      pretty' (structure -> Pow x y) = mkPretty x <> pretty "^" <> mkPretty y
         where
-          mkPretty (structure -> Number s)
-            | s < 0 || false (isInteger s) = parens $ viaShow s
           mkPretty v@(structure -> Add _) = parens $ pretty v
           mkPretty v@(structure -> Mul _) = parens $ pretty v
           mkPretty v@(structure -> Pow _ _) = parens $ pretty v
@@ -105,9 +107,17 @@ instance Pretty Expr where
       pretty' (structure -> Exp x) =
         let e = symbol "e"
          in pretty $ e ** x
-      pretty' (structure -> Fun f (x :| [])) = pretty (lower f) <> parens (pretty x)
+      pretty' (structure -> Fun f (x :| [])) = pretty (camelCase f) <> parens (pretty x)
         where
+            camelCase (words -> []) = ""
+            camelCase (words -> (y:ys)) = lower y ++ concatMap capitalize ys
+
+            capitalize [] = ""
+            capitalize (y:ys) = toUpper y : lower ys
+
             lower = map toLower
+
+
       pretty' v = viaShow v
 
 {-
