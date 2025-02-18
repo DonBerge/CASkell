@@ -152,7 +152,7 @@ contractTrigRules v@(structure -> Mul _) =
           Cos _ -> v
           Pow _ _ -> expandMainOp (c * contractTrigPower d)
           Mul ds -> expandMainOp (c * contractTrigProduct ds)
-          _ -> fail "Contract trig rules: Unreachable case"
+          _ -> undefinedExpr "Contract trig rules: Unreachable case"
 contractTrigRules (structure -> Add us) = sum $ fmap trigRules us
   where
     trigRules v@(structure -> Pow _ _) = contractTrigRules v

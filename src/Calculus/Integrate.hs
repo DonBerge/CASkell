@@ -70,8 +70,8 @@ integralTable f@(structure -> Fun _ (a:|[])) x
         integrateFun (Sec x) = log(tan x + sec x)
         integrateFun (Csc x) = -log(cot x + csc x)
         integrateFun (Cot x) = log(sin x)
-        integrateFun _ = fail "Integral no aparece en la tabla de integrales"
-integralTable _ _ = fail "Integral no aparece en la tabla de integrales"
+        integrateFun _ = undefinedExpr "Integral no aparece en la tabla de integrales"
+integralTable _ _ = undefinedExpr "Integral no aparece en la tabla de integrales"
 
 ---
 
@@ -118,10 +118,10 @@ linearProperties :: Expr -> Expr -> Expr
 linearProperties u@(structure -> Mul _) x = do
                                 let (free,dependent) = separateFactors u x 
                                 if free == 1
-                                    then fail "No se puede aplicar linealidad de la integral"
+                                    then undefinedExpr "No se puede aplicar linealidad de la integral"
                                     else free * (integrate dependent x)
 linearProperties u@(structure -> Add _) x = mapStructure (`integrate` x) u
-linearProperties _ _ = fail "No se puede aplicar linealidad de la integral"
+linearProperties _ _ = undefinedExpr "No se puede aplicar linealidad de la integral"
 
 {-|
     @substitutionMethod f x@ aplica el método de sustitución para resolver la integral de la expresión \(f\) respecto a la variable \(x\)
@@ -138,7 +138,7 @@ substitutionMethod f x = foldr ((<|>) . makeSubstitution) failSubstitution $ tri
                          --   let p = trialSubstituions f
                          --   foldr ((<|>) . makeSubstitution) failSubstitution p
     where
-        failSubstitution = fail "No se puede aplicar sustitución"
+        failSubstitution = undefinedExpr "No se puede aplicar sustitución"
 
         -- Obtiene un nombre de variable de integración que no este en la expresion
         getIntegrationVariable u (structure -> Symbol x) = getIntegrationVariable' x
@@ -150,7 +150,7 @@ substitutionMethod f x = foldr ((<|>) . makeSubstitution) failSubstitution $ tri
                                             in if symbol_x `elem` vars
                                                 then getIntegrationVariable' _x
                                                 else symbol_x
-        getIntegrationVariable _ _ = fail "La variable de integración debe ser un simbolo"
+        getIntegrationVariable _ _ = undefinedExpr "La variable de integración debe ser un simbolo"
 
         --makeSubstitution = undefined
         makeSubstitution g = if g/=x && not (g `freeOf` x)

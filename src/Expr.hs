@@ -9,9 +9,9 @@ import PExpr
 
 import Symplify
 
-import Data.List
 import Number (Number)
 import qualified Number as N
+import Control.Monad.Except (MonadError(throwError))
 
 -- import Simplification.Rationalize
 
@@ -88,19 +88,19 @@ csc = makeFun Csc
 cot :: Expr -> Expr
 cot = makeFun Cot
 
----------
+-- * Assumptions sobre las expresiones
 
-extractTriBool :: EvalSteps TriBool -> TriBool
-extractTriBool (EvalSteps (Left _, _)) = U
-extractTriBool (EvalSteps (Right x, _)) = x
-
-instance Assumptions Expr where
-    isNegative = extractTriBool . fmap isNegative
-    isPositive = extractTriBool . fmap isPositive
-    isZero = extractTriBool . fmap isZero
-    isEven = extractTriBool . fmap isEven
-    isOdd = extractTriBool . fmap isOdd
-    isInteger = extractTriBool . fmap isInteger
+-- extractTriBool :: EvalSteps TriBool -> TriBool
+-- extractTriBool (EvalSteps (Left _, _)) = U
+-- extractTriBool (EvalSteps (Right x, _)) = x
+-- 
+-- instance Assumptions Expr where
+--     isNegative = extractTriBool . fmap isNegative
+--     isPositive = extractTriBool . fmap isPositive
+--     isZero = extractTriBool . fmap isZero
+--     isEven = extractTriBool . fmap isEven
+--     isOdd = extractTriBool . fmap isOdd
+--     isInteger = extractTriBool . fmap isInteger
                         
 
 
@@ -116,27 +116,27 @@ number = return . Number
 symbol :: String -> Expr
 symbol = pure . Symbol
 
-undefinedExpr :: Expr
-undefinedExpr = fail "Explicit undefined"
+undefinedExpr :: String -> Expr
+undefinedExpr = throwError
 
 --
 
 -- | Muestra la estructura interna de la expresion, util para debuggear
-showStruct :: Expr -> String
-showStruct (EvalSteps (Left e, _)) = "Undefined: " ++ e 
-showStruct (EvalSteps (Right e, _)) = showStruct' e
-    where
-        unquote :: String -> String
-        unquote [] = []
-        unquote [x] = [x]
-        unquote (x:xs) = if x == last xs then init xs else x:xs
-
-        showStruct' (Number n) = "Number " ++ show n
-        showStruct' (Symbol x) = unquote x
-        showStruct' (Mul xs) = "Mul ( (" ++ intercalate ") , (" (map showStruct' xs) ++ ") )"
-        showStruct' (Add xs) = "Add ( (" ++ intercalate ") , (" (map showStruct' xs) ++ ") )"
-        showStruct' (Pow x y) = "Pow (" ++ showStruct' x ++ "), (" ++ showStruct' y ++ ")"
-        showStruct' (Fun f xs) ="Fun " ++ unquote f ++ " " ++ intercalate "," (map showStruct' xs)
+-- showStruct :: Expr -> String
+-- showStruct (EvalSteps (Left e, _)) = "Undefined: " ++ e 
+-- showStruct (EvalSteps (Right e, _)) = showStruct' e
+--     where
+--         unquote :: String -> String
+--         unquote [] = []
+--         unquote [x] = [x]
+--         unquote (x:xs) = if x == last xs then init xs else x:xs
+-- 
+--         showStruct' (Number n) = "Number " ++ show n
+--         showStruct' (Symbol x) = unquote x
+--         showStruct' (Mul xs) = "Mul ( (" ++ intercalate ") , (" (map showStruct' xs) ++ ") )"
+--         showStruct' (Add xs) = "Add ( (" ++ intercalate ") , (" (map showStruct' xs) ++ ") )"
+--         showStruct' (Pow x y) = "Pow (" ++ showStruct' x ++ "), (" ++ showStruct' y ++ ")"
+--         showStruct' (Fun f xs) ="Fun " ++ unquote f ++ " " ++ intercalate "," (map showStruct' xs)
 
 numerator :: Expr -> Expr
 numerator = (=<<) numerator'

@@ -3,8 +3,6 @@ module MonadStep where
 
 import Control.Monad
 
-import Control.Applicative
-
 import Classes.StepTree
 import Data.Bifunctor (Bifunctor(second))
 

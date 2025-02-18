@@ -1,15 +1,42 @@
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 {-| 
     Module: EvalSteps 
     Description: Monadaa 'EvalSteps', usada para computaciones que pueden fallar y que ademas llevan un registro de mensajes.
 -}
 module Classes.EvalSteps where
 
-import Control.Applicative
-import Data.Bifunctor
-import Data.Either
+import Control.Monad.Except
+import Control.Monad.Identity
+import Classes.Monads.MonadAssumptions (AssumptionsT, runAssumptionsT)
+import Classes.Assumptions (Assumptions)
+import qualified Classes.Assumptions as A
 
 -- | Alias de tipo para mensajes de error.
 type Error = String
+
+type EvalSteps = AssumptionsT (Except Error)
+
+
+instance Eq a => Eq (EvalSteps a) where
+    a == b = case (runEvalSteps a, runEvalSteps b) of
+                (Left _, Left _) -> True
+                (Right x, Right y) -> x == y
+                _ -> False
+
+runEvalSteps :: EvalSteps a -> Either Error a
+runEvalSteps = runIdentity . runExceptT . runAssumptionsT
+
+instance Assumptions (EvalSteps a) where
+    isNegative = undefined
+    isPositive = undefined
+    isZero = undefined
+    isEven = undefined
+    isOdd = undefined
+    isInteger = undefined
+
+{-
 
 -- | El tipo 'EvalSteps' encapsula una computación que puede resultar en un error o en un valor,
 -- junto con una lista de mensajes de registro.
@@ -62,3 +89,4 @@ isUndefined = isLeft . fst . unEvalSteps
 -- Agrega un mensaje de registro a la computación 'EvalSteps'.
 addStep :: String -> EvalSteps ()
 addStep msg = EvalSteps (return (), [msg])
+-}

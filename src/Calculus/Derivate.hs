@@ -48,7 +48,7 @@ makeUnevaluatedDerivative u = construct . Derivative u
 --  > derivate (f(g(x))) x = Derivate(f(g(x)), g(x)) * Derivate(g(x),x) -- regla de la cadena
 derivate :: Expr -> Expr -> Expr
 derivate u x
-  | notAVariable x = fail $ "Derivate: " ++ show x ++ " no es una variable"
+  | notAVariable x = undefinedExpr $ "Derivate: " ++ show x ++ " no es una variable"
   | u == x = 1 -- derivada de x
   | freeOf u x = 0 -- derivada de una constante
 derivate u@(structure -> Pow v w) x =

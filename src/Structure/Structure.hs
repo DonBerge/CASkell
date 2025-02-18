@@ -47,7 +47,7 @@ import qualified PExpr as P
 import qualified Number as N
 
 import Expr
-import Classes.EvalSteps (EvalSteps(unEvalSteps))
+import Classes.EvalSteps (runEvalSteps)
 import Classes.Assumptions
 import Symplify (simplifyFun)
 import Data.List.NonEmpty (toList, NonEmpty(..))
@@ -59,9 +59,9 @@ makeExpr :: P.PExpr -> Expr
 makeExpr = return
 
 structure :: Expr -> SExpr
-structure x = case unEvalSteps x of
-                (Left e, _) -> Undefined e
-                (Right x', _) -> structure' x'
+structure x = case runEvalSteps x of
+                Left e -> Undefined e
+                Right x' -> structure' x'
 
     where
         structure' (P.Number n) = Number n
@@ -90,7 +90,7 @@ construct (Add xs) = sum xs
 construct (Mul xs) = product xs
 construct (Pow b e) = b ** e
 construct (Fun s xs) = sequence xs >>= simplifyFun . P.Fun s . toList
-construct (Undefined error) = fail error
+construct (Undefined error) = undefinedExpr error
 
 freeOf :: Expr -> Expr -> Bool
 freeOf u t

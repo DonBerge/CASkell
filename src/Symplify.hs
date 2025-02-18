@@ -26,6 +26,7 @@ import PExpr
 import Data.List
 import Control.Applicative
 import Classes.EvalSteps
+import Control.Monad.Except (MonadError(throwError))
 
 
 numberNumerator :: PExpr -> Integer
@@ -90,7 +91,7 @@ exponent _ = 1
 simplifyPow :: PExpr -> PExpr -> EvalSteps PExpr
 simplifyPow 0 w
     | true $ isPositive w = return 0
-    | otherwise = fail "0^w is not defined for w <= 0"
+    | otherwise = throwError "0^w is not defined for w <= 0"
 simplifyPow 1 _ = return 1
 simplifyPow v w
     | true $ isInteger w = simplifyIntPow v (numberNumerator w)
@@ -235,7 +236,7 @@ freeOf u t = all (`freeOf` t) $ operands u
 linearForm :: PExpr -> PExpr -> EvalSteps (PExpr, PExpr)
 linearForm u x
     | u == x = return (1, 0)
-    | notASymbol x = fail "x must be a symbol"
+    | notASymbol x = throwError $ show x ++ " must be a symbol"
         where
             notASymbol (Symbol _) = False
             notASymbol _ = True
@@ -247,7 +248,7 @@ linearForm u@(Mul _) x
                     udivx <- simplifyDiv u x
                     if freeOf udivx x
                         then return (udivx, 0)
-                        else fail "not a linear form"
+                        else throwError "not a linear form"
 linearForm u@(Add []) _ = return (0, u)
 linearForm (Add (u:us)) x = do
                                 (a,b) <- linearForm u x
@@ -257,7 +258,7 @@ linearForm (Add (u:us)) x = do
                                 return (a', b')
 linearForm u x
     | freeOf u x = return (0, u)
-    | otherwise = fail "not a linear form"
+    | otherwise = throwError "not a linear form"
 
 mulByNeg :: PExpr -> Bool
 mulByNeg (Mul ((Number a):_)) = a<0
@@ -279,7 +280,7 @@ handlePeriod cases onOddPi x = do
                                          in if even m
                                                 then q
                                                 else q >>= onOddPi
-                        _ -> fail "Could not handle period"
+                        _ -> throwError "Could not handle period"
 
 simplifyFun :: PExpr -> EvalSteps PExpr
 simplifyFun (Sin x)

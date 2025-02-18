@@ -285,7 +285,7 @@ mbRemainder p q l = snd $ mbPolyDivide p q l
 
 -}
 pseudoDivision :: Expr -> Expr -> Expr -> (Expr, Expr)
-pseudoDivision _ 0 _ = let f = fail "Pseudo-division por cero" in (f,f)
+pseudoDivision _ 0 _ = let f = undefinedExpr "Pseudo-division por cero" in (f,f)
 pseudoDivision u v x = let
                         p = 0
                         s = u

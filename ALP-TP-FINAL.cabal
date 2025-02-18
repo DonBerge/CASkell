@@ -91,6 +91,7 @@ library
                       matrix,
                       prettyprinter,
                       array,
+                      mtl,
                       exact-combinatorics
 
     -- Directories containing source files.

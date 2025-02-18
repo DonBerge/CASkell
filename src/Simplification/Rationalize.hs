@@ -56,7 +56,7 @@ rationalSimplify u = let
 
         -- signNormalized = normalized
 
-        simplifyNumbers _ 0 = (fail "Division by zero", fail "Division by zero")
+        simplifyNumbers _ 0 = (undefinedExpr "Division by zero", undefinedExpr "Division by zero")
         simplifyNumbers 0 _ = (0,1)
         simplifyNumbers n d = let
                                 c = numberCoefficientList n ++ numberCoefficientList d

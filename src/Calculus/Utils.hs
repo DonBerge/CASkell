@@ -25,4 +25,4 @@ getNewVariable u (structure -> Symbol x) = getNewVariable' x
                             in if symbol_x `elem` vars
                                 then getNewVariable' ('_':x)
                                 else symbol_x
-getNewVariable _ _ = fail "La variable debe ser un simbolo"
+getNewVariable _ _ = undefinedExpr "La variable debe ser un simbolo"
