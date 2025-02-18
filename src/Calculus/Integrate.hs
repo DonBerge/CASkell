@@ -15,16 +15,10 @@ import TwoList (toList)
 import Calculus.Derivate (derivate)
 import Data.List (union)
 
+import Calculus.Utils
+
 makeUnevaluatedIntegral :: Expr -> Expr -> Expr
 makeUnevaluatedIntegral u = construct . Integral u
-
-{-|
-    Sustitucion de expresiones dentro de otra expresion
--}
-substitute :: Expr -> Expr -> Expr -> Expr
-substitute u t r
-    | u == t = r
-    | otherwise = mapStructure (\u' -> substitute u' t r) u
 
 
 {-| 

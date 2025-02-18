@@ -3,7 +3,7 @@
 
 module Simplification.Trigonometric where
 
-import Calculus.Integrate (substitute)
+import Calculus.Utils
 import Classes.Assumptions
 import Data.Bifunctor (Bifunctor (bimap, first, second))
 import qualified Data.Matrix as Matrix

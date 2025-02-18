@@ -29,6 +29,7 @@ module Structure (
     pattern Sinh,
     pattern Cosh,
     pattern Tanh,
+    pattern Substitution,
     pattern Derivative,
     pattern Integral,
     pattern DefiniteIntegral,
@@ -165,6 +166,9 @@ pattern Cosh x = Fun "Cosh" (x :| [])
 
 pattern Tanh :: Expr -> SExpr
 pattern Tanh x = Fun "Tanh" (x :| [])
+
+pattern Substitution :: Expr -> Expr -> Expr -> SExpr
+pattern Substitution u v w = Fun "Substitution" (u :| [v,w])
 
 pattern Derivative :: Expr -> Expr -> SExpr
 pattern Derivative u x = Fun "Derivate" (u :| [x])
