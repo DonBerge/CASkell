@@ -112,8 +112,8 @@ instance Show PExpr where
     show (Pow x y) = parenExpr x ++ "^" ++ parenExpr y
         where
             parenExpr (Number s)
-                | false (s >= 0 ||| isInteger s) = paren $ show s
-                | otherwise = show s
+                | true (s >= 0 &&& isInteger s) = show s
+                | otherwise = paren $ show s
             parenExpr s@(Add _) = "(" ++ show s ++ ")"
             parenExpr s@(Mul _) = "(" ++ show s ++ ")"
             parenExpr s@(Pow _ _) = "(" ++ show s ++ ")"

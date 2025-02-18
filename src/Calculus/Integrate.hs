@@ -1,6 +1,13 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
+-- |
+-- Module      : Calculus.Integrate
+-- Description : Proporciona funcionalidad para calcular la integral de expresiones matemáticas.
+--
+-- Este módulo define funciones para calcular la integral de expresiones matemáticas con respecto a una variable dada. Soporta la integración de operaciones aritméticas básicas, funciones trigonométricas, funciones exponenciales y logarítmicas.
+-- Puede manejar la integración de expresiones mas complejas gracias a la aplicación de la linealidad de la integral y el método de sustitución.
+
 module Calculus.Integrate where
 
 import Expr
@@ -17,6 +24,11 @@ import Data.List (union)
 
 import Calculus.Utils
 
+{-|
+    Construye una integral sin evaluar
+
+    > structure (makeUnevaluatedIntegral u x) = Integral u x
+-}
 makeUnevaluatedIntegral :: Expr -> Expr -> Expr
 makeUnevaluatedIntegral u = construct . Integral u
 
@@ -29,9 +41,8 @@ makeUnevaluatedIntegral u = construct . Integral u
 
     @integralTable@ cumple el rol de una tabla de integrales.
 
-    Ejemplos:
+    === Ejemplos:
     
-    > integralTable (sec(x) * tan(x)) (x) = sec(x)
     > integralTable (log x) = log x * x
     > integralTable (x^2) = 1/3 * x^3
     > integralTable (2 * sin x * cos x) x = Undefined: Integral desconocida
@@ -41,19 +52,18 @@ integralTable e x
     | e `freeOf` x = e * x -- Expresiones libres de x(constantes)
     | e == x = 1/2 * x ** 2 -- Integral de x
 -- x^n con n libre de x
+-- b^x con b libre de x
 integralTable (structure -> Pow a n) x
     | a == x && n `freeOf` x = case n of
                                  -1 -> log x
                                  _ -> x**(n+1) / (n+1)
--- e^x, log x, b^x con b libre de x
-integralTable u@(structure -> Exp a) x
-    | a == x = u
-integralTable (structure -> Log a) x
-    | a == x = x * log x --simplifyProduct [Log x, x]
--- Funciones trigonometricas
+    | n == x && a `freeOf` x = a**x / log a
+-- Integracion de funciones conocidas
 integralTable f@(structure -> Fun _ (a:|[])) x
     | a == x = integrateFun (structure f)
     where
+        integrateFun (Exp x) = exp x
+        integrateFun (Log x) = x * log x - x
         integrateFun (Sin x) = - cos x
         integrateFun (Cos x) = sin x
         integrateFun (Tan x) = -log(cos x)
@@ -68,7 +78,7 @@ integralTable _ _ = fail "Integral no aparece en la tabla de integrales"
 {-|
     @separateFactors u x@ factoriza la expresión en 2 partes \(a \cdot b\) donde \(a\) no depende de \(x\)
 
-    Ejemplos:
+    === Ejemplos:
 
     > separateFactors (x^2) x = (1,x^2)
     > separateFactors (x^2 + 1) x = (1,x^2 + 1)
@@ -208,7 +218,7 @@ integrate u x = integralTable u x
                     <|>
                 substitutionMethod u x
                     <|>
-                construct (Integral u x) -- Integral desconocida, devolver una integral sin evaluar
+                makeUnevaluatedIntegral u x -- Integral desconocida, devolver una integral sin evaluar
 ---
 
 {-|

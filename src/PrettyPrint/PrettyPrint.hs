@@ -61,8 +61,15 @@ instance Pretty Expr where
         d = denominator u
      in if d == 1
           then pretty' n
-          else pretty' n <+> slash <+> pretty' d
+          else prettyDivision n d --pretty' n <+> slash <+> pretty' d
     where
+      prettyDivision n d = mkPretty n <> slash <> mkPretty d
+        where
+          mkPretty u@(structure -> Add _) = parens $ pretty' u
+          mkPretty u@(structure -> Mul _) = parens $ pretty' u
+          mkPretty u = pretty' u
+
+
       pretty' v
         | mulByNeg v = pretty "-" <> mkPretty (negate v)
         where
