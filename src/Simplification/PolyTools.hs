@@ -4,7 +4,6 @@ module Simplification.PolyTools where
 import Prelude hiding (exponent)
 
 import Expr
-import Classes.Assumptions
 import Structure
 import qualified Simplification.Algebraic as Algebraic
 
@@ -16,9 +15,7 @@ isSymbol _ = False
 
 variables :: Expr -> [Expr]
 variables (structure -> Number _) = []
-variables u@(structure -> Pow v w)
-    | true (isInteger w &&& isPositive (w - 1)) = variables v
-    | otherwise = [u]
+variables (structure -> MonomialTerm v _) = variables v
 variables (structure -> Add us) = foldl union [] $ fmap variables us
 variables (structure -> Mul us) = foldl union [] $ fmap variables us
 variables u = [u]
