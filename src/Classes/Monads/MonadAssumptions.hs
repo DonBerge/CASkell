@@ -7,12 +7,12 @@ import TriBool
 import Control.Monad.Reader
 
 data AssumptionsEnviroment = AssumptionsEnviroment {
-    isPositive :: TriBool,
-    isNegative :: TriBool,
-    isZero :: TriBool,
-    isEven :: TriBool,
-    isOdd :: TriBool,
-    isInteger :: TriBool
+    askPositive :: TriBool,
+    askNegative :: TriBool,
+    askZero :: TriBool,
+    askEven :: TriBool,
+    askOdd :: TriBool,
+    askInteger :: TriBool
 }
 
 emptyAssumptions :: AssumptionsEnviroment

@@ -65,6 +65,8 @@ structure x = case runEvalSteps x of
 
     where
         structure' (P.Number n) = Number n
+
+        structure' (P.SymbolWithAssumptions s _) = Symbol s
         
         structure' (P.Add []) = Number 0
         structure' (P.Add [x]) = structure' x

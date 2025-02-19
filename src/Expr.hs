@@ -12,6 +12,7 @@ import Symplify
 import Number (Number)
 import qualified Number as N
 import Control.Monad.Except (MonadError(throwError))
+import Classes.Monads.MonadAssumptions (emptyAssumptions)
 
 -- import Simplification.Rationalize
 
@@ -114,7 +115,7 @@ number :: Number -> Expr
 number = return . Number
 
 symbol :: String -> Expr
-symbol = pure . Symbol
+symbol = return . flip SymbolWithAssumptions emptyAssumptions
 
 undefinedExpr :: String -> Expr
 undefinedExpr = throwError
