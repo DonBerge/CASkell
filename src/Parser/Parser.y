@@ -75,7 +75,7 @@ mkFun name args
       "csc", "asin", "acos", "atan", "asinh", "acosh", "atah", "sinh", "cosh", "tanh"] = construct $ Fun (capitalize lname) args
   | lname == "sqrt" = case args of
                         (x :| []) -> sqrt x
-                        _ -> fail "La funcion raiz cuadrada solo toma un argumento"
+                        _ -> undefinedExpr "La funcion raiz cuadrada solo toma un argumento"
   | otherwise = construct $ Fun name args
 -- = let
                   --  lname = map toLower name

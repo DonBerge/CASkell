@@ -13,6 +13,7 @@ import Number (Number)
 import qualified Number as N
 import Control.Monad.Except (MonadError(throwError))
 import Classes.Monads.MonadAssumptions (emptyAssumptions)
+import Data.Either (fromRight)
 
 -- import Simplification.Rationalize
 
@@ -91,20 +92,30 @@ cot = makeFun Cot
 
 -- * Assumptions sobre las expresiones
 
--- extractTriBool :: EvalSteps TriBool -> TriBool
--- extractTriBool (EvalSteps (Left _, _)) = U
--- extractTriBool (EvalSteps (Right x, _)) = x
--- 
--- instance Assumptions Expr where
---     isNegative = extractTriBool . fmap isNegative
---     isPositive = extractTriBool . fmap isPositive
---     isZero = extractTriBool . fmap isZero
---     isEven = extractTriBool . fmap isEven
---     isOdd = extractTriBool . fmap isOdd
---     isInteger = extractTriBool . fmap isInteger
-                        
+extractTriBool :: EvalSteps TriBool -> TriBool
+extractTriBool = fromRight U . runEvalSteps
 
+instance Assumptions Expr where
+    isNegative = extractTriBool . fmap isNegative
+    isPositive = extractTriBool . fmap isPositive
+    isZero = extractTriBool . fmap isZero
+    isEven = extractTriBool . fmap isEven
+    isOdd = extractTriBool . fmap isOdd
+    isInteger = extractTriBool . fmap isInteger
 
+-- * Comparacion de expresiones              
+
+lte :: Expr -> Expr -> TriBool
+lte x y = isNegative (x-y) ||| x==y -- (x-y) negativo o x==y
+
+lt :: Expr -> Expr -> TriBool
+lt x y = isNegative (x-y) -- (y-x) negativo y x/=y
+
+gt :: Expr -> Expr -> TriBool
+gt x y = not3 $ lte x y
+
+gte :: Expr -> Expr -> TriBool
+gte x y = not3 $ lt x y
 
 --------
 
