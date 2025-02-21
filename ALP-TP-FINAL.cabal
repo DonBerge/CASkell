@@ -60,6 +60,7 @@ library
 
     -- Modules exported by the library.
     exposed-modules:  Simplification.Algebraic
+                      Simplification.Exponential
                       Simplification.PolyTools
                       Simplification.Rationalize
                       Simplification.Trigonometric
