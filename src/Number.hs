@@ -3,229 +3,117 @@
 {-|
 Module: Number
 Description: Definición y operaciones para el tipo 'Number', que puede representar enteros, fracciones y números reales.
+
+Este módulo define el tipo 'Number' y proporciona varias operaciones y clases de instancias para trabajar con números que pueden ser enteros, fracciones o números reales.
 -}
 module Number (
     -- * Tipos
-    Number(..),
+    Number(fromNumber),
     -- * Funciones
     numerator,
     denominator,
-    fromNumber
 ) where
 
-import Data.Ratio ((%))
 import qualified Data.Ratio as R
 
 import Classes.Assumptions
 import Data.Bifunctor (Bifunctor(bimap))
 
--- | El tipo 'Number' puede representar un entero, una fracción o un número real.
-data Number = Int Integer | Fraction Rational | Real Double
+-- | El tipo 'Number' representa un número que puede ser un entero, una fracción o un número real.
+newtype Number = Number { fromNumber :: Rational } deriving (Eq, Ord)
 
+-- | Obtiene la cantidad de dígitos de un número entero.
 digitCount :: Integer -> Int
 digitCount = length . show . abs
 
-epsilon :: Double
-epsilon = 2**(-52)
-
+-- | "maxDigits" es la cantidad máxima de dígitos que para que un numero se muestre como fraccion.
 maxDigits :: Int
 maxDigits = 7
 
--- | Simplifica un 'Number' transformándolo entre los distintos tipos si es necesario.
-simplify :: Number -> Number
-simplify (Fraction x) 
-    | R.denominator x == 1 = Int $ R.numerator x
-    | dn <= maxDigits && dd <= maxDigits = Fraction x
-    | otherwise = Real $ fromRational x
-    where
-        dn = digitCount $ R.numerator x
-        dd = digitCount $ R.denominator x
--- Un real con pocos decimales se convierte en fraccion
-simplify (Real x)
-    | dn <= maxDigits && dd <= maxDigits = if R.denominator f == 1 
-                                                then Int (R.numerator f) 
-                                                else Fraction f -- simplify $ Fraction f
-    | otherwise = Real x
-    where
-        f = R.approxRational x epsilon
-        dn = digitCount $ R.numerator f
-        dd = digitCount $ R.denominator f
-simplify x = x
+-- | Convierte un 'Number' a un numero de punto flotante.
+toDouble :: Number -> Double
+toDouble (Number x) = fromRational x
 
--- | Convierte un 'Number' a una fracción.
-toFraction :: Number -> Number
-toFraction (Int n) = Fraction (n%1)
-toFraction (Real n) = Fraction (R.approxRational n epsilon)
-toFraction x = x
-
--- | Convierte un 'Number' a un número real.
-toReal :: Number -> Number
-toReal (Int n) = Real (fromIntegral n)
-toReal (Fraction n) = Real (fromRational n)
-toReal x = x
-
--- | Función auxiliar para aplicar operaciones entre dos 'Number'.
-makeOp :: (Number -> Number -> t) -> Number -> Number -> t
-makeOp op a@(Int _) b@(Int _) = a `op` b
-makeOp op a@(Int _) b@(Fraction _) = toFraction a `op` b
-makeOp op a@(Int _) b@(Real _) = toReal a `op` b
-makeOp op a@(Fraction _) b@(Int _) = a `op` toFraction b
-makeOp op a@(Fraction _) b@(Fraction _) = a `op` b
-makeOp op a@(Fraction _) b@(Real _) = toReal a `op` b
-makeOp op a@(Real _) b = a `op` toReal b
-
--- | Instancia de igualdad para 'Number'.
-instance Eq Number where
-  Int a == Int b = a==b
-  Fraction a == Fraction b = a==b
-  Real a == Real b = a==b
-
-  a==b = makeOp (==) a b
-
--- | Instancia de orden para 'Number'.
-instance Ord Number where
-    Int a <= Int b = a<=b
-    Fraction a <= Fraction b = a<=b
-    Real a <= Real b = a<=b
-    
-    a<=b = makeOp (<=) a b
-
--- | Instancia de 'Show' para 'Number'.
 instance Show Number where
-  show (Int n) = show n
-  show (Fraction n) = show (R.numerator n) ++ "/" ++ show (R.denominator n)
-  show (Real n) = show n
+-- Mostrar un numero racional como fraccion si tiene pocos digitos, sino mostrarlo como un double
+  show x
+    | dn <= maxDigits && dd <= maxDigits = if d == 1 
+                                                then show n 
+                                                else show n ++ "/" ++ show d
+    | otherwise = show $ toDouble x
+    where
+        n = R.numerator $ fromNumber x
+        d = R.denominator $ fromNumber x
+        dn = digitCount $ R.numerator $ fromNumber x
+        dd = digitCount $ d
 
--- | Instancia de 'Num' para 'Number'.
 instance Num Number where
-    fromInteger = Int
+    Number a + Number b = Number (a+b)
+    Number a * Number b = Number (a*b)
+    negate (Number a) = Number (-a)
+    abs (Number a) = Number (abs a)
+    signum (Number a) = Number (signum a)
+    fromInteger = Number . fromInteger
 
-    ---
-    Int a + Int b = Int (a+b)
-    Fraction a + Fraction b = simplify $ Fraction (a+b)
-    Real a + Real b = simplify $ Real (a+b)
-
-    a+b = makeOp (+) a b
-
-    ---
-    Int a * Int b = Int (a*b)
-    Fraction a * Fraction b = simplify $ Fraction (a*b)
-    Real a * Real b = simplify $ Real (a*b)
-    a*b = makeOp (*) a b
-    --
-    negate (Int a) = Int (-a)
-    negate (Fraction a) = Fraction (-a)
-    negate (Real a) = Real (-a)
-    ---
-    abs (Int a) = Int (abs a)
-    abs (Fraction a) = Fraction (abs a)
-    abs (Real a) = Real (abs a)
-
-    ---
-    signum (Int a) = Int (signum a)
-    signum (Fraction a) = Int $ R.numerator $ signum a
-    signum (Real a) = Int $ truncate $ signum a
-
--- | Instancia de 'Fractional' para 'Number'.
 instance Fractional Number where
-    fromRational = simplify . Fraction
+    Number a / Number b = Number (a/b)
+    recip (Number a) = Number (recip a)
+    fromRational = Number
 
-    recip (Int a) = simplify $ Fraction (1%a)
-    recip (Fraction a) = simplify $ Fraction $ recip a
-    recip (Real a) = simplify $ Real $ recip a
-
-makeFun :: (Double -> Double) -> Number -> Number
-makeFun f (Real x) = simplify $ Real $ f x
-makeFun f x = makeFun f $ toReal x
-
--- | Instancia de 'Floating' para 'Number'.
-instance Floating Number where
-    pi = Real pi
-    exp = makeFun exp
-    log = makeFun log
-    sqrt = makeFun sqrt
-    sin = makeFun sin
-    cos = makeFun cos
-    tan = makeFun tan
-    asin = makeFun asin
-    acos = makeFun acos
-    atan = makeFun atan
-    sinh = makeFun sinh
-    cosh = makeFun cosh
-    tanh = makeFun tanh
-    asinh = makeFun asinh
-    acosh = makeFun acosh
-    atanh = makeFun atanh
-
-    x ** (Int y) = x ^^ y
-    x ** y@(Fraction _) = x ** toReal y
-    (Int x) ** (Real y) = simplify $ Real (fromIntegral x ** y)
-    (Fraction x) ** (Real y) = simplify $ Real (fromRational x ** y)
-    (Real x) ** (Real y) = simplify $ Real (x ** y)
-
--- | Instancia de 'Real' para 'Number'.
 instance Real Number where
-    toRational (Fraction a) = a
-    toRational x = toRational $ toFraction x
+    toRational = fromNumber
 
--- | Instancia de 'RealFrac' para 'Number'.
 instance RealFrac Number where
-    properFraction (Int i) = (fromInteger i, 0)
-    properFraction (Fraction x) = let
-                                    (n,f) = properFraction x
-                                  in
-                                    (n, simplify $ Fraction f)
-    properFraction (Real x) = let
-                                (n,f) = properFraction x
-                              in
-                                (n, simplify $ Real f)
+    properFraction x = (fromInteger n, Number f)
+        where
+            (n,f) = properFraction $ fromNumber x
 
+lift :: (Double -> Double) -> Number -> Number
+lift f =  Number . toRational . f . toDouble
 
---- NOTA: Asume que el numero esta simplificado
--- | Instancia de 'Assumptions' para 'Number'.
-instance Assumptions Number where
-    isPositive (Int x) = liftBool $ x > 0
-    isPositive (Fraction x) = liftBool $ x > 0
-    isPositive (Real x) = liftBool $ x > 0
-
-    isNegative (Int x) = liftBool $ x < 0
-    isNegative (Fraction x) = liftBool $ x < 0
-    isNegative (Real x) = liftBool $ x < 0
-
-    isZero (Int x) = liftBool $ x == 0
-    isZero _ = F
-
-    isEven (Int x) = liftBool $ even x
-    isEven _ = F
-
-    isOdd (Int x) = liftBool $ odd x
-    isOdd _ = F
-
-    isInteger (Int _) = T
-    isInteger _ = F
-
-instance Enum Number where
-    toEnum = Int . toInteger
-    fromEnum (Int x) = fromInteger x
-    fromEnum _ = error "fromEnum: Not an Int"
-
-instance Integral Number where
-    quotRem (Int a) (Int b) = bimap Int Int (quotRem a b)
-    quotRem _ _ = error "quotRem: Not an Int"
-
-    toInteger (Int x) = x
-    toInteger _ = error "toInteger: Not an Int"
+instance Floating Number where
+    pi = Number $ toRational (pi :: Double)
+    exp = lift exp
+    log = lift log
+    sqrt = lift sqrt
+    sin = lift sin
+    cos = lift cos
+    tan = lift tan
+    asin = lift asin
+    acos = lift acos
+    atan = lift atan
+    sinh = lift sinh
+    cosh = lift cosh
+    tanh = lift tanh
+    asinh = lift asinh
+    acosh = lift acosh
+    atanh = lift atanh
 
 -- | Obtiene el numerador de un 'Number'.
 numerator :: Number -> Integer
-numerator = R.numerator . toRational 
+numerator = R.numerator . fromNumber
 
 -- | Obtiene el denominador de un 'Number'.
 denominator :: Number -> Integer
-denominator = R.denominator . toRational
+denominator = R.denominator . fromNumber
 
--- | Convierte un 'Number' a un 'Double'.
-fromNumber :: Number -> Double
-fromNumber (Int x) = fromIntegral x
-fromNumber (Fraction x) = fromRational x
-fromNumber (Real x) = x
+instance Assumptions Number where
+    isPositive x = liftBool $ x > 0
+    isZero x = liftBool $ x == 0
+    isInteger x = liftBool $ denominator x == 1
+    isEven x = isInteger x &&& even (numerator x)
+
+instance Enum Number where
+    toEnum = fromIntegral
+    fromEnum x
+        | true (isInteger x) = fromIntegral $ numerator x
+        | otherwise = error "fromEnum: Not an Int"
+
+instance Integral Number where
+    quotRem a b
+        | true (isInteger a &&& isInteger b) = bimap fromInteger fromInteger (quotRem (toInteger a) (toInteger b))
+        | otherwise = error "quotRem: Not an Int"
+
+    toInteger x
+        | true (isInteger x) = numerator x
+        | otherwise = error "toInteger: Not an Int"

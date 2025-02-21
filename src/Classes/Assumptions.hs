@@ -18,8 +18,19 @@ import TriBool
 -- como por ejemplo si es positivo, negativo, cero, par, impar, entero, etc.
 class Assumptions a where
     isPositive :: a -> TriBool
+    isPositive x = not3 (isNegative x ||| isZero x)
+
     isNegative :: a -> TriBool
+    isNegative x = not3 (isPositive x ||| isZero x)
+
     isZero :: a -> TriBool
+    isZero x = not3 (isPositive x ||| isNegative x)
+
     isEven :: a -> TriBool
+    isEven x = isInteger x &&& not3 (isOdd x)
+
     isOdd :: a -> TriBool
+    isOdd x = isInteger x &&& not3 (isEven x)
+
     isInteger :: a -> TriBool
+    isInteger x = isEven x ||| isOdd x
