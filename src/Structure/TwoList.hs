@@ -12,7 +12,8 @@ module TwoList (
   sortBy,
   intersperse,
   intercalate,
-  reverse
+  reverse,
+  partition
 )
 where
 
@@ -58,3 +59,6 @@ intercalate x = concat . intersperse x
 
 reverse :: TwoList a -> TwoList a
 reverse = lift NE.reverse
+
+partition :: (a -> Bool) -> TwoList a -> ([a], [a])
+partition p (x :|| xs) = NE.partition p (x :| NE.toList xs)

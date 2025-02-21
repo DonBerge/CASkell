@@ -129,32 +129,17 @@ instance Show PExpr where
     show (Fun f xs) = f ++ "(" ++ intercalate "," (map show xs) ++ ")"
 
 instance Assumptions PExpr where
-    {-isPositive (Number x) = isPositive x
-    isPositive (SymbolWithAssumptions _ a) = askPositive a
-    isPositive (Mul xs) = xor3 isNegative xs
-    isPositive (Add []) = F
-    isPositive (Add xs) = foldTri uand T isPositive xs
-        where
-            uand U _ = U
-            uand _ U = U
-            uand p q = p &&& q
-    isPositive (Pow x y) = isPositive x ||| isEven y
-    isPositive (Exp _) = T
-    isPositive (Log (Number a)) = liftBool $ a > 1
-    isPositive Pi = T
-    isPositive (Fun _ _) = U-}
-    --isPositive x = not3 $ isNegative x ||| isZero x
     isZero (SymbolWithAssumptions _ a) = askZero a
     isZero u = liftBool $ u==0
 
 
     isNegative (Number x) = isNegative x
     isNegative (SymbolWithAssumptions _ a) = askNegative a
-    isNegative (Mul xs) = foldl nxor T $ map isNegative xs
+    isNegative (Mul xs) = foldl1 xor $ map isNegative xs
         where
-            nxor U _ = U
-            nxor _ U = U
-            nxor p q = liftBool $ p == q
+            xor U _ = U
+            xor _ U = U
+            xor p q = liftBool $ p /= q
     isNegative (Add xs) = foldTri uand T isNegative xs
         where
             -- la diferencia con (&&&) es que _ &&& F = F

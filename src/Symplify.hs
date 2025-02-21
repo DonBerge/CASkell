@@ -335,6 +335,11 @@ simplifyFun (Exp x) = do
     where
         e = Exp 1
 
+-- logaritmos
+simplifyFun (Log 1) = return 0
+simplifyFun (Log x)
+--     | true $ isNegative x = fail $ "Logaritmo de un número negativo( Log(" ++ show x ++  ") )"
+    | otherwise = return $ Log x
 
 simplifyFun x = return x
 
