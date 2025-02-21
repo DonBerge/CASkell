@@ -75,7 +75,7 @@ separateIntegerTerms u
 
 -- Primero se expanden las subexpresiones algebraicas
 expand :: Expr -> Expr
-expand (mapStructure expand . Algebraic.expand -> v) = case structure v of
+expand (mapStructure expand . Algebraic.expandMainOp -> v) = case structure v of
   Exp w -> expandRules w -- Si la expresión raiz es una exponencial, aplicar las propiedades de expansión
   _ -> v
   where
@@ -88,8 +88,48 @@ expand (mapStructure expand . Algebraic.expand -> v) = case structure v of
 
 -- * Contracción de exponenciales
 
+{-|
+    Una expresión algebraica \(u\) esta en forma exponencial contraida si satisface las siguientes propiedades:
+
+        1. Todo producto en \(u\) contiene como mucho un operando que es una función exponencial.
+        2. Toda potencia en \(u\) no tiene una función exponencial como base.
+        3. Toda subexpresión de \(u\) esta en forma algebraica expandida.
+    
+    Ejemplos:
+
+      >>> contract (exp(x) * (exp(x)+exp(y)))
+      Exp(2*x)+Exp(x+y)
+
+      >>> contract (exp(exp(x)) ** exp(y))
+      Exp(Exp(x+y))
+
+-}
 contract :: Expr -> Expr
-contract = undefined
+contract (mapStructure contract -> v)
+  | mulOrPow v = contractRules v -- contraer exponenciales en productos o potencias
+  | otherwise = v
+    where
+      mulOrPow (structure -> Mul _) = True
+      mulOrPow (structure -> Pow _ _) = True
+      mulOrPow _ = False
+
+      contractRules (Algebraic.expand -> v') = case structure v' of
+        Pow b s -> case structure b of
+                    Exp b' -> let p = b'*s in if mulOrPow p then exp(contractRules p) else exp p
+                    _ -> v'
+        Mul vs -> let (p,s) = foldl combineMul (1,0) vs in (exp s) * p
+        Add vs -> foldl combineSum 0 vs
+        _ -> v'
+
+      -- La expansión de expandMainOp puede introducir sumas, por lo que se deben contraer los sumandos
+      combineSum s y
+        | mulOrPow y = s + contractRules y
+        | otherwise = s + y
+
+      -- combinar los argumentos de las exponenciales en s, usando la propiedad exp(s)*exp(y) = exp(s+y)
+      -- los argumentos que no son exponenciales se multiplican en p
+      combineMul (p,s) (structure -> Exp y) = (p, s+y)
+      combineMul (p,s) y = (p*y, s)
 
 -- * Simplificación de exponenciales
 

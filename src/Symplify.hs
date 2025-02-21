@@ -325,6 +325,17 @@ simplifyFun (Tan x) = handlePeriod cases return x <|> return (Tan x)
                         (_,0) | r==1/3 -> simplifySqrt 3
                         (_,0) | r==1/2 -> return $ 1/0
                         (_,_) -> Tan <$> (simplifyProduct [Number r,Pi] >>= simplifySum . (:[b]))
+
+-- exponenciales
+simplifyFun (Exp x) = do 
+                        y' <- simplifyPow e x
+                        case y' of
+                            Pow (Exp 1) y -> return $ Exp y
+                            y -> return y
+    where
+        e = Exp 1
+
+
 simplifyFun x = return x
 
 
