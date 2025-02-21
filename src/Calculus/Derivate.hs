@@ -10,16 +10,21 @@ module Calculus.Derivate where
 import Expr
 import Structure
 
--- | Verifica si una expresión dada es una variable
-notAVariable :: Expr -> Bool
-notAVariable (structure -> Pi) = True
-notAVariable (structure -> Symbol _) = False
-notAVariable _ = True
+import Calculus.Utils (notAVariable)
+
+-- $setup
+-- >>> let x = symbol "x"
+-- >>> let y = symbol "y"
+-- >>> let z = symbol "z"
+-- >>> let u = symbol "u"
+-- >>> let f = function "f"
+-- >>> let g = function "g"
 
 -- |
 --  Construye una derivada sin evaluar
 --
---  > structure (makeUnevaluatedDerivative u x) = Derivate u x
+-- >>> makeUnevaluatedDerivative u x
+-- Derivate(u,x)
 makeUnevaluatedDerivative :: Expr -> Expr -> Expr
 makeUnevaluatedDerivative u = construct . Derivative u
 
@@ -38,14 +43,23 @@ makeUnevaluatedDerivative u = construct . Derivative u
 --  Ademas se utliza la funciñon 'derivateTable' para calcular la derivada de funciones matemáticas comunes.
 --
 --  Si al aplicar las reglas de derivación no se puede calcular la derivada, se devuelve una derivada sin evaluar.
+--
 --  === Ejemplos
---  > derivate (x^2 + 2*x + 1) x = 2*x + 2
---  > derivate (sin x) x = cos x
---  > derivate (exp(x**2)) x = 2 * exp(x**2) * x
---  > derivate (x*log(x)-x) x = log x
---  > derivate (f(x)) x = Derivate(f(x),x) -- derivada sin evaluar
---  > derivate (f(x)*exp(x)) x = Derivate(f(x),x)*exp(x) + f(x)*exp(x) -- regla del producto sin evaluar
---  > derivate (f(g(x))) x = Derivate(f(g(x)), g(x)) * Derivate(g(x),x) -- regla de la cadena
+--
+--  >>> derivate (x**2 + 2*x + 1) x
+--  2+2*x
+--  >>> derivate (sin x) x
+--  Cos(x)
+--  >>> derivate (exp(x**2)) x
+--  2*Exp(x^2)*x
+--  >>> derivate (x*log(x)-x) x
+--  Log(x)
+--  >>> derivate (f[x]) x 
+--  Derivate(f(x),x)
+--  >>> derivate (f[x]*exp(x)) x 
+--  Derivate(f(x),x)*Exp(x)+Exp(x)*f(x)
+--  >>> derivate (f[g[x]]) x
+--  Derivate(f(g(x)),g(x))*Derivate(g(x),x)
 derivate :: Expr -> Expr -> Expr
 derivate u x
   | notAVariable x = undefinedExpr $ "Derivate: " ++ show x ++ " no es una variable"
@@ -60,7 +74,7 @@ derivate u@(structure -> Mul us) x = sum $ fmap ((u *) . logder) us -- regla del
   where
     logder f = (f `derivate` x) / f -- logder f = (log(f(x)))' = f'(x)/f(x)
 derivate u@(structure -> Fun _ (v :| [])) x =
-  let df = derivateTable u v
+  let df = derivateTable u -- derivar u respecto de v
       dv = derivate v x
    in df * dv -- regla de la cadena
   -- Derivada de una integral
@@ -74,30 +88,34 @@ derivate u x = makeUnevaluatedDerivative u x
 --
 --    Si la derivada de una función no está en la tabla, se devuelve una derivada sin evaluar.
 --
---    El segundo argumento solo se usa para construir la derivada sin evaluar.
+--    Si el argumento pasado no es una función, se devuelve Undefined.
 --
 --    Ejemplos:
 --
---      > derivateTable (sin x) x = cos x
---      > derivateTable (exp x) z = exp x
---      > derivateTable (f(x)) = Derivate f x
-derivateTable :: Expr -> Expr -> Expr
-derivateTable (structure -> Sin v) _ = cos v
-derivateTable (structure -> Cos v) _ = negate $ sin v
-derivateTable (structure -> Tan v) _ = 1 / (cos v ** 2)
-derivateTable (structure -> Cot v) _ = negate $ 1 + cot v ** 2
-derivateTable (structure -> Sec v) _ = tan v * sec v
-derivateTable (structure -> Csc v) _ = negate $ cot v * csc v
-derivateTable (structure -> Asin v) _ = 1 / sqrt (1 - v ** 2)
-derivateTable (structure -> Acos v) _ = negate $ 1 / sqrt (1 - v ** 2)
-derivateTable (structure -> Atan v) _ = 1 / (1 + v ** 2)
-derivateTable (structure -> Asinh v) _ = 1 / sqrt (1 + v ** 2)
-derivateTable (structure -> Acosh v) _ = 1 / sqrt (v ** 2 - 1)
-derivateTable (structure -> Atanh v) _ = 1 / (1 - v ** 2)
-derivateTable (structure -> Sinh v) _ = cosh v
-derivateTable (structure -> Cosh v) _ = sinh v
-derivateTable (structure -> Tanh v) _ = 1 / (cosh v ** 2)
-derivateTable (structure -> Exp v) _ = exp v
-derivateTable (structure -> Log v) _ = 1 / v
+--      >>> derivateTable (sin x)
+--      Cos(x)
+--      >>> derivateTable (exp x)
+--      Exp(x)
+--      >>> derivateTable (f[x])
+--      Derivate(f(x),x)
+derivateTable :: Expr -> Expr
+derivateTable (structure -> Sin v) = cos v
+derivateTable (structure -> Cos v) = negate $ sin v
+derivateTable (structure -> Tan v) = 1 / (cos v ** 2)
+derivateTable (structure -> Cot v) = negate $ 1 + cot v ** 2
+derivateTable (structure -> Sec v) = tan v * sec v
+derivateTable (structure -> Csc v) = negate $ cot v * csc v
+derivateTable (structure -> Asin v) = 1 / sqrt (1 - v ** 2)
+derivateTable (structure -> Acos v) = negate $ 1 / sqrt (1 - v ** 2)
+derivateTable (structure -> Atan v) = 1 / (1 + v ** 2)
+derivateTable (structure -> Asinh v) = 1 / sqrt (1 + v ** 2)
+derivateTable (structure -> Acosh v) = 1 / sqrt (v ** 2 - 1)
+derivateTable (structure -> Atanh v) = 1 / (1 - v ** 2)
+derivateTable (structure -> Sinh v) = cosh v
+derivateTable (structure -> Cosh v) = sinh v
+derivateTable (structure -> Tanh v) = 1 / (cosh v ** 2)
+derivateTable (structure -> Exp v) = exp v
+derivateTable (structure -> Log v) = 1 / v
 -- Derivada desconocida, devolver un operador sin evaluar
-derivateTable u v = makeUnevaluatedDerivative u v
+derivateTable u@(structure -> Fun _ (v :| [])) = makeUnevaluatedDerivative u v
+derivateTable _ = undefinedExpr "DerivateTable: El argumento no es una funcion"

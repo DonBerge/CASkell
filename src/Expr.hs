@@ -125,8 +125,14 @@ gte x y = not3 $ lt x y
 number :: Number -> Expr
 number = return . Number
 
+function :: String -> [Expr] -> Expr
+function f xs = sequence xs >>= return . Fun f
+
 symbol :: String -> Expr
 symbol = return . flip SymbolWithAssumptions emptyAssumptions
+
+symbols :: String -> [Expr]
+symbols = map symbol . words
 
 assume :: Expr -> [String] -> Expr
 assume u a = foldl (\x y -> x >>= assume' y) u a
