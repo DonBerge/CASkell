@@ -108,6 +108,9 @@ instance Show PExpr where
     show (Mul []) = "1"
     show (Mul xs) = intercalate "*" $ map parenExpr xs
         where
+            parenExpr (Number s)
+                | true (s>=0 &&& isInteger s) = show s
+                | otherwise = paren $ show s
             parenExpr s@(Add _) = paren $ show s
             parenExpr s = show s
     show (Add []) = "0"
@@ -119,7 +122,7 @@ instance Show PExpr where
     show (Pow x y) = parenExpr x ++ "^" ++ parenExpr y
         where
             parenExpr (Number s)
-                | true (s >= 0 &&& isInteger s) = show s
+                | true (s>=0 &&& isInteger s) = show s
                 | otherwise = paren $ show s
             parenExpr s@(Add _) = "(" ++ show s ++ ")"
             parenExpr s@(Mul _) = "(" ++ show s ++ ")"
