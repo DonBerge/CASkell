@@ -15,6 +15,25 @@ data AssumptionsEnviroment = AssumptionsEnviroment {
     askInteger :: TriBool
 }
 
+setPositive :: TriBool -> AssumptionsEnviroment -> AssumptionsEnviroment
+setPositive p env = env { askPositive = p }
+
+setNegative :: TriBool -> AssumptionsEnviroment -> AssumptionsEnviroment
+setNegative n env = env { askNegative = n }
+
+setZero :: TriBool -> AssumptionsEnviroment -> AssumptionsEnviroment
+setZero z env = env { askZero = z }
+
+setEven :: TriBool -> AssumptionsEnviroment -> AssumptionsEnviroment
+setEven e env = env { askEven = e }
+
+setOdd :: TriBool -> AssumptionsEnviroment -> AssumptionsEnviroment
+setOdd o env = env { askOdd = o }
+
+setInteger :: TriBool -> AssumptionsEnviroment -> AssumptionsEnviroment
+setInteger i env = env { askInteger = i }
+
+
 emptyAssumptions :: AssumptionsEnviroment
 emptyAssumptions = AssumptionsEnviroment U U U U U U
 

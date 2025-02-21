@@ -12,7 +12,7 @@ import Symplify
 import Number (Number)
 import qualified Number as N
 import Control.Monad.Except (MonadError(throwError))
-import Classes.Monads.MonadAssumptions (emptyAssumptions)
+import Classes.Monads.MonadAssumptions (emptyAssumptions, setPositive, setNegative, setZero, setInteger, setOdd, setEven)
 import Data.Either (fromRight)
 
 -- import Simplification.Rationalize
@@ -127,6 +127,23 @@ number = return . Number
 
 symbol :: String -> Expr
 symbol = return . flip SymbolWithAssumptions emptyAssumptions
+
+assume :: Expr -> [String] -> Expr
+assume u a = foldl (\x y -> x >>= assume' y) u a
+    where
+        assume' b (SymbolWithAssumptions y env) = return $ SymbolWithAssumptions y (setAssumption b env)
+        assume' _ x = return x
+
+        setAssumption "positive" = setNegative F . setZero F . setPositive T
+        setAssumption "negative" = setNegative T . setZero F . setPositive F
+        setAssumption "zero" = setNegative F . setZero T . setPositive F
+        setAssumption "integer" = setEven U . setOdd U . setInteger T
+        setAssumption "even" = setEven T . setOdd F . setInteger T
+        setAssumption "odd" = setOdd T . setEven F . setInteger T
+        setAssumption _ = id
+
+
+
 
 undefinedExpr :: String -> Expr
 undefinedExpr = throwError
