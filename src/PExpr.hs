@@ -101,7 +101,6 @@ paren s = "(" ++ s ++ ")"
 -- isNegative (Number x) = x < 0
 -- isNegative _ = False
 
--- TODO: usar DOC
 instance Show PExpr where
     show (Number x) = show x
     show (Symbol x) = x
@@ -144,8 +143,10 @@ instance Assumptions PExpr where
     isPositive (Log (Number a)) = liftBool $ a > 1
     isPositive Pi = T
     isPositive (Fun _ _) = U-}
-    isPositive x = not3 $ isNegative x ||| isZero x
-    
+    --isPositive x = not3 $ isNegative x ||| isZero x
+    isZero (SymbolWithAssumptions _ a) = askZero a
+    isZero u = liftBool $ u==0
+
 
     isNegative (Number x) = isNegative x
     isNegative (SymbolWithAssumptions _ a) = askNegative a
@@ -166,15 +167,15 @@ instance Assumptions PExpr where
     isNegative Pi = F
     isNegative (Fun _ _) = U
 
-    isZero (Number x) = isZero x
-    isZero (SymbolWithAssumptions _ a) = askZero a
-    isZero (Mul xs) = or3 isZero xs
-    isZero (Add xs) = and3 isZero xs
-    isZero (Pow x y) = isZero x &&& isPositive y
-    isZero (Exp _) = F
-    isZero (Log (Number a)) = liftBool $ a == 1
-    isZero Pi = F
-    isZero (Fun _ _) = U
+    -- isZero (Number x) = isZero x
+    -- isZero (SymbolWithAssumptions _ a) = askZero a
+    -- isZero (Mul xs) = or3 isZero xs
+    -- isZero (Add xs) = and3 isZero xs
+    -- isZero (Pow x y) = isZero x &&& isPositive y
+    -- isZero (Exp _) = F
+    -- isZero (Log (Number a)) = liftBool $ a == 1
+    -- isZero Pi = F
+    -- isZero (Fun _ _) = U
 
     isInteger (Number x) = isInteger x
     isInteger (SymbolWithAssumptions _ a) = askInteger a
@@ -197,11 +198,15 @@ instance Assumptions PExpr where
 
 instance Num PExpr where
     fromInteger x = Number (fromInteger x)
+    0 + x = x
+    x + 0 = x
     (Add ps) + (Add qs) = Add $ ps ++ qs
     p + (Add qs) = Add $ p:qs
     (Add ps) + q = Add $ ps ++ [q]
     p + q = Add [p, q]
 
+    1 * x = x
+    x * 1 = x
     (Mul ps) * (Mul qs) = Mul $ ps ++ qs
     p * (Mul qs) = Mul $ p:qs
     (Mul ps) * q = Mul $ ps ++ [q]

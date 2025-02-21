@@ -13,8 +13,8 @@
 --     \end{align*}
 -- \]
 --
--- La operacion que aplica las propiedades de izquierda a derecha se llama *expansión exponencial* y la operación que las aplica de derecha a izquierda
--- se llama *contracción exponencial*. Este modulo contiene definiciones tanto para la expansión como para la contracción de exponenciales.
+-- La operacion que aplica las propiedades de izquierda a derecha se llama /expansión exponencial/ y la operación que las aplica de derecha a izquierda
+-- se llama /contracción exponencial/. Este modulo contiene definiciones tanto para la expansión como para la contracción de exponenciales.
 module Simplification.Exponential where
 
 import Classes.Assumptions
@@ -23,12 +23,21 @@ import qualified Simplification.Algebraic as Algebraic
 import Structure
 import Simplification.Rationalize (rationalize)
 
+-- $setup
+-- >>> let x = symbol "x"
+-- >>> let y = symbol "y"
+-- >>> let z = symbol "z"
+-- >>> let w = symbol "w"
+
 -- * Expansion de exponenciales
 
 -- |
 --    Sea \(u=\prod u_i\), 'separateIntegerTerms' separa aquellos terminos \(u_i\) que son enteros de aquellos que no lo son.
 --
 --    Si \(u\) no es un producto, se aplica la operación viendo a \(u\) como un producto entre 1 y si mismo.
+--
+--    >>> separateIntegerTerms (2*x*(y+z))
+--    (2,x*(y+z))
 separateIntegerTerms :: Expr -> (Expr, Expr)
 separateIntegerTerms (structure -> Mul xs) = foldl combine (1, 1) xs
   where
@@ -49,11 +58,20 @@ separateIntegerTerms u
 --
 --    Ejemplos:
 --
---        > expand (exp (2*w*x + 3*y*z)) = exp(w*x)^2 * exp(y*z)^3
---        > expand (exp (x+y)^2) =  exp(x)^2 * exp(y)^2
---        > expand (1 / (exp (2*x) - exp(x)^2)) = Undefined: Division por cero
---        > expand (exp((x+y)(x-y))) = exp(x^2) / exp(y^2)
---        > expand (exp((x+y)^2)) = exp(x^2) * exp(x*y)^2 * exp(y^2)
+--        >>> expand (exp (2*w*x + 3*y*z))
+--        Exp(w*x)^2*Exp(y*z)^3
+--
+--        >>> expand (exp(x+y) ** 2)
+--        Exp(x)^2*Exp(y)^2
+--
+--        >>> expand (1 / (exp(2*x) - exp(x)**2))
+--        Undefined: Division por cero
+-- 
+--        >>> expand (exp((x+y)*(x-y)))
+--        Exp(x^2)*Exp(y^2)^(-1)
+--
+--        >>> expand (exp((x+y)**2))
+--        Exp(x^2)*Exp(x*y)^2*Exp(y^2)
 
 -- Primero se expanden las subexpresiones algebraicas
 expand :: Expr -> Expr

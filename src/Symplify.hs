@@ -91,7 +91,7 @@ exponent _ = 1
 simplifyPow :: PExpr -> PExpr -> EvalSteps PExpr
 simplifyPow 0 w
     | true $ isPositive w = return 0
-    | otherwise = throwError "0^w is not defined for w <= 0"
+    | otherwise = throwError "Division por cero"
 simplifyPow 1 _ = return 1
 simplifyPow v w
     | true $ isInteger w = simplifyIntPow v (numberNumerator w)
