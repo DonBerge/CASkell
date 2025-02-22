@@ -37,7 +37,8 @@ module Structure (
     freeOf,
     operands,
     construct,
-    mapStructure
+    mapStructure,
+    showStruct
 )
 where
 
@@ -176,7 +177,7 @@ pattern Derivative :: Expr -> Expr -> SExpr
 pattern Derivative u x = Fun "Derivate" (u :| [x])
 
 pattern Integral :: Expr -> Expr -> SExpr
-pattern Integral u x = Fun "Integrate" (u :| [x])
+pattern Integral u x = Fun "Integral" (u :| [x])
 
 pattern DefiniteIntegral :: Expr -> Expr -> Expr -> Expr -> SExpr
 pattern DefiniteIntegral u x a b = Fun "Definite_Integral" (u:| [x,a,b])
@@ -191,3 +192,12 @@ positiveIntegerDegree :: Expr -> Maybe Integer -- Se asume que el argumento es u
 positiveIntegerDegree (structure -> Number n)
   | true (isInteger n &&& n > 1) = Just $ toInteger n
 positiveIntegerDegree _ = Nothing
+
+showStruct :: Expr -> String
+showStruct (structure -> Number n) = "Number " ++ show n
+showStruct (structure -> Symbol s) = "Symbol " ++ s
+showStruct (structure -> Add xs) = "Add " ++ show xs
+showStruct (structure -> Mul xs) = "Mul " ++ show xs
+showStruct (structure -> Pow b e) = "Pow " ++ show b ++ " " ++ show e
+showStruct (structure -> Fun s xs) = "Fun " ++ s ++ " " ++ show xs
+showStruct (structure -> Undefined e) = "Undefined " ++ e

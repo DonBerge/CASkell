@@ -16,6 +16,7 @@ import Structure
 import Control.Applicative
 
 import Simplification.PolyTools (variables)
+import qualified Simplification.Algebraic as Algebraic (expand)
 
 import Data.Bifunctor
 import TwoList (toList)
@@ -24,10 +25,19 @@ import Data.List (union)
 
 import Calculus.Utils
 
+-- $setup
+-- >>> let x = symbol "x"
+-- >>> let y = symbol "y"
+-- >>> let z = symbol "z"
+-- >>> let u = symbol "u"
+-- >>> let f = function "f"
+-- >>> let g = function "g"
+
 {-|
     Construye una integral sin evaluar
 
-    > structure (makeUnevaluatedIntegral u x) = Integral u x
+    >>> makeUnevaluatedIntegral u x
+    Integral(u,x)
 -}
 makeUnevaluatedIntegral :: Expr -> Expr -> Expr
 makeUnevaluatedIntegral u = construct . Integral u
@@ -43,9 +53,12 @@ makeUnevaluatedIntegral u = construct . Integral u
 
     === Ejemplos:
     
-    > integralTable (log x) = log x * x
-    > integralTable (x^2) = 1/3 * x^3
-    > integralTable (2 * sin x * cos x) x = Undefined: Integral desconocida
+    >>> integralTable (log x) x
+    (-1)*x+Log(x)*x
+    >>> integralTable (x**2) x
+    (1/3)*x^3
+    >>> integralTable (2 * sin x * cos x) x
+    Undefined: Integral no aparece en la tabla de integrales
 -}
 integralTable :: Expr -> Expr -> Expr
 integralTable e x
@@ -80,10 +93,18 @@ integralTable _ _ = undefinedExpr "Integral no aparece en la tabla de integrales
 
     === Ejemplos:
 
-    > separateFactors (x^2) x = (1,x^2)
-    > separateFactors (x^2 + 1) x = (1,x^2 + 1)
-    > separateFactors 21 x = (21,1)
-    > separateFactors (2*x*y) x = (2*y,x)
+    >>> separateFactors (x**2) x
+    (1,x^2)
+    
+    >>> separateFactors (x**2 + 1) x
+    (1,1+x^2)
+    
+    >>> separateFactors (21*x) x
+    (21,x)
+
+    >>> separateFactors (2*x*y) x
+    (2*y,x)
+
 -}
 separateFactors :: Expr -> Expr -> (Expr, Expr)
 separateFactors (structure -> Mul us) x = bimap product product $ partitionMul $ toList us
@@ -132,6 +153,23 @@ linearProperties _ _ = undefinedExpr "No se puede aplicar linealidad de la integ
     la integral de la expresión resultante con @x@
 
     Si no se consigue ninguna sustitución que elimine la variable x, la función devuelve Undefined.
+
+    === Ejemplos
+    
+    >>> substitutionMethod (2*x*cos(x**2)) x
+    Sin(x^2)
+
+    >>> substitutionMethod ((2*x+1)*cos(x**2+x)) x
+    Sin(x+x^2)
+
+    >>> substitutionMethod (((x+1)*log(cos((x+1)**2))*sin((x+1)**2)) / (cos((x+1)**2))) x
+    (-1/4)*Log(Cos((1+x)^2))^2
+    
+    >>> substitutionMethod (2*x/(x**4+1)) x 
+    Undefined: No se puede aplicar sustitución
+
+    El ultimo ejemplo evalua a \(\arctan(x^2)\) con la sustitución \(x^2\), pero como
+    \(x^2\) no es obtenido por 'trialSubstituions', la integral no se puede obtener.
 -}
 substitutionMethod :: Expr -> Expr -> Expr
 substitutionMethod f x = foldr ((<|>) . makeSubstitution) failSubstitution $ trialSubstituions f --do
@@ -212,13 +250,16 @@ trialSubstituions _ = []
     Si todos los pasos fallan, no es posible evaluar la integral y la función devuelve Undefined
 -}
 integrate :: Expr -> Expr -> Expr
-integrate u x = integralTable u x
+integrate f x = integralTable f x
                     <|>
-                linearProperties u x
+                linearProperties f x
                     <|>
-                substitutionMethod u x
+                substitutionMethod f x
                     <|>
-                makeUnevaluatedIntegral u x -- Integral desconocida, devolver una integral sin evaluar
+                let g = Algebraic.expand f
+                in if f /= g
+                    then integrate g x -- Intentar integrar la expresion expandida
+                    else makeUnevaluatedIntegral f x -- Integral desconocida, devolver una integral sin evaluar
 ---
 
 {-|

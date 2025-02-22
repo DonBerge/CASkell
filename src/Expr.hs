@@ -46,12 +46,6 @@ instance Fractional Expr where
 
     recip p = p >>= (`simplifyPow` (-1))
 
-    p / q = do
-              p' <- p
-              q' <- q
-              simplifyDiv p' q'
-              -- rationalize pdivq
-
 makeFun :: (PExpr -> PExpr) -> Expr -> Expr
 makeFun f = (=<<) (simplifyFun . f)
 

@@ -97,7 +97,7 @@ simplifyPow v w
     | true $ isInteger w = simplifyIntPow v (numberNumerator w)
     | otherwise = return (Pow v w)
     where
-        simplifyIntPow (Number x) n = return $ Number $ x**fromIntegral n
+        simplifyIntPow (Number x) n = return $ Number $ x ^^ n
         simplifyIntPow _ 0 = return 1
         simplifyIntPow x 1 = return x
         simplifyIntPow (Pow r s) n = simplifyProduct [s,fromInteger n] >>= simplifyPow r

@@ -73,6 +73,9 @@ lift f =  Number . toRational . f . toDouble
 
 instance Floating Number where
     pi = Number $ toRational (pi :: Double)
+
+    (**) x = lift ((**) (toDouble x))
+
     exp = lift exp
     log = lift log
     sqrt = lift sqrt
