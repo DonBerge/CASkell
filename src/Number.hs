@@ -34,18 +34,24 @@ maxDigits = 7
 toDouble :: Number -> Double
 toDouble (Number x) = fromRational x
 
+printAsFraction :: Number -> Bool
+printAsFraction x = dn <= maxDigits && dd <= maxDigits
+    where
+        n = R.numerator $ fromNumber x
+        d = R.denominator $ fromNumber x
+        dn = digitCount $ n
+        dd = digitCount $ d
+
 instance Show Number where
 -- Mostrar un numero racional como fraccion si tiene pocos digitos, sino mostrarlo como un double
   show x
-    | dn <= maxDigits && dd <= maxDigits = if d == 1 
-                                                then show n 
-                                                else show n ++ "/" ++ show d
+    | printAsFraction x = if d == 1 
+                            then show n 
+                            else show n ++ "/" ++ show d
     | otherwise = show $ toDouble x
     where
         n = R.numerator $ fromNumber x
         d = R.denominator $ fromNumber x
-        dn = digitCount $ R.numerator $ fromNumber x
-        dd = digitCount $ d
 
 instance Num Number where
     Number a + Number b = Number (a+b)

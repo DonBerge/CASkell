@@ -1,5 +1,6 @@
 -- filepath: /home/don-berge/Documentos/ALP-TP-FINAL/src/Parser/Parser.y
 {
+{-# OPTIONS_HADDOCK hide #-}
 module Parser where
 
 import Expr
