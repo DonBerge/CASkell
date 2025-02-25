@@ -20,7 +20,7 @@ substitute u t r
   | u == t = r
   | otherwise = mapStructure (\u' -> substitute u' t r) u
 
--- Obtiene un nombre de variable de integración que no este en la expresion
+-- | Dada una expresión \(u\) y un simbolo \(x\), obtiene un nuevo simbolo \(x\) que no este en \(u\)
 getNewVariable :: Expr -> Expr -> Expr
 getNewVariable u (structure -> Symbol x) = getNewVariable' x
   where
