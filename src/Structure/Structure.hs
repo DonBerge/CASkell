@@ -45,7 +45,8 @@ where
 import Data.TwoList (TwoList(..))
 
 import qualified PExpr as P
-import qualified Number as N
+
+import Data.Number (Number)
 
 import Expr
 import Classes.EvalSteps (runEvalSteps)
@@ -53,7 +54,7 @@ import Assumptions
 import Symplify (simplifyFun)
 import Data.List.NonEmpty (toList, NonEmpty(..))
 
-data SExpr = Number N.Number | Symbol String | Add (TwoList Expr) | Mul (TwoList Expr) | Pow Expr Expr | Fun String (NonEmpty Expr) | Undefined String
+data SExpr = Number Number | Symbol String | Add (TwoList Expr) | Mul (TwoList Expr) | Pow Expr Expr | Fun String (NonEmpty Expr) | Undefined String
   deriving (Eq, Show)
 
 makeExpr :: P.PExpr -> Expr

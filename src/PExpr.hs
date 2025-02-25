@@ -28,7 +28,7 @@ module PExpr (
     pattern Atanh
 ) where
 
-import Number
+import Data.Number
 
 import Data.List
 

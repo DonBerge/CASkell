@@ -9,8 +9,8 @@ import PExpr
 
 import Symplify
 
-import Number (Number)
-import qualified Number as N
+import Data.Number (Number)
+import qualified Data.Number as Number
 import Control.Monad.Except (MonadError(throwError))
 import Data.Either (fromRight)
 
@@ -167,7 +167,7 @@ numerator :: Expr -> Expr
 numerator = (=<<) numerator'
     where
         -- Multiplicación rapida de PExpr, ya que no es necesaria simplificación
-        numerator' (Number n) = fromInteger $ N.numerator n
+        numerator' (Number n) = fromInteger $ Number.numerator n
         numerator' (Mul xs) = mapM numerator' xs >>= return . product
         numerator' (Pow _ y)
             | mulByNeg y = return 1
@@ -178,7 +178,7 @@ numerator = (=<<) numerator'
 denominator :: Expr -> Expr
 denominator = (=<<) denominator'
     where
-        denominator' (Number n) = fromInteger $ N.denominator n
+        denominator' (Number n) = fromInteger $ Number.denominator n
         denominator' (Mul xs) = mapM denominator' xs >>= return . product
         denominator' u@(Pow _ y)
             | mulByNeg y = simplifyDiv 1 u

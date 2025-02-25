@@ -13,7 +13,7 @@ import Simplification.PolyTools
 import Data.Bifunctor
 import Data.List
 
-import qualified Number as N
+import qualified Data.Number as Number
 import qualified Simplification.Algebraic as Algebraic
 
 rationalize :: Expr -> Expr
@@ -61,7 +61,7 @@ rationalSimplify u = let
         simplifyNumbers n d = let
                                 c = numberCoefficientList n ++ numberCoefficientList d
                                 -- Obtener el lcm de los denominadores y el gcd de los numeradores
-                                (n',d') = foldr (\x -> bimap (gcd (N.numerator x)) (lcm (N.denominator x))) (0,1) c  -- n' is lcm of the denominators and d' is the gcd of the numerators
+                                (n',d') = foldr (\x -> bimap (gcd (Number.numerator x)) (lcm (Number.denominator x))) (0,1) c  -- n' is lcm of the denominators and d' is the gcd of the numerators
                                 c' = fromInteger n' / fromInteger d'
                              in 
                                 (n / c', d / c')

@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
 
 {-|
-Module: Number
+Module: Data.Number
 Description: Definición y operaciones para el tipo 'Number', que puede representar enteros, fracciones y números reales.
 
 Este módulo define el tipo 'Number' y proporciona varias operaciones y clases de instancias para trabajar con números que pueden ser enteros, fracciones o números reales.
 -}
-module Number (
+module Data.Number (
     -- * Tipos
     Number(fromNumber),
     -- * Funciones

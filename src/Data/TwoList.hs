@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 {-|
-  Module      : TwoList
+  Module      : Data.TwoList
   Description : Una estructura de datos para representar listas con al menos 2 elementos
 
   Una TwoList es una lista que contiene al menos 2 elementos, pero que por lo demás es idéntica a la lista tradicional en complejidad y en términos de API.

@@ -11,14 +11,14 @@ module Evaluate.Numeric
 where
 
 import Expr
-import qualified Number as N
+import Data.Number
 import Structure
 
 -- $setup
 -- >>> let x = symbol "x"
 
 -- | Contexto de evaluación de expresiones.
-type Context = [(Expr, N.Number)]
+type Context = [(Expr, Number)]
 
 -- |
 --    Evaluación de operaciones flotantes sobre números. f

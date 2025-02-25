@@ -20,7 +20,8 @@ module Symplify (
 
 import Prelude hiding (const, exponent)
 
-import qualified Number as N
+import Data.Number (Number)
+
 import PExpr
 
 import Data.List
@@ -28,10 +29,6 @@ import Control.Applicative
 import Classes.EvalSteps
 import Control.Monad.Except (MonadError(throwError))
 
-
-numberNumerator :: PExpr -> Integer
-numberNumerator (Number x) = N.numerator x
-numberNumerator _ = error "numberNumerator: not a number"
 
 -- instance Real PExpr where
 --     toRational (Number x) = x
@@ -91,18 +88,18 @@ exponent _ = 1
 simplifyPow :: PExpr -> PExpr -> EvalSteps PExpr
 simplifyPow 0 w
     | true $ isPositive w = return 0
-    | otherwise = throwError "Division por cero"
+    | true $ (isNegative w ||| isZero w) = throwError "Division por cero" -- 0^x con x <= 0 no esta definido
 simplifyPow 1 _ = return 1
 simplifyPow v w
-    | true $ isInteger w = simplifyIntPow v (numberNumerator w)
+    | true $ isInteger w = simplifyIntPow v w
     | otherwise = return (Pow v w)
     where
-        simplifyIntPow (Number x) n = return $ Number $ x ^^ n
-        simplifyIntPow _ 0 = return 1
-        simplifyIntPow x 1 = return x
-        simplifyIntPow (Pow r s) n = simplifyProduct [s,fromInteger n] >>= simplifyPow r
-        simplifyIntPow (Mul r) n = mapM (`simplifyIntPow` n) r >>= simplifyProduct
-        simplifyIntPow x n = return $ Pow x (fromInteger n)
+        simplifyIntPow (Number x) (Number n) = return $ Number $ x ^^ (toInteger n) -- evaluar la potencia en los numeros
+        simplifyIntPow _ 0 = return 1 -- x^0 = 1
+        simplifyIntPow x 1 = return x -- x^1 = x
+        simplifyIntPow (Pow r s) n = simplifyProduct [s,n] >>= simplifyPow r -- (r^s)^n = r^(s*n)
+        simplifyIntPow (Mul r) n = mapM (`simplifyIntPow` n) r >>= simplifyProduct -- (u*v)^n = u^n * v^n
+        simplifyIntPow x n = return $ Pow x n
 
 simplifyProduct :: [PExpr] -> EvalSteps PExpr
 simplifyProduct [] = return 1
@@ -270,7 +267,7 @@ simplifySqrt x = simplifyPow x 0.5
 
 ----------------
 
-handlePeriod :: (N.Number -> PExpr -> EvalSteps PExpr) -> (PExpr -> EvalSteps PExpr) -> PExpr -> EvalSteps PExpr
+handlePeriod :: (Number -> PExpr -> EvalSteps PExpr) -> (PExpr -> EvalSteps PExpr) -> PExpr -> EvalSteps PExpr
 handlePeriod cases onOddPi x = do
                     p <- linearForm x Pi
                     case p of

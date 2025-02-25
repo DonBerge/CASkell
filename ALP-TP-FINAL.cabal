@@ -79,7 +79,7 @@ library
                       Evaluate.Numeric
 
     -- Modules included in this library but not exported.
-    other-modules:  Number
+    other-modules:  Data.Number
                     PExpr
                     Parser
                     Calculus.Utils
@@ -109,52 +109,3 @@ library
 
     -- Base language which the package is written in.
     default-language: Haskell2010
-
-test-suite cas-test
-    -- Import common warning flags.
-    import:           warnings
-
-    -- Base language which the package is written in.
-    default-language: Haskell2010
-    
-    other-modules:  Expr
-                    Number
-                    PExpr
-                    Symplify
-                    Calculus
-                    Calculus.Derivate
-                    Simplification.Algebraic
-                    Simplification.PolyTools
-                    Simplification.Fu
-                    Test.Algebraic
-                    Test.PolyTools
-                    Test.Fu
-                    Test.Derivate
-                    Classes.Assumptions
-                    Classes.EvalSteps
-                    TriBool
-                                        
-
-    -- LANGUAGE extensions used by modules in this package.
-    other-extensions: PatternSynonyms
-
-    -- The interface type and version of the test suite.
-    type:             exitcode-stdio-1.0
-
-    -- Directories containing source files.
-    hs-source-dirs:   test/Test
-                      test
-                      src
-                      src/Calculus
-                      src/Simplification
-                      src/Structure
-                      src/Classes
-
-    -- The entrypoint to the test suite.
-    main-is:          Main.hs
-
-    -- Test dependencies.
-    build-depends:    base,
-                      HUnit,
-                      exact-combinatorics,
-                      monad-parallel
