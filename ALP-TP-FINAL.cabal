@@ -66,8 +66,7 @@ library
                       Simplification.Rationalize
                       Simplification.Trigonometric
                       Classes.EvalSteps
-                      Classes.StepTree
-                      TriBool
+                      Data.TriBool
                       PrettyPrint
                       Structure
                       Symplify
@@ -102,7 +101,6 @@ library
                       src/Calculus
                       src/PrettyPrint
                       src/Parser
-                      src/Classes/Monads
                       src/Structure
                       src/Simplification
                       src/Classes

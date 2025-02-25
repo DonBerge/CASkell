@@ -1,6 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-|
-Module      : TriBool
+Module      : Data.TriBool
 Description : Modulo para el manejo de logica ternaria, que soporta 3 valores de verdad, Verdadearo(T), Falso(F) y Desconocido(U).
 
 La logica clasica soporta dos valores de verdad, Verdadero y Falso. Sin embargo, hay situaciones en las que no se puede 
@@ -39,7 +39,7 @@ T ||| U = T
 Notar que las operaciones con valores desconocidos no siempre resultan en un valor desconocido.
 
 -}
-module TriBool where
+module Data.TriBool where
 
 -- | Tipo de dato que representa los valores de verdad, Verdadero, Falso y Desconocido.
 data TriBool = 

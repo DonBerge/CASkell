@@ -8,7 +8,7 @@
 -- caso donde se desconoce si la propiedad se cumple o no.
 
 module Assumptions (
-    module TriBool,
+    module Data.TriBool,
     -- * Clase de supociones
     Assumptions(..),
     -- * Entorno de suposiciones
@@ -23,7 +23,7 @@ module Assumptions (
     setInteger
 ) where
 
-import TriBool
+import Data.TriBool
 
 -- | Define funciones que permiten determinar si un cierto tipo de datos cumple con ciertas propiedades, 
 -- como por ejemplo si es positivo, negativo, cero, par, impar, entero, etc.

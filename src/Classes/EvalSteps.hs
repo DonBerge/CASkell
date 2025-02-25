@@ -4,7 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-| 
     Module: EvalSteps 
-    Description: Monadaa 'EvalSteps', usada para computaciones que pueden fallar y que ademas llevan un registro de mensajes.
+    Description: Monadaa 'EvalSteps', usada para computaciones que pueden fallar.
 -}
 module Classes.EvalSteps where
 
@@ -32,7 +32,6 @@ instance Eq a => Eq (EvalSteps a) where
 -- | Instancia de 'Functor' para 'EvalSteps'.
 instance Functor EvalSteps where
     fmap f = EvalSteps . fmap f . unEvalSteps
-    --fmap f (EvalSteps x) = EvalSteps $ first (fmap f) x
 
 -- | Instancia de 'Applicative' para 'EvalSteps'.
 instance Applicative EvalSteps where
@@ -51,7 +50,7 @@ instance MonadError Error EvalSteps where
 
 -- | Instancia de 'MonadFail' para 'EvalSteps'.
 instance MonadFail EvalSteps where
-    fail = throwError --EvalSteps (Left e, [])
+    fail = throwError
 
 -- | Instancia de 'Alternative' para 'EvalSteps'.
 instance Alternative EvalSteps where
