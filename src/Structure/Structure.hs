@@ -42,7 +42,7 @@ module Structure (
 )
 where
 
-import TwoList (TwoList(..))
+import Data.TwoList (TwoList(..))
 
 import qualified PExpr as P
 import qualified Number as N

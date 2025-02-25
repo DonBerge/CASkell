@@ -72,7 +72,7 @@ library
                       Structure
                       Symplify
                       Expr
-                      TwoList
+                      Data.TwoList
                       Calculus.Derivate
                       Calculus.Integrate
                       Assumptions
@@ -98,6 +98,7 @@ library
 
     -- Directories containing source files.
     hs-source-dirs:   src
+                      src/Data
                       src/Calculus
                       src/PrettyPrint
                       src/Parser

@@ -19,7 +19,7 @@ import Simplification.PolyTools (variables)
 import qualified Simplification.Algebraic as Algebraic (expand)
 
 import Data.Bifunctor
-import TwoList (toList)
+import Data.TwoList (toList)
 import Calculus.Derivate (derivate)
 import Data.List (union)
 

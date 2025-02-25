@@ -17,7 +17,7 @@ import Simplification.PolyTools
 import Structure
 
 import Data.Foldable (toList)
-import TwoList (sortBy, reverse)
+import Data.TwoList (sortBy, reverse)
 import Data.Function
 import Data.Char (toLower, toUpper)
 

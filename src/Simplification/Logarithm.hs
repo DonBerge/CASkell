@@ -21,7 +21,7 @@ module Simplification.Logarithm where
 import Expr
 import Structure
 import PExpr (Assumptions(isPositive), true)
-import TwoList (partition)
+import Data.TwoList (partition)
 
 -- $setup
 -- >>> let x = assume (symbol "x") ["positive"]
