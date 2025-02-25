@@ -6,7 +6,7 @@
 module PExpr (
     PExpr(..),
     module TriBool,
-    module Classes.Assumptions,
+    module Assumptions,
     pattern Pi,
     pattern Symbol,
     pattern Exp,
@@ -32,9 +32,8 @@ import Number
 
 import Data.List
 
-import Classes.Assumptions
+import Assumptions
 import TriBool
-import Classes.Monads.MonadAssumptions
 
 -- Las PExpre construyen a partir de un conjunto de simbolos y constantes numericas
 data PExpr = Number Number 

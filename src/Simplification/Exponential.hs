@@ -17,7 +17,7 @@
 -- se llama /contracción exponencial/. Este modulo contiene definiciones tanto para la expansión como para la contracción de exponenciales.
 module Simplification.Exponential where
 
-import Classes.Assumptions
+import Assumptions
 import Expr
 import qualified Simplification.Algebraic as Algebraic
 import Structure

@@ -11,7 +11,7 @@ import Expr
 import Structure
 
 import Math.Combinatorics.Exact.Binomial (choose)
-import Classes.Assumptions (true, Assumptions (isInteger))
+import Assumptions (true, Assumptions (isInteger))
 
 {-|
     Expansión de expresiones, una expresion esta expandida si `variables` no contiene ninguna suma

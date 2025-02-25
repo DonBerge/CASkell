@@ -16,7 +16,7 @@ module Number (
 
 import qualified Data.Ratio as R
 
-import Classes.Assumptions
+import Assumptions
 import Data.Bifunctor (Bifunctor(bimap))
 
 -- | El tipo 'Number' representa un número que puede ser un entero, una fracción o un número real.

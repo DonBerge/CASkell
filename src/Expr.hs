@@ -12,7 +12,6 @@ import Symplify
 import Number (Number)
 import qualified Number as N
 import Control.Monad.Except (MonadError(throwError))
-import Classes.Monads.MonadAssumptions (emptyAssumptions, setPositive, setNegative, setZero, setInteger, setOdd, setEven)
 import Data.Either (fromRight)
 
 -- import Simplification.Rationalize
@@ -110,9 +109,6 @@ gt x y = not3 $ lte x y
 
 gte :: Expr -> Expr -> TriBool
 gte x y = not3 $ lt x y
-
---------
-
 
 -------
 

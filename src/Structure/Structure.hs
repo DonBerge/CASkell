@@ -49,7 +49,7 @@ import qualified Number as N
 
 import Expr
 import Classes.EvalSteps (runEvalSteps)
-import Classes.Assumptions
+import Assumptions
 import Symplify (simplifyFun)
 import Data.List.NonEmpty (toList, NonEmpty(..))
 

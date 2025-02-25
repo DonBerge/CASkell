@@ -1,4 +1,4 @@
-{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-|
 Module      : TriBool
 Description : Modulo para el manejo de logica ternaria, que soporta 3 valores de verdad, Verdadearo(T), Falso(F) y Desconocido(U).
@@ -84,38 +84,40 @@ liftBool False = F
 infixr 3 &&&
 infixr 2 |||
 infixr 3 !&&
-infixr 2 /||
 
 -- = Operadores logicos
 
 -- | Clase que permite redefinir los operadores logicos para valores que no necesariamente son Booleanos, 
 -- util para poder operar tanto con valores ternarios como booleanos.
-class BAlgebra a b c | a b -> c where
+class BAlgebra a b where
     -- | Operador AND
-    (&&&) :: a -> b -> c
+    (&&&) :: a -> b -> TriBool
 
     -- | Operador OR
-    (|||) :: a -> b -> c
+    (|||) :: a -> b -> TriBool
 
     -- | Operador NAND
-    (!&&)  :: a -> b -> c
+    (!&&)  :: a -> b -> TriBool
 
     -- | Operador XOR
-    (/||) :: a -> b -> c
+    (/||) :: a -> b -> TriBool
 
 -- | Operador NOT
-not3 :: BAlgebra b b c => b -> c
+not3 :: BAlgebra a a => a -> TriBool
 not3 p = p !&& p
 
+liftBoolOp :: (Bool -> Bool -> Bool) -> Bool -> Bool -> TriBool
+liftBoolOp f a b = liftBool $ f a b
+
 -- | Definicion de los operadores logicos para valores booleanos, se comportan igual que sus pares de la logica de dos valores.
-instance BAlgebra Bool Bool Bool where
-    (&&&) = (&&)
-    (|||) = (||)
-    (!&&) = (&&) . not 
-    (/||) = (/=)
+instance BAlgebra Bool Bool where
+    (&&&) = liftBoolOp (&&)
+    (|||) = liftBoolOp (||)
+    a !&& b = liftBool $ not a && b 
+    (/||) = liftBoolOp (/=)
 
 -- | Definicion de los operadores logicos para valores ternarios.
-instance BAlgebra TriBool TriBool TriBool where
+instance BAlgebra TriBool TriBool where
     F &&& _ = F
     _ &&& F = F
     T &&& T = T
@@ -136,14 +138,14 @@ instance BAlgebra TriBool TriBool TriBool where
     p /|| q = liftBool $ p /= q
 
 -- | Definicion de los operadores logicos donde el primer operando es booleano y el segundo ternario
-instance BAlgebra Bool TriBool TriBool where
+instance BAlgebra Bool TriBool where
     (&&&) = (&&&) . liftBool
     (|||) = (|||) . liftBool
     (!&&) = (!&&) . liftBool
     (/||) = (/||) . liftBool
 
 -- | Definicion de los operadores logicos donde el primer operando es ternario y el segundo booleano
-instance BAlgebra TriBool Bool TriBool where
+instance BAlgebra TriBool Bool where
     (&&&) = flip (&&&)
     (|||) = flip (|||)
     (!&&) = flip (!&&)

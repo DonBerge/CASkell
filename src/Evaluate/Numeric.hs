@@ -2,6 +2,9 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ViewPatterns #-}
 
+-- |
+-- Module      : Evaluate.Numeric
+-- Description : Evaluación de expresiones numéricas.
 module Evaluate.Numeric
   ( eval,
   )
@@ -21,36 +24,34 @@ type Context = [(Expr, N.Number)]
 --    Evaluación de operaciones flotantes sobre números. f
 --
 --    === Ejemplos
---    
+--
 --    >>> evalFloatingOp sin 2  -- evalua sin(2)
 --    0.9092974268256817
 --    >>> evalFloatingOp sin x  -- evalua sin(x), como x no es un valor numeico, no se evalua.
---    Sin(x)    
+--    Sin(x)
 evalFloatingOp :: (forall a. (Floating a) => a -> a) -> Expr -> Expr
 evalFloatingOp f (structure -> Number n) = construct $ Number $ f n
 evalFloatingOp f x = f x
 
-{-|
-  Elimina un par clave-valor de una lista de pares clave-valor.
--}
+-- |
+--  Elimina un par clave-valor de una lista de pares clave-valor.
 deleteWithKey :: (Eq a) => a -> [(a, b)] -> [(a, b)]
 deleteWithKey _ [] = []
 deleteWithKey x ((y, z) : xs)
   | x == y = xs
   | otherwise = (y, z) : deleteWithKey x xs
 
-{-|
-  Evalua numericamente la expresión dada, reemplazando los simbolos por sus valores en el contexto.
-
-  === Ejemplos
-
-  >>> eval [] (sqrt(2) * pi)
-  4.442882938158366
-  >>> eval [] (pi*x**2 + x/3)
-  (1/3)*x+3.141592653589793*x^2
-  >>> eval [(x,pi)] (2*sin(x/4))
-  1.414213562373095
--}
+-- |
+--  Evalua numericamente la expresión dada, reemplazando los simbolos por sus valores en el contexto.
+--
+--  === Ejemplos
+--
+--  >>> eval [] (sqrt(2) * pi)
+--  4.442882938158366
+--  >>> eval [] (pi*x**2 + x/3)
+--  (1/3)*x+3.141592653589793*x^2
+--  >>> eval [(x,pi)] (2*sin(x/4))
+--  1.414213562373095
 eval :: Context -> Expr -> Expr
 eval _ (structure -> Pi) = construct $ Number pi
 eval ctx u@(structure -> Symbol _) = maybe u (construct . Number) $ lookup u ctx

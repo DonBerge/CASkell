@@ -10,7 +10,7 @@ module PrettyPrint (
 
 import Prelude hiding (reverse)
 
-import Classes.Assumptions
+import Assumptions
 import Expr
 import Prettyprinter
 import Simplification.PolyTools

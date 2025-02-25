@@ -75,13 +75,13 @@ library
                       TwoList
                       Calculus.Derivate
                       Calculus.Integrate
+                      Assumptions
                       Evaluate.Numeric
 
     -- Modules included in this library but not exported.
     other-modules:  Number
                     PExpr
                     Parser
-                    Classes.Assumptions
                     Calculus.Utils
 
     -- LANGUAGE extensions used by modules in this package.
