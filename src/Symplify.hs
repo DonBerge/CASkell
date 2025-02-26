@@ -1,21 +1,39 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# OPTIONS_GHC -Wno-type-defaults #-}
 
+{-|
+    Module: AutoSimplify
+
+    Description: Funciones usadas en el proceso de autosimplificación
+
+    El proceso de autosimplificación se define como una colección de transformaciones algebraicas
+    y de simplificación de funciones que se aplican a una expresión durante la evaluación.
+
+    Autosimplificación es un acronimo de "Simplificación automatica", y se llama de esta manera ya que
+    las transformaciones se realizan automaticamente sin la intervención directa del usuario.
+
+    Por ejemplo, la expresión @2 * 3 + 4@ es autosimplificada a @10@ y @x+x@ autosimplifica a @2*x@.
+
+    La autosimplificación no realiza todas las simplificaciones posibles, por ejemplo, la expresión
+    @a*x+b*x+2*x@ no se simplifica a @(a+b+2)*x@, ya que simplificaciones de este tipo colisionan con
+    funciones como 'expand'.
+-}
 module Symplify (
     module Classes.EvalSteps,
+    module PExpr,
     automaticSymplify,
     simplifyProduct,
     simplifySum,
     simplifyDiv,
     simplifySub,
     simplifyPow,
+    simplifyIntPow,
     simplifyNegate,
     operands,
     mulByNeg,
     freeOf,
     linearForm,
     simplifyFun,
-    module PExpr,
 ) where
 
 import Prelude hiding (const, exponent)
@@ -29,10 +47,8 @@ import Control.Applicative
 import Classes.EvalSteps
 import Control.Monad.Except (MonadError(throwError))
 
-
--- instance Real PExpr where
---     toRational (Number x) = x
---     toRational _ = error "toRational: not a number"
+-- $setup
+-- >>> let x = Number 0
 
 automaticSymplify :: PExpr -> EvalSteps PExpr
 automaticSymplify (Mul xs) = mapM automaticSymplify xs >>= simplifyProduct
@@ -47,11 +63,14 @@ automaticSymplify (Fun f xs) = do
 automaticSymplify x = return x
 
 ------------------------------
+
+-- | Verificación de constantes
 isConstant :: PExpr -> Bool
 isConstant (Number _) = True
 -- isConstant Pi = True
 isConstant _ = False
 
+-- | Extrae la parte constante de una multiplicación
 const :: PExpr -> PExpr
 const (Mul []) = 1
 const (Mul (x:_))
@@ -61,6 +80,7 @@ const u
     | isConstant u = error "Constants dont have terms"
     | otherwise = 1
 
+-- | Extrae la parte variable de una multiplicación
 term :: PExpr -> PExpr
 term (Mul []) = error "Empty products do not have terms"
 term (Mul (x:xs))
@@ -70,12 +90,14 @@ term u
     | isConstant u = error "Constants dont have terms"
     | otherwise = Mul [u]
 
+-- | Extrae la base de una potencia
 base :: PExpr -> PExpr
 base (Number _) = error "Base of a number is not defined"
 -- base (Exp _) = Exp 1
 base (Pow x _) = x
 base u = u
 
+-- | Extrae el exponente de una potencia
 exponent :: PExpr -> PExpr
 exponent (Number _) = error "Exponent of a number is not defined"
 -- exponent (Exp x) = x
@@ -85,21 +107,71 @@ exponent _ = 1
 ---------------------------------------------------------------------------------------
 
 -- SPOW-2
+
+-- * Autosimplificación de potencias
+
+{-|
+    Simplificación de potencias
+
+    Sea @u = Pow v w@ la expresión a simplificar, entonces las reglas de simplificación son las siguientes:
+
+    [@SPOW-1@]: Si @v = Undefined@ o @w = Undefined@, entonces @'simplifyPow' u = Undefined@
+
+    [@SPOW-2@]: Si @v = 0@:
+
+        * Si @w > 0@, entonces @'simplifyPow' u = 0@
+        * Si @w <= 0@, entonces @'simplifyPow' u = Undefined@ 
+     Si no se puede determinar el signo de @w@ esta regla no determina nada. Se continua con las siguientes
+    
+    [@SPOW-3@]: Si @v=1@ entonces @'simplifyPow' u = 1@
+
+    [@SPOW-4@]: Si @w@ es entero, entonces @'simplifyPow' u = 'simplifyIntPow' u w@
+
+    [@SPOW-5@]: Si ninguna regla aplica, entonces @'simplifyPow' u = u@
+
+    === Ejemplos
+-}
 simplifyPow :: PExpr -> PExpr -> EvalSteps PExpr
-simplifyPow 0 w
-    | true $ isPositive w = return 0
-    | true $ (isNegative w ||| isZero w) = throwError "Division por cero" -- 0^x con x <= 0 no esta definido
-simplifyPow 1 _ = return 1
+-- SPOW-1 es manejada automaticamente por la monada EvalSteps
+simplifyPow 0 w -- SPOW-2
+    | true $ isPositive w = return 0 -- SPOW-2.1
+    | true $ (isNegative w ||| isZero w) = throwError "Division por cero" -- SPOW-2.2
+simplifyPow 1 _ = return 1 -- SPOW-3
 simplifyPow v w
-    | true $ isInteger w = simplifyIntPow v w
-    | otherwise = return (Pow v w)
-    where
-        simplifyIntPow (Number x) (Number n) = return $ Number $ x ^^ (toInteger n) -- evaluar la potencia en los numeros
-        simplifyIntPow _ 0 = return 1 -- x^0 = 1
-        simplifyIntPow x 1 = return x -- x^1 = x
-        simplifyIntPow (Pow r s) n = simplifyProduct [s,n] >>= simplifyPow r -- (r^s)^n = r^(s*n)
-        simplifyIntPow (Mul r) n = mapM (`simplifyIntPow` n) r >>= simplifyProduct -- (u*v)^n = u^n * v^n
-        simplifyIntPow x n = return $ Pow x n
+    | true $ isInteger w = simplifyIntPow v w -- SPOW.4
+    | otherwise = return (Pow v w) -- SPOW.5
+
+{-| 
+    Simplificación de potencias con exponentes enteros
+
+    Sea la expresión @v^n@ con @v/=0@ y @n@ entero, 'simplifyIntPow' se define con las siguientes reglas:
+    
+    [@SINTPOW-1@]: Si @v = Number x@ y @n = Number y@, entonces @'simplifyIntPow' v n = Number (x^y)@
+
+    [@SINTPOW-2@]: Si @n = 0@, entonces @'simplifyIntPow' v n = 1@
+
+    [@SINTPOW-3@]: Si @n = 1@, entonces @'simplifyIntPow' v n = v@
+
+    [@SINTPOW-4@]: Si @v = Pow r s@, sea p = 'simplifyProduct' [s,n]:
+
+        * Si @p@ es entero, entonces @'simplifyIntPow' v n = 'simplifyIntPow' r p@
+        * Si no, entonces @'simplifyIntPow' v n = Pow r p@
+    
+    [@SINTPOW-5@]: Si @v = Mul rs@, entonces @'simplifyIntPow' v n = 'simplifyProduct' [u^n | u <- r]@
+
+    [@SINTPOW-6@]: Si ninguna regla aplica, entonces @'simplifyIntPow' v n = Pow v n@
+-}
+simplifyIntPow :: PExpr -> PExpr -> EvalSteps PExpr
+simplifyIntPow (Number x) (Number n) = return $ Number $ x ^^ (toInteger n) -- SINTPOW-1
+simplifyIntPow _ 0 = return 1 -- SINTPOW-2
+simplifyIntPow x 1 = return x -- SINTPOW-3
+simplifyIntPow (Pow r s) n = do
+                                p <- simplifyProduct [s,n]
+                                if true (isInteger p)
+                                    then simplifyIntPow r p -- SINTPOW-4.1
+                                    else return $ Pow r p   -- SINTPOW-4.2
+simplifyIntPow (Mul rs) n = mapM (`simplifyIntPow` n) rs >>= simplifyProduct -- SINTPOW-5
+simplifyIntPow x n = return $ Pow x n -- SINTPOW-6
 
 simplifyProduct :: [PExpr] -> EvalSteps PExpr
 simplifyProduct [] = return 1
