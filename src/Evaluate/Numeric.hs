@@ -13,6 +13,8 @@ where
 import Expr
 import Data.Number
 import Structure
+import Calculus.Derivate (makeUnevaluatedDerivative)
+import Calculus.Integrate (makeUnevaluatedIntegral, makeUnevaluatedDefiniteIntegral)
 
 -- $setup
 -- >>> let x = symbol "x"
@@ -30,7 +32,7 @@ type Context = [(Expr, Number)]
 --    >>> evalFloatingOp sin x  -- evalua sin(x), como x no es un valor numeico, no se evalua.
 --    Sin(x)
 evalFloatingOp :: (forall a. (Floating a) => a -> a) -> Expr -> Expr
-evalFloatingOp f (structure -> Number n) = construct $ Number $ f n
+evalFloatingOp f (structure -> Number n) = fromNumber $ f n
 evalFloatingOp f x = f x
 
 -- |
@@ -53,20 +55,20 @@ deleteWithKey x ((y, z) : xs)
 --  >>> eval [(x,pi)] (2*sin(x/4))
 --  1.414213562373095
 eval :: Context -> Expr -> Expr
-eval _ (structure -> Pi) = construct $ Number pi
-eval ctx u@(structure -> Symbol _) = maybe u (construct . Number) $ lookup u ctx
-eval ctx (structure -> Derivative u x) = construct $ Derivative (eval (deleteWithKey x ctx) u) x -- no evaluar la variable de derivacion
-eval ctx (structure -> Integral u x) = construct $ Integral (eval (deleteWithKey x ctx) u) x -- no evaluar la variable de integracion
+eval _ (structure -> Pi) = fromNumber pi
+eval ctx u@(structure -> Symbol _) = maybe u fromNumber $ lookup u ctx
+eval ctx (structure -> Derivative u x) = makeUnevaluatedDerivative (eval (deleteWithKey x ctx) u) x -- no evaluar la variable de derivacion
+eval ctx (structure -> Integral u x) = makeUnevaluatedIntegral (eval (deleteWithKey x ctx) u) x -- no evaluar la variable de integracion
 eval ctx (structure -> DefiniteIntegral u x a b) =
   let u' = eval (deleteWithKey x ctx) u
       a' = eval ctx a
       b' = eval ctx b
-   in construct $ DefiniteIntegral u' x a' b' -- no evaluar la variable de integracion
+   in makeUnevaluatedDefiniteIntegral u' x a' b' -- no evaluar la variable de integracion
 eval ctx u = eval' $ mapStructure (eval ctx) u
   where
     -- evaluar funciones con numeros como argumento, ademas de potencias de numeros
     eval' (structure -> Pow a b)
-      | Number n <- structure a, Number m <- structure b = construct $ Number $ n ** m -- potencias de numeros
+      | Number n <- structure a, Number m <- structure b = fromNumber $ n ** m -- potencias de numeros
     eval' (structure -> Sin x) = evalFloatingOp sin x -- uno de los sin evalua a numeros y otro a expresiones
     eval' (structure -> Cos x) = evalFloatingOp cos x
     eval' (structure -> Tan x) = evalFloatingOp tan x

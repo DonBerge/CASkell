@@ -10,6 +10,7 @@ module Data.TwoList (
   TwoList(..),
   NonEmpty( (:|) ),
   toList,
+  fromList,
   sort,
   sortBy,
   intersperse,
@@ -35,12 +36,21 @@ instance Functor TwoList where
 instance Foldable TwoList where
   foldMap f (x :|| xs) = f x <> foldMap f xs
 
+instance Traversable TwoList where
+  traverse f (x :|| xs) = (:||) <$> f x <*> traverse f xs
+
 instance Semigroup (TwoList a) where
   (x :|| xs) <> (y :|| ys) = x :|| (xs <> (y <| ys))
 
 -- | Convierte una 'TwoList' en una lista
 toList :: TwoList a -> [a]
 toList (x :|| xs) = x : NE.toList xs
+
+-- | Convierte una lista a una 'TwoLIst'
+fromList :: [a] -> Maybe (TwoList a)
+fromList [] = Nothing
+fromList [_] = Nothing
+fromList (x:xs) = Just (x :|| NE.fromList xs)
 
 -- | Convierte una función que opera en listas no vacías en una función que opera en TwoLists
 lift :: (NonEmpty a -> NonEmpty b) -> (TwoList a -> TwoList b)

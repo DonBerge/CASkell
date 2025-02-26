@@ -1,4 +1,5 @@
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 -- |
 -- Module      : Calculus.Derivate
@@ -20,13 +21,17 @@ import Calculus.Utils (notAVariable)
 -- >>> let f = function "f"
 -- >>> let g = function "g"
 
+-- * Patron de derivada
+pattern Derivative :: Expr -> Expr -> Expr
+pattern Derivative u x <- Fun "Derivate" (u :| [x]) --(matchAnyarityFun "Derivative" -> Just (u :| [x]))
+
 -- |
 --  Construye una derivada sin evaluar
 --
 -- >>> makeUnevaluatedDerivative u x
 -- Derivate(u,x)
 makeUnevaluatedDerivative :: Expr -> Expr -> Expr
-makeUnevaluatedDerivative u = construct . Derivative u
+makeUnevaluatedDerivative u x = function "Derivate" [u,x]
 
 -- |
 --  Utiliza las reglas de derivación para calcular la derivada de una expresión con respecto a una variable dada.

@@ -8,7 +8,7 @@ Este módulo define el tipo 'Number' y proporciona varias operaciones y clases d
 -}
 module Data.Number (
     -- * Tipos
-    Number(fromNumber),
+    Number,
     -- * Funciones
     numerator,
     denominator,

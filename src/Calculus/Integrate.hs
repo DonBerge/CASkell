@@ -1,5 +1,6 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 -- |
 -- Module      : Calculus.Integrate
@@ -33,6 +34,7 @@ import Calculus.Utils
 -- >>> let f = function "f"
 -- >>> let g = function "g"
 
+-- * Constructores
 {-|
     Construye una integral sin evaluar
 
@@ -40,9 +42,18 @@ import Calculus.Utils
     Integral(u,x)
 -}
 makeUnevaluatedIntegral :: Expr -> Expr -> Expr
-makeUnevaluatedIntegral u = construct . Integral u
+makeUnevaluatedIntegral u x = function "Integral" [u,x]
 
+{-|
+    Construye una integral definida sin evaluar
 
+    >>> makeUnevaluatedDefiniteIntegral u x z u
+    Definite_Integral(u,x,z,u)
+-}
+makeUnevaluatedDefiniteIntegral :: Expr -> Expr -> Expr -> Expr -> Expr
+makeUnevaluatedDefiniteIntegral u x a b = function "Definite_Integral" [u,x,a,b]
+
+-- * Calculo de integrales
 {-| 
     @integralTable e x@ realiza la integración de expresiones conocidas respecto a la variable @x@
     , por ejemplo, como \(\sin(x), e^x, \sec(x)\tan(x)\), etc
@@ -184,7 +195,7 @@ substitutionMethod f x = foldr ((<|>) . makeSubstitution) failSubstitution $ tri
                 vars = variables u
                 getIntegrationVariable' x = let
                                                 _x = '_' : x
-                                                symbol_x  = construct $ Symbol $ _x
+                                                symbol_x  = symbol $ _x
                                             in if symbol_x `elem` vars
                                                 then getIntegrationVariable' _x
                                                 else symbol_x
@@ -273,5 +284,5 @@ definiteIntegral :: Expr -> Expr -> Expr -> Expr -> Expr
 definiteIntegral u x a b = let
                             u' = integrate u x
                            in case structure u' of
-                                Integral _ _ -> construct $ DefiniteIntegral u x a b
+                                Integral _ _ -> makeUnevaluatedDefiniteIntegral u x a b
                                 _ -> (substitute u' x b) - (substitute u' x a)

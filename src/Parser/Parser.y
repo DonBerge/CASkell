@@ -49,8 +49,8 @@ Expression :   Expression '+' Expression  { $1 + $3 }
 
 Arguments : '(' CommaArguments ')' { $2 }
 
-CommaArguments : Expression { $1 :| [] } 
-               | Expression ',' CommaArguments { $1 <| $3 }
+CommaArguments : Expression { $1 : [] } 
+               | Expression ',' CommaArguments { $1 : $3 }
                
 
 {
@@ -70,14 +70,14 @@ data Token
 
 -- Construccion de funciones
 
-mkFun :: String -> NonEmpty Expr -> Expr
+mkFun :: String -> [Expr] -> Expr
 mkFun name args 
   | lname `elem` ["sin", "cos", "tan", "exp", "log", "pi", "cot", "sec", 
-      "csc", "asin", "acos", "atan", "asinh", "acosh", "atah", "sinh", "cosh", "tanh"] = construct $ Fun (capitalize lname) args
+      "csc", "asin", "acos", "atan", "asinh", "acosh", "atah", "sinh", "cosh", "tanh"] = function (capitalize lname) args
   | lname == "sqrt" = case args of
-                        (x :| []) -> sqrt x
+                        [x] -> sqrt x
                         _ -> undefinedExpr "La funcion raiz cuadrada solo toma un argumento"
-  | otherwise = construct $ Fun name args
+  | otherwise = function name args
 -- = let
                   --  lname = map toLower name
                   --in mkFun' lname

@@ -24,13 +24,13 @@ expand (structure -> Pow b e)
                                     b' = expand b
                                     (fl, m) = properFraction f
                                  in 
-                                    expandProduct (expandPower b' fl) (b' ** (number m))
+                                    expandProduct (expandPower b' fl) (b' ** (fromNumber m))
     | otherwise = let
                     b' = expand b
                     e' = expand e
                   in
                     expandFraction $ b' ** e'
-expand (structure -> Fun f xs) = construct $ Fun f $ fmap expand xs
+expand u@(structure -> Fun _ _) = mapStructure expand u --construct $ Fun f $ fmap expand xs
 expand u = u
 
 {-|

@@ -26,7 +26,7 @@ getNewVariable u (structure -> Symbol x) = getNewVariable' x
   where
     vars = variables u
     getNewVariable' x =
-      let symbol_x = construct $ Symbol $ x
+      let symbol_x = symbol x
        in if symbol_x `elem` vars
             then getNewVariable' ('_' : x)
             else symbol_x
