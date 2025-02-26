@@ -39,7 +39,7 @@ import Simplification.Rationalize (rationalize)
 --    >>> separateIntegerTerms (2*x*(y+z))
 --    (2,x*(y+z))
 separateIntegerTerms :: Expr -> (Expr, Expr)
-separateIntegerTerms (structure -> Mul xs) = foldl combine (1, 1) xs
+separateIntegerTerms (Mul xs) = foldl combine (1, 1) xs
   where
     combine (a, b) (separateIntegerTerms -> (c, d)) = (a * c, b * d)
 separateIntegerTerms u
@@ -107,8 +107,8 @@ contract (mapStructure contract -> v)
   | mulOrPow v = contractRules v -- contraer exponenciales en productos o potencias
   | otherwise = v
     where
-      mulOrPow (structure -> Mul _) = True
-      mulOrPow (structure -> Pow _ _) = True
+      mulOrPow (Mul _) = True
+      mulOrPow (Pow _ _) = True
       mulOrPow _ = False
 
       contractRules (Algebraic.expandMainOp -> v') = case structure v' of
@@ -126,7 +126,7 @@ contract (mapStructure contract -> v)
 
       -- combinar los argumentos de las exponenciales en s, usando la propiedad exp(s)*exp(y) = exp(s+y)
       -- los argumentos que no son exponenciales se multiplican en p
-      combineMul (p,s) (structure -> Exp y) = (p, s+y)
+      combineMul (p,s) (Exp y) = (p, s+y)
       combineMul (p,s) y = (p*y, s)
 
 -- * Simplificación de exponenciales

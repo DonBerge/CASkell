@@ -24,10 +24,10 @@ import Structure
 trigSubstitute :: Expr -> Expr
 trigSubstitute = mapStructure trigSubstitute . trigSubstitute'
   where
-    trigSubstitute' (structure -> Tan x) = sin x / cos x
-    trigSubstitute' (structure -> Cot x) = cos x / sin x
-    trigSubstitute' (structure -> Sec x) = 1 / cos x
-    trigSubstitute' (structure -> Csc x) = 1 / sin x
+    trigSubstitute' (Tan x) = sin x / cos x
+    trigSubstitute' (Cot x) = cos x / sin x
+    trigSubstitute' (Sec x) = 1 / cos x
+    trigSubstitute' (Csc x) = 1 / sin x
     trigSubstitute' x = x
 
 -- * Expansion de expresiones trigonometricas
@@ -43,8 +43,8 @@ trigSubstitute = mapStructure trigSubstitute . trigSubstitute'
 trigExpand :: Expr -> Expr
 trigExpand = trigExpand' . mapStructure trigExpand
   where
-    trigExpand' (structure -> Sin x) = fst $ expandTrigRules x
-    trigExpand' (structure -> Cos x) = snd $ expandTrigRules x
+    trigExpand' (Sin x) = fst $ expandTrigRules x
+    trigExpand' (Cos x) = snd $ expandTrigRules x
     trigExpand' x = x
 
 -- |
@@ -59,13 +59,13 @@ trigExpand = trigExpand' . mapStructure trigExpand
 --  - Si @u=n*v@ con @n@ un entero, entonces la forma expandida se calcula utilizando 'multipleAngleCos' y 'multipleAngleSin'
 expandTrigRules :: Expr -> (Expr, Expr)
 -- u = v + w
-expandTrigRules u@(structure -> Add (x :|| _)) =
+expandTrigRules u@(Add (x :|| _)) =
   let f = expandTrigRules x
       r = expandTrigRules (u - x)
       s = fst f * snd r + snd f * fst r
       c = snd f * snd r - fst f * fst r
    in (s, c)
-expandTrigRules u@(structure -> Mul (f :|| _))
+expandTrigRules u@(Mul (f :|| _))
   | Number f' <- structure f,
     true (isInteger f') -- u = n * v
     =
@@ -77,7 +77,7 @@ expandTrigRules u = (sin u, cos u)
 -- |
 --  Expansión de \(\cos(n \cdot x)\), utilizando los polinomios de Chebyshev de primera clase.
 multipleAngleCos :: Integer -> Expr -> Expr
-multipleAngleCos n u@(structure -> Add _) = trigExpand $ cos $ Algebraic.expandMainOp $ fromInteger n * u
+multipleAngleCos n u@(Add _) = trigExpand $ cos $ Algebraic.expandMainOp $ fromInteger n * u
 multipleAngleCos 0 _ = 1
 multipleAngleCos 1 x = cos x
 multipleAngleCos n x
@@ -90,7 +90,7 @@ multipleAngleCos n x
 -- |
 --  Expansión de \(\sin(n \cdot x)\), utilizando los polinomios de Chebyshev de segunda clase.
 multipleAngleSin :: Integer -> Expr -> Expr
-multipleAngleSin n u@(structure -> Add _) = trigExpand $ sin $ Algebraic.expandMainOp $ fromInteger n * u
+multipleAngleSin n u@(Add _) = trigExpand $ sin $ Algebraic.expandMainOp $ fromInteger n * u
 multipleAngleSin 0 _ = 0
 multipleAngleSin 1 x = sin x
 multipleAngleSin n x
@@ -137,13 +137,13 @@ cheby2 x n = Algebraic.expand $ Matrix.getElem 1 1 $ (Matrix.fromLists [[2 * x, 
 contractTrig :: Expr -> Expr
 contractTrig = mapStructure contractTrig . contractTrig'
   where
-    contractTrig' v@(structure -> Pow _ _) = contractTrigRules $ expandMainOp v
-    contractTrig' v@(structure -> Mul _) = contractTrigRules $ expandMainOp v
+    contractTrig' v@(Pow _ _) = contractTrigRules $ expandMainOp v
+    contractTrig' v@(Mul _) = contractTrigRules $ expandMainOp v
     contractTrig' v = v
 
 contractTrigRules :: Expr -> Expr
-contractTrigRules v@(structure -> Pow _ _) = contractTrigPower v
-contractTrigRules v@(structure -> Mul _) =
+contractTrigRules v@(Pow _ _) = contractTrigPower v
+contractTrigRules v@(Mul _) =
   let (c, d) = separateSinCos v
    in if d == 1
         then v
@@ -153,26 +153,26 @@ contractTrigRules v@(structure -> Mul _) =
           Pow _ _ -> expandMainOp (c * contractTrigPower d)
           Mul ds -> expandMainOp (c * contractTrigProduct ds)
           _ -> undefinedExpr "Contract trig rules: Unreachable case"
-contractTrigRules (structure -> Add us) = sum $ fmap trigRules us
+contractTrigRules (Add us) = sum $ fmap trigRules us
   where
-    trigRules v@(structure -> Pow _ _) = contractTrigRules v
-    trigRules v@(structure -> Mul _) = contractTrigRules v
+    trigRules v@(Pow _ _) = contractTrigRules v
+    trigRules v@(Mul _) = contractTrigRules v
     trigRules v = v
 contractTrigRules v = v
 
 -- |
 --    Verifica que la expresión dada es un seno, coseno o una potencia entera de un seno o coseno
 isSinOrCos :: Expr -> Bool
-isSinOrCos (structure -> Sin _) = True
-isSinOrCos (structure -> Cos _) = True
-isSinOrCos (structure -> Pow v w)
+isSinOrCos (Sin _) = True
+isSinOrCos (Cos _) = True
+isSinOrCos (Pow v w)
   | true $ isSinOrCos v &&& isInteger w = True
 isSinOrCos _ = False
 
 -- |
 --    Dada una expresión @u@, 'separateSinCos' separa los senos y cosenos de los demás términos.
 separateSinCos :: Expr -> (Expr, Expr)
-separateSinCos (structure -> Mul (u :|| v :| us)) = bimap product product $ separateSinCos' (u : v : us)
+separateSinCos (Mul (u :|| v :| us)) = bimap product product $ separateSinCos' (u : v : us)
   where
     separateSinCos' [] = ([], [])
     separateSinCos' (u : us)
@@ -199,7 +199,7 @@ contractTrigProduct (a :|| b :| c : cs) = contractTrigRules $ a * contractTrigPr
 -- |
 --    Contraccion de potencias de funciones trigonometricas.
 contractTrigPower :: Expr -> Expr
-contractTrigPower a@(structure -> MonomialTerm u n) =
+contractTrigPower a@(MonomialTerm u n) =
   case structure u of
     Sin u' -> contractSinPower n u'
     Cos u' -> contractCosPower n u'

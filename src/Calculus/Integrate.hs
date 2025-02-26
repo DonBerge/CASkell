@@ -77,13 +77,13 @@ integralTable e x
     | e == x = 1/2 * x ** 2 -- Integral de x
 -- x^n con n libre de x
 -- b^x con b libre de x
-integralTable (structure -> Pow a n) x
+integralTable (Pow a n) x
     | a == x && n `freeOf` x = case n of
                                  -1 -> log x
                                  _ -> x**(n+1) / (n+1)
     | n == x && a `freeOf` x = a**x / log a
 -- Integracion de funciones conocidas
-integralTable f@(structure -> Fun _ (a:|[])) x
+integralTable f@(Fun _ (a:|[])) x
     | a == x = integrateFun (structure f)
     where
         integrateFun (Exp x) = exp x
@@ -118,7 +118,7 @@ integralTable _ _ = undefinedExpr "Integral no aparece en la tabla de integrales
 
 -}
 separateFactors :: Expr -> Expr -> (Expr, Expr)
-separateFactors (structure -> Mul us) x = bimap product product $ partitionMul $ toList us
+separateFactors (Mul us) x = bimap product product $ partitionMul $ toList us
     where
         partitionMul [] = ([],[])
         partitionMul (u:us)
@@ -147,12 +147,12 @@ separateFactors u x
     Si no es posible aplicar linealidad, la función devuelve Undefined
 -}
 linearProperties :: Expr -> Expr -> Expr
-linearProperties u@(structure -> Mul _) x = do
+linearProperties u@(Mul _) x = do
                                 let (free,dependent) = separateFactors u x 
                                 if free == 1
                                     then undefinedExpr "No se puede aplicar linealidad de la integral"
                                     else free * (integrate dependent x)
-linearProperties u@(structure -> Add _) x = mapStructure (`integrate` x) u
+linearProperties u@(Add _) x = mapStructure (`integrate` x) u
 linearProperties _ _ = undefinedExpr "No se puede aplicar linealidad de la integral"
 
 {-|
@@ -190,7 +190,7 @@ substitutionMethod f x = foldr ((<|>) . makeSubstitution) failSubstitution $ tri
         failSubstitution = undefinedExpr "No se puede aplicar sustitución"
 
         -- Obtiene un nombre de variable de integración que no este en la expresion
-        getIntegrationVariable u (structure -> Symbol x) = getIntegrationVariable' x
+        getIntegrationVariable u (Symbol x) = getIntegrationVariable' x
             where
                 vars = variables u
                 getIntegrationVariable' x = let
@@ -242,10 +242,10 @@ unionMap f = foldl (\a b -> a `union` f b) []
         4. Exponentes de potencias: \(2\)
 -}
 trialSubstituions :: Expr -> [Expr]
-trialSubstituions u@(structure -> Fun _ (x:| xs)) = u : ((x:xs) `union` unionMap trialSubstituions (x:xs))
-trialSubstituions (structure -> Pow a b) = [a,b] `union` trialSubstituions a `union` trialSubstituions b
-trialSubstituions (structure -> Mul us) = unionMap trialSubstituions us
-trialSubstituions (structure -> Add us) = unionMap trialSubstituions us
+trialSubstituions u@(Fun _ (x:| xs)) = u : ((x:xs) `union` unionMap trialSubstituions (x:xs))
+trialSubstituions (Pow a b) = [a,b] `union` trialSubstituions a `union` trialSubstituions b
+trialSubstituions (Mul us) = unionMap trialSubstituions us
+trialSubstituions (Add us) = unionMap trialSubstituions us
 trialSubstituions _ = []
 
 

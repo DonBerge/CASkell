@@ -10,14 +10,14 @@ import qualified Simplification.Algebraic as Algebraic
 import Data.List
 
 isSymbol :: Expr -> Bool
-isSymbol (structure -> Symbol _) = True
+isSymbol (Symbol _) = True
 isSymbol _ = False
 
 variables :: Expr -> [Expr]
-variables (structure -> Number _) = []
-variables (structure -> MonomialTerm v _) = variables v
-variables (structure -> Add us) = foldl union [] $ fmap variables us
-variables (structure -> Mul us) = foldl union [] $ fmap variables us
+variables (Number _) = []
+variables (MonomialTerm v _) = variables v
+variables (Add us) = foldl union [] $ fmap variables us
+variables (Mul us) = foldl union [] $ fmap variables us
 variables u = [u]
 
 -- * Manipulación de polinomios
@@ -31,9 +31,9 @@ coefficientMonomialGPE :: Expr -> Expr-> (Expr, Integer)
 coefficientMonomialGPE 0 _ = (0,-1)
 coefficientMonomialGPE u x
     | u == x = (1, 1)
-coefficientMonomialGPE (structure -> MonomialTerm base exponent) x
+coefficientMonomialGPE (MonomialTerm base exponent) x
     | base == x = (1, exponent)
-coefficientMonomialGPE u@(structure -> Mul us) x = foldl combine (u,0) $ fmap (`coefficientMonomialGPE` x) us
+coefficientMonomialGPE u@(Mul us) x = foldl combine (u,0) $ fmap (`coefficientMonomialGPE` x) us
     where
         combine (c,m) (_,0) = (c,m)
         combine (_,_) (_,m) = (u / (x ** (fromInteger m)),m)
@@ -52,7 +52,7 @@ coefficientMonomialGPE u _ = (u,0) -- TODO: NO ESTOY SEGURO DE ESTO
     > degreeGPE (e^x) x = Undefined: e^x no es un monomio sobre x
 -}
 degreeGPE :: Expr -> Expr -> Integer
-degreeGPE (structure -> Add us) x = maximum $ fmap (`degreeGPE` x) us -- foldM (\d u -> max d . snd <$> coefficientMonomialGPE u x) (-1) us --maximum $ map (`degreeGPE` x) us
+degreeGPE (Add us) x = maximum $ fmap (`degreeGPE` x) us -- foldM (\d u -> max d . snd <$> coefficientMonomialGPE u x) (-1) us --maximum $ map (`degreeGPE` x) us
 degreeGPE u x = snd $ coefficientMonomialGPE u x
 
 multidegree :: [Expr] -> Expr -> [Integer]
@@ -71,7 +71,7 @@ multidegree vars u = map (degreeGPE u) vars
     > coefficientGPE (e^x) x 2 = Undefined: e^x no es un monomio sobre x
 -}
 coefficientGPE :: Expr -> Expr -> Integer -> Expr
-coefficientGPE u@(structure -> Add us) x j
+coefficientGPE u@(Add us) x j
     | u == x = if j == 1 then 1 else 0
     | otherwise = foldl combine 0 us
         where
@@ -237,7 +237,7 @@ mbPolyDivide u v l = let
             | otherwise = (q,r)
 
 
-        g (structure -> Add us) vm = sum $ fmap (`g` vm) us --mapM (`g` vm) us >>= simplifySum  -- g = sum ui / vm, donde ui es divisible por vm
+        g (Add us) vm = sum $ fmap (`g` vm) us --mapM (`g` vm) us >>= simplifySum  -- g = sum ui / vm, donde ui es divisible por vm
         g w wm = let
                     w' = w / wm
                     dw = denominator w'

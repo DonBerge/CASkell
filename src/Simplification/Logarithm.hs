@@ -54,8 +54,8 @@ expand (mapStructure expand -> v) = case structure v of
     Log w -> expandRules w
     _ -> v
     where
-        expandRules (structure -> Mul xs) = let (a,b) = partition (true . isPositive) xs in sum (fmap expandRules a) + log (product b)
-        expandRules (structure -> Pow x y)
+        expandRules (Mul xs) = let (a,b) = partition (true . isPositive) xs in sum (fmap expandRules a) + log (product b)
+        expandRules (Pow x y)
             | true (isPositive x) = y * expandRules x
         expandRules v' = log v'
 
@@ -80,25 +80,25 @@ contract (mapStructure contract -> v)
     | sumOrMul v = contractRules v
     | otherwise = v
     where
-        sumOrMul (structure -> Add _) = True
-        sumOrMul (structure -> Mul _) = True
+        sumOrMul (Add _) = True
+        sumOrMul (Mul _) = True
         sumOrMul _ = False
 
-        isLog (structure -> Log _) = True
+        isLog (Log _) = True
         isLog _ = False
 
-        contractRules (structure -> Add xs) = let (a,b) = foldl combineSum (1,0) xs in log a + b
-        contractRules (structure -> Mul xs) = 
+        contractRules (Add xs) = let (a,b) = foldl combineSum (1,0) xs in log a + b
+        contractRules (Mul xs) = 
             case partition isLog xs of
                 ([],factors) -> product factors
-                ([structure -> Log x], factors) -> log (x**(product factors))
-                (((structure -> Log y):ys), factors) -> foldl1 combinelogs ((log (y**(product factors))) : ys)
+                ([Log x], factors) -> log (x**(product factors))
+                (((Log y):ys), factors) -> foldl1 combinelogs ((log (y**(product factors))) : ys)
                 _ -> error "Este caso nunca se va a dar"
         contractRules v' = log v'
 
-        combinelogs l (structure -> Log x) = log(x**l)
+        combinelogs l (Log x) = log(x**l)
         combinelogs _ _ = error "Este caso nunca se va a dar"
 
         -- Obtiene el producto de los argumentos de los logaritmos y la suma de los terminos que no tienen logaritmos
-        combineSum (a,b) (structure -> Log x) = (a*x,b)
+        combineSum (a,b) (Log x) = (a*x,b)
         combineSum (a,b) x = (a,b+x)

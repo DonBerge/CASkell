@@ -32,7 +32,7 @@ type Context = [(Expr, Number)]
 --    >>> evalFloatingOp sin x  -- evalua sin(x), como x no es un valor numeico, no se evalua.
 --    Sin(x)
 evalFloatingOp :: (forall a. (Floating a) => a -> a) -> Expr -> Expr
-evalFloatingOp f (structure -> Number n) = fromNumber $ f n
+evalFloatingOp f (Number n) = fromNumber $ f n
 evalFloatingOp f x = f x
 
 -- |
@@ -55,11 +55,11 @@ deleteWithKey x ((y, z) : xs)
 --  >>> eval [(x,pi)] (2*sin(x/4))
 --  1.414213562373095
 eval :: Context -> Expr -> Expr
-eval _ (structure -> Pi) = fromNumber pi
-eval ctx u@(structure -> Symbol _) = maybe u fromNumber $ lookup u ctx
-eval ctx (structure -> Derivative u x) = makeUnevaluatedDerivative (eval (deleteWithKey x ctx) u) x -- no evaluar la variable de derivacion
-eval ctx (structure -> Integral u x) = makeUnevaluatedIntegral (eval (deleteWithKey x ctx) u) x -- no evaluar la variable de integracion
-eval ctx (structure -> DefiniteIntegral u x a b) =
+eval _ (Pi) = fromNumber pi
+eval ctx u@(Symbol _) = maybe u fromNumber $ lookup u ctx
+eval ctx (Derivative u x) = makeUnevaluatedDerivative (eval (deleteWithKey x ctx) u) x -- no evaluar la variable de derivacion
+eval ctx (Integral u x) = makeUnevaluatedIntegral (eval (deleteWithKey x ctx) u) x -- no evaluar la variable de integracion
+eval ctx (DefiniteIntegral u x a b) =
   let u' = eval (deleteWithKey x ctx) u
       a' = eval ctx a
       b' = eval ctx b
@@ -67,20 +67,20 @@ eval ctx (structure -> DefiniteIntegral u x a b) =
 eval ctx u = eval' $ mapStructure (eval ctx) u
   where
     -- evaluar funciones con numeros como argumento, ademas de potencias de numeros
-    eval' (structure -> Pow a b)
+    eval' (Pow a b)
       | Number n <- structure a, Number m <- structure b = fromNumber $ n ** m -- potencias de numeros
-    eval' (structure -> Sin x) = evalFloatingOp sin x -- uno de los sin evalua a numeros y otro a expresiones
-    eval' (structure -> Cos x) = evalFloatingOp cos x
-    eval' (structure -> Tan x) = evalFloatingOp tan x
-    eval' (structure -> Asin x) = evalFloatingOp asin x
-    eval' (structure -> Acos x) = evalFloatingOp acos x
-    eval' (structure -> Atan x) = evalFloatingOp atan x
-    eval' (structure -> Sinh x) = evalFloatingOp sinh x
-    eval' (structure -> Cosh x) = evalFloatingOp cosh x
-    eval' (structure -> Tanh x) = evalFloatingOp tanh x
-    eval' (structure -> Asinh x) = evalFloatingOp asinh x
-    eval' (structure -> Acosh x) = evalFloatingOp acosh x
-    eval' (structure -> Atanh x) = evalFloatingOp atanh x
-    eval' (structure -> Exp x) = evalFloatingOp exp x
-    eval' (structure -> Log x) = evalFloatingOp log x
+    eval' (Sin x) = evalFloatingOp sin x -- uno de los sin evalua a numeros y otro a expresiones
+    eval' (Cos x) = evalFloatingOp cos x
+    eval' (Tan x) = evalFloatingOp tan x
+    eval' (Asin x) = evalFloatingOp asin x
+    eval' (Acos x) = evalFloatingOp acos x
+    eval' (Atan x) = evalFloatingOp atan x
+    eval' (Sinh x) = evalFloatingOp sinh x
+    eval' (Cosh x) = evalFloatingOp cosh x
+    eval' (Tanh x) = evalFloatingOp tanh x
+    eval' (Asinh x) = evalFloatingOp asinh x
+    eval' (Acosh x) = evalFloatingOp acosh x
+    eval' (Atanh x) = evalFloatingOp atanh x
+    eval' (Exp x) = evalFloatingOp exp x
+    eval' (Log x) = evalFloatingOp log x
     eval' v = v

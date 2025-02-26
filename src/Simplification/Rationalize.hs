@@ -17,9 +17,9 @@ import qualified Data.Number as Number
 import qualified Simplification.Algebraic as Algebraic
 
 rationalize :: Expr -> Expr
-rationalize (structure -> Pow x y) = (rationalize x) ** y
-rationalize (structure -> Mul xs) = product $ fmap rationalize xs
-rationalize u@(structure -> Add (f :|| _)) = let
+rationalize (Pow x y) = (rationalize x) ** y
+rationalize (Mul xs) = product $ fmap rationalize xs
+rationalize u@(Add (f :|| _)) = let
                                                 g = rationalize f
                                                 h = rationalize (u - f)
                                              in
@@ -49,9 +49,9 @@ rationalSimplify u = let
                         simplifyNumberAndSign n' d' v
     where
         -- Obtener los coeficientes que sean numeros
-        numberCoefficientList (structure -> Number p) = [p]
-        numberCoefficientList (structure -> Mul ((structure -> Number p) :|| _)) = [p]
-        numberCoefficientList (structure -> Add us) = concatMap numberCoefficientList us
+        numberCoefficientList (Number p) = [p]
+        numberCoefficientList (Mul ((Number p) :|| _)) = [p]
+        numberCoefficientList (Add us) = concatMap numberCoefficientList us
         numberCoefficientList _ = [1]
 
         -- signNormalized = normalized

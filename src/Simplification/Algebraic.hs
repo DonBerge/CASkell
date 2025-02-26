@@ -17,9 +17,9 @@ import Assumptions (true, Assumptions (isInteger))
     Expansión de expresiones, una expresion esta expandida si `variables` no contiene ninguna suma
 -}
 expand :: Expr -> Expr
-expand (structure -> Add xs) = expandFraction $ sum $ fmap expand xs
-expand (structure -> Mul xs) = foldr1 expandProduct $ fmap expand xs
-expand (structure -> Pow b e)
+expand (Add xs) = expandFraction $ sum $ fmap expand xs
+expand (Mul xs) = foldr1 expandProduct $ fmap expand xs
+expand (Pow b e)
     | Number f <- structure e = let
                                     b' = expand b
                                     (fl, m) = properFraction f
@@ -30,7 +30,7 @@ expand (structure -> Pow b e)
                     e' = expand e
                   in
                     expandFraction $ b' ** e'
-expand u@(structure -> Fun _ _) = mapStructure expand u --construct $ Fun f $ fmap expand xs
+expand u@(Fun _ _) = mapStructure expand u --construct $ Fun f $ fmap expand xs
 expand u = u
 
 {-|
@@ -40,8 +40,8 @@ expand u = u
     \]
 -}
 expandProduct :: Expr -> Expr -> Expr
-expandProduct (structure -> Add rs) s = expand (sum $ fmap (`expandProduct` s) rs) -- auto simplificacion puede generar terminos no expandidos, hay que expandir de nuevo
-expandProduct r s@(structure -> Add _) = expandProduct s r
+expandProduct (Add rs) s = expand (sum $ fmap (`expandProduct` s) rs) -- auto simplificacion puede generar terminos no expandidos, hay que expandir de nuevo
+expandProduct r s@(Add _) = expandProduct s r
 expandProduct r s = expandFraction $ r * s 
 
 {-|
@@ -56,7 +56,7 @@ expandPower u n
     | n < 0 = 1 / expandPower u (-n)
 expandPower _ 0 = 1
 expandPower u 1 = u
-expandPower (structure -> Add (f :|| rs)) n = let
+expandPower (Add (f :|| rs)) n = let
                                                 rs' = sum rs
                                               in
                                                 sum [expandProduct (cf k) (expandPower rs' (n-k)) | k <- [0..n]]
@@ -83,11 +83,11 @@ expandFraction x = let
         > expandMainOP ((x+(1+x)²)²) = x² + 2*x*(1+x)² + (1+x)⁴ 
 -}
 expandMainOp :: Expr -> Expr
-expandMainOp (structure -> Mul xs) = foldr1 expandProduct' xs
+expandMainOp (Mul xs) = foldr1 expandProduct' xs
     where
-        expandProduct' u (structure -> Add us) = sum $ fmap (u*) us
-        expandProduct' u@(structure -> Add _) v = expandProduct v u
+        expandProduct' u (Add us) = sum $ fmap (u*) us
+        expandProduct' u@(Add _) v = expandProduct v u
         expandProduct' u v = u * v
-expandMainOp (structure -> Pow b e)
+expandMainOp (Pow b e)
     | Number f <- structure e, true (isInteger f) = expandPower b (toInteger f)
 expandMainOp u = u

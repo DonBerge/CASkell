@@ -9,8 +9,8 @@ import Structure
 
 -- | Verifica si una expresión dada es una variable
 notAVariable :: Expr -> Bool
-notAVariable (structure -> Pi) = True
-notAVariable (structure -> Symbol _) = False
+notAVariable Pi = True
+notAVariable (Symbol _) = False
 notAVariable _ = True
 
 -- |
@@ -22,7 +22,7 @@ substitute u t r
 
 -- | Dada una expresión \(u\) y un simbolo \(x\), obtiene un nuevo simbolo \(x\) que no este en \(u\)
 getNewVariable :: Expr -> Expr -> Expr
-getNewVariable u (structure -> Symbol x) = getNewVariable' x
+getNewVariable u (Symbol x) = getNewVariable' x
   where
     vars = variables u
     getNewVariable' x =

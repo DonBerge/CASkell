@@ -22,9 +22,9 @@ import Data.Function
 import Data.Char (toLower, toUpper)
 
 numberFactor :: Expr -> Expr
-numberFactor n@(structure -> Number _) = n
-numberFactor (structure -> Mul vs) = product $ fmap numberFactor vs
-numberFactor (structure -> Pow u v) =
+numberFactor n@(Number _) = n
+numberFactor (Mul vs) = product $ fmap numberFactor vs
+numberFactor (Pow u v) =
   let -- (a*b)**c = a**c * b**c, solo si a y b son positivos
       u' = numberFactor u
       u'' = u / u'
@@ -37,7 +37,7 @@ mulByNeg :: Expr -> Bool
 mulByNeg = true . isNegative . numberFactor
 
 toNumberSuperscript :: Expr -> String
-toNumberSuperscript (structure -> Number n) = map toSuperscript $ show n
+toNumberSuperscript (Number n) = map toSuperscript $ show n
   where
     toSuperscript '-' = '⁻'
     toSuperscript '/' = 'ᐟ'
@@ -65,20 +65,20 @@ instance Pretty Expr where
     where
       prettyDivision n d = mkPretty n <> slash <> mkPretty d
         where
-          mkPretty u@(structure -> Add _) = parens $ pretty' u
-          mkPretty u@(structure -> Mul _) = parens $ pretty' u
+          mkPretty u@(Add _) = parens $ pretty' u
+          mkPretty u@(Mul _) = parens $ pretty' u
           mkPretty u = pretty' u
 
 
       pretty' v
         | mulByNeg v = pretty "-" <> mkPretty (negate v)
         where
-          mkPretty u@(structure -> Add _) = parens $ pretty u
+          mkPretty u@(Add _) = parens $ pretty u
           mkPretty u = pretty u
 
-      pretty' (structure -> Number n) = viaShow n
+      pretty' (Number n) = viaShow n
       
-      pretty' u'@(structure -> Add us) = 
+      pretty' u'@(Add us) = 
         let
             vars = variables u'
             (v :|| vs) = reverse $ sortBy (compare `on` (multidegree vars)) us -- ordenar los monomios
@@ -89,33 +89,33 @@ instance Pretty Expr where
             | mulByNeg y = pretty "-" <+> pretty (negate y)
             | otherwise = pretty "+" <+> pretty y
 
-      pretty' (structure -> Mul vs) = concatWith (surround (pretty "∙")) $ fmap mkPretty $ toList vs
+      pretty' (Mul vs) = concatWith (surround (pretty "∙")) $ fmap mkPretty $ toList vs
         where
           -- Cerrar entre parentesis si no es entero positivo o es una suma
-          mkPretty v@(structure -> Add _) = parens $ pretty v
+          mkPretty v@(Add _) = parens $ pretty v
           mkPretty v = pretty v
 
-      pretty' (structure -> Pow x n)
+      pretty' (Pow x n)
         | Number _ <- structure n = mkPretty x <> pretty (toNumberSuperscript n)
         where
-            mkPretty u@(structure -> Symbol _) = pretty u
-            mkPretty u@(structure -> Exp _) = parens $ pretty u
-            mkPretty u@(structure -> Fun _ _) = pretty u
+            mkPretty u@(Symbol _) = pretty u
+            mkPretty u@(Exp _) = parens $ pretty u
+            mkPretty u@(Fun _ _) = pretty u
             mkPretty u = parens $ pretty u
       
-      pretty' (structure -> Pow x y) = mkPretty x <> pretty "^" <> mkPretty y
+      pretty' (Pow x y) = mkPretty x <> pretty "^" <> mkPretty y
         where
-          mkPretty v@(structure -> Add _) = parens $ pretty v
-          mkPretty v@(structure -> Mul _) = parens $ pretty v
-          mkPretty v@(structure -> Pow _ _) = parens $ pretty v
+          mkPretty v@(Add _) = parens $ pretty v
+          mkPretty v@(Mul _) = parens $ pretty v
+          mkPretty v@(Pow _ _) = parens $ pretty v
           mkPretty v = pretty v
       
-      pretty' (structure -> Symbol s) = pretty s
+      pretty' (Symbol s) = pretty s
       
-      pretty' (structure -> Exp x) =
+      pretty' (Exp x) =
         let e = symbol "e"
          in pretty $ e ** x
-      pretty' (structure -> Fun f (x :| [])) = pretty (camelCase f) <> parens (pretty x)
+      pretty' (Fun f (x :| [])) = pretty (camelCase f) <> parens (pretty x)
         where
             camelCase (words -> []) = ""
             camelCase (words -> (y:ys)) = lower y ++ concatMap capitalize ys
@@ -137,11 +137,11 @@ toDoc u = let
                 if d == 1 then showExpr' n
                 else showExpr' n ++ " / " ++ showExpr' d
     where
-        showExpr' v@(structure -> Add vs) =
+        showExpr' v@(Add vs) =
             let
                 vars = variables v
             in
                 intercalate " + " $ fmap showExpr $ sortBy (compare `on` (multidegree vars)) $ vs
-        -- showExpr' (structure -> Exp x)
+        -- showExpr' (Exp x)
         showExpr' v = show v
 -}

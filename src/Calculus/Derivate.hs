@@ -70,20 +70,20 @@ derivate u x
   | notAVariable x = undefinedExpr $ "Derivate: " ++ show x ++ " no es una variable"
   | u == x = 1 -- derivada de x
   | freeOf u x = 0 -- derivada de una constante
-derivate u@(structure -> Pow v w) x =
+derivate u@(Pow v w) x =
   let dv = derivate v x
       dw = derivate w x
    in w * v ** (w - 1) * dv + dw * u * log v -- regla de la potencia
-derivate u@(structure -> Add _) x = mapStructure (`derivate` x) u -- regla de la suma
-derivate u@(structure -> Mul us) x = sum $ fmap ((u *) . logder) us -- regla del producto
+derivate u@(Add _) x = mapStructure (`derivate` x) u -- regla de la suma
+derivate u@(Mul us) x = sum $ fmap ((u *) . logder) us -- regla del producto
   where
     logder f = (f `derivate` x) / f -- logder f = (log(f(x)))' = f'(x)/f(x)
-derivate u@(structure -> Fun _ (v :| [])) x =
+derivate u@(Fun _ (v :| [])) x =
   let df = derivateTable u -- derivar u respecto de v
       dv = derivate v x
    in df * dv -- regla de la cadena
   -- Derivada de una integral
-derivate (structure -> Integral v y) x
+derivate (Integral v y) x
   | x == y = v
 -- Derivada desconocida, devolver una derivada sin evaluar
 derivate u x = makeUnevaluatedDerivative u x
@@ -104,23 +104,23 @@ derivate u x = makeUnevaluatedDerivative u x
 --      >>> derivateTable (f[x])
 --      Derivate(f(x),x)
 derivateTable :: Expr -> Expr
-derivateTable (structure -> Sin v) = cos v
-derivateTable (structure -> Cos v) = negate $ sin v
-derivateTable (structure -> Tan v) = 1 / (cos v ** 2)
-derivateTable (structure -> Cot v) = negate $ 1 + cot v ** 2
-derivateTable (structure -> Sec v) = tan v * sec v
-derivateTable (structure -> Csc v) = negate $ cot v * csc v
-derivateTable (structure -> Asin v) = 1 / sqrt (1 - v ** 2)
-derivateTable (structure -> Acos v) = negate $ 1 / sqrt (1 - v ** 2)
-derivateTable (structure -> Atan v) = 1 / (1 + v ** 2)
-derivateTable (structure -> Asinh v) = 1 / sqrt (1 + v ** 2)
-derivateTable (structure -> Acosh v) = 1 / sqrt (v ** 2 - 1)
-derivateTable (structure -> Atanh v) = 1 / (1 - v ** 2)
-derivateTable (structure -> Sinh v) = cosh v
-derivateTable (structure -> Cosh v) = sinh v
-derivateTable (structure -> Tanh v) = 1 / (cosh v ** 2)
-derivateTable (structure -> Exp v) = exp v
-derivateTable (structure -> Log v) = 1 / v
+derivateTable (Sin v) = cos v
+derivateTable (Cos v) = negate $ sin v
+derivateTable (Tan v) = 1 / (cos v ** 2)
+derivateTable (Cot v) = negate $ 1 + cot v ** 2
+derivateTable (Sec v) = tan v * sec v
+derivateTable (Csc v) = negate $ cot v * csc v
+derivateTable (Asin v) = 1 / sqrt (1 - v ** 2)
+derivateTable (Acos v) = negate $ 1 / sqrt (1 - v ** 2)
+derivateTable (Atan v) = 1 / (1 + v ** 2)
+derivateTable (Asinh v) = 1 / sqrt (1 + v ** 2)
+derivateTable (Acosh v) = 1 / sqrt (v ** 2 - 1)
+derivateTable (Atanh v) = 1 / (1 - v ** 2)
+derivateTable (Sinh v) = cosh v
+derivateTable (Cosh v) = sinh v
+derivateTable (Tanh v) = 1 / (cosh v ** 2)
+derivateTable (Exp v) = exp v
+derivateTable (Log v) = 1 / v
 -- Derivada desconocida, devolver un operador sin evaluar
-derivateTable u@(structure -> Fun _ (v :| [])) = makeUnevaluatedDerivative u v
+derivateTable u@(Fun _ (v :| [])) = makeUnevaluatedDerivative u v
 derivateTable _ = undefinedExpr "DerivateTable: El argumento no es una funcion"
