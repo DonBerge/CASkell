@@ -19,7 +19,8 @@ import Math.Combinatorics.Exact.Binomial (choose)
 import Assumptions (true, Assumptions (isInteger))
 
 {-|
-    Expansión de expresiones, una expresion esta expandida si `variables` no contiene ninguna suma
+    Expansión de expresiones, una expresion esta expandida si ninguna suma es el operando de un producto o de una potencia
+    a exponente entero.
 -}
 expand :: Expr -> Expr
 expand (Add xs) = expandFraction $ sum $ fmap expand xs

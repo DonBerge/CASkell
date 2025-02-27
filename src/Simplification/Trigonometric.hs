@@ -24,7 +24,7 @@ import Structure
 
 -- | Aplica una función a cada subexpresión de una expresión dada.
 bottomUp :: (Expr -> Expr) -> Expr -> Expr
-bottomUp f = f . mapStructure f
+bottomUp f = f . mapStructure (bottomUp f)
 
 -- * Substitucion de funciones trigonometricas
 

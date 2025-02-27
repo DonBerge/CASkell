@@ -7,7 +7,7 @@
 --    Module      : Structure
 --    Description : Manipulacion de la estructura de datos de las expresiones
 module Structure
-  ( -- SExpr(..),
+  ( 
     TwoList (..),
     NonEmpty (..),
 
@@ -53,6 +53,8 @@ module Structure
     pattern Derivative,
     pattern Integral,
     pattern DefiniteIntegral,
+
+    -- * Operaciones sobre la estructura
     freeOf,
     operands,
     mapStructure,

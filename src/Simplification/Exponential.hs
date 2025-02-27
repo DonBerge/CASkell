@@ -29,6 +29,33 @@ import Simplification.Rationalize (rationalize)
 -- >>> let z = symbol "z"
 -- >>> let w = symbol "w"
 
+bottomUp :: (Expr -> Expr) -> Expr -> Expr
+bottomUp f = f . mapStructure (bottomUp f)
+
+-- * Sustitución de exponenciales
+
+-- |
+--    Reemplaza las ocurrencias de 'sinh', 'cosh', 'tanh', 'cot', 'sec' y 'csc' por sus equivalentes en seno y coseno.
+--
+--    === Ejemplos
+--
+--    >>> expSubstitute (sinh x)
+--    (-1/2)*Exp((-1)*x)+1/2*Exp(x)
+--    >>> expSubstitute (cosh x)
+--    1/2*Exp((-1)*x)+1/2*Exp(x)
+--    >>> expSubstitute (csch x + sech y)
+--    2*((-1)*Exp((-1)*x)+Exp(x))^(-1)+2*(Exp((-1)*y)+Exp(y))^(-1)
+expSubstitute :: Expr -> Expr
+expSubstitute = bottomUp expSubstitute'
+  where
+    expSubstitute' (Sinh x) = (exp x - exp (-x)) / 2
+    expSubstitute' (Cosh x) = (exp x + exp (-x)) / 2
+    expSubstitute' (Tanh x) = (exp x - exp (-x)) / (exp x + exp (-x))
+    expSubstitute' (Coth x) = (exp x + exp (-x)) / (exp x - exp (-x))
+    expSubstitute' (Sech x) = 2 / (exp x + exp (-x))
+    expSubstitute' (Csch x) = 2 / (exp x - exp (-x))
+    expSubstitute' x = x
+
 -- * Expansion de exponenciales
 
 -- |
@@ -75,7 +102,7 @@ separateIntegerTerms u
 
 -- Primero se expanden las subexpresiones algebraicas
 expand :: Expr -> Expr
-expand (mapStructure expand -> v) = case v of
+expand (Algebraic.expandMainOp . mapStructure expand -> v) = case v of
   Exp w -> expandRules w -- Si la expresión raiz es una exponencial, aplicar las propiedades de expansión
   _ -> v
   where
@@ -103,7 +130,7 @@ expand (mapStructure expand -> v) = case v of
 
 -}
 contract :: Expr -> Expr
-contract (mapStructure contract -> v)
+contract (Algebraic.expandMainOp . mapStructure contract -> v)
   | mulOrPow v = contractRules v -- contraer exponenciales en productos o potencias
   | otherwise = v
     where

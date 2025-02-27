@@ -67,7 +67,7 @@ makeUnevaluatedDefiniteIntegral u x a b = function "Definite_Integral" [u,x,a,b]
     >>> integralTable (log x) x
     (-1)*x+Log(x)*x
     >>> integralTable (x**2) x
-    (1/3)*x^3
+    1/3*x^3
     >>> integralTable (2 * sin x * cos x) x
     Undefined: Integral no aparece en la tabla de integrales
 -}

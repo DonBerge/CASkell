@@ -105,7 +105,7 @@ paren s = "(" ++ s ++ ")"
 
 showNumberFactor :: Number -> String
 showNumberFactor x
-    | elem '/' s || elem '-' s = paren s
+    | elem '-' s = paren s
     | otherwise = s
     where
         s = show x
