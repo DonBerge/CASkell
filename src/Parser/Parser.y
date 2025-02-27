@@ -1,7 +1,8 @@
 -- filepath: /home/don-berge/Documentos/ALP-TP-FINAL/src/Parser/Parser.y
 {
-{-# OPTIONS_HADDOCK hide #-}
-module Parser where
+module Parser (
+  parseExpr
+) where
 
 import Expr
 import Structure
@@ -44,7 +45,7 @@ Expression :   Expression '+' Expression  { $1 + $3 }
              | Expression '^^' Expression { $1 ** $3 }
              | '(' Expression ')'         { $2 }
              | number                     { $1 }
-             | symbol                     { symbol $1 } -- Si se trata de un simbolo, dejar el nombre como esta
+             | symbol                     { mkSymbol $1 } -- Si se trata de un simbolo, dejar el nombre como esta
              | symbol Arguments           { mkFun $1 $2 }--construct (Fun (mkFunName $1) $2) } 
 
 Arguments : '(' CommaArguments ')' { $2 }
@@ -68,6 +69,14 @@ data Token
   | TokenSymbol String
   deriving (Show)
 
+capitalize :: String -> String
+capitalize [] = []
+capitalize (c:cs) = toUpper c : map toLower cs
+
+mkSymbol :: String -> Expr
+mkSymbol "Pi" = pi
+mkSymbol name = symbol name
+
 -- Construccion de funciones
 
 mkFun :: String -> [Expr] -> Expr
@@ -78,14 +87,8 @@ mkFun name args
                         [x] -> sqrt x
                         _ -> undefinedExpr "La funcion raiz cuadrada solo toma un argumento"
   | otherwise = function name args
--- = let
-                  --  lname = map toLower name
-                  --in mkFun' lname
   where
     lname = map toLower name
-    
-    capitalize [] = []
-    capitalize (c:cs) = toUpper c : cs
 
 parseError :: [Token] -> a
 parseError _ = error "Parse error"
@@ -110,7 +113,9 @@ lexer (')':cs) = TokenRParen : lexer cs
 
 lexSymbolOrFunction cs = let
                            (s, cs') = span isAlpha cs
-                         in TokenSymbol s : processArgs cs'
+                        in case capitalize s of
+                          "Pi" -> TokenSymbol "Pi" : lexer cs'
+                          _ -> TokenSymbol s : processArgs cs'
   where
 
     processArgs [] = []
@@ -145,7 +150,23 @@ lexNumber cs = let
                 
                in TokenNumber (realToFrac parsedNumber) : lexer cs''
 
-
+-- | Parseo de expresiones algebraicas
+--
+--   La expresión se evalua a medida que se va parseando
+--
+-- === Ejemplos
+--
+-- >>> parseExpr "2 + 3"
+-- 5
+-- >>> parseExpr "x + x + x - y"
+-- 3*x+(-1)*y
+-- >>> parseExpr "f(x) + g(y) + sin(pi/2)"
+-- 1+f(x)+g(y)
+--
+-- Los nombres de las funciones y simbolos conocidos no son sensibles a las mayusculas
+--
+-- >>> parseExpr "sin(pi/2) + COS(PI) + tAN (pI/4) + funCIONrARA(2.2)"
+-- 1+funCIONrARA(2.2) 
 parseExpr = parser . lexer
 
 }

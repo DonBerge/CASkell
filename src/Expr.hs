@@ -3,7 +3,34 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Expr where
+{-|
+    Module      : Expr
+    Description : Módulo que define el tipo 'Expr' y sus operaciones.
+    
+-}
+module Expr (
+    -- * El tipo 'Expr'
+    Expr,
+    sec,
+    csc,
+    cot,
+    -- * Conversiones
+    fromNumber,
+    function,
+    symbol,
+    symbols,
+    assume,
+    undefinedExpr,
+    -- * Operadores
+    -- ** Operadores racionales
+    numerator,
+    denominator,
+    -- ** Operadores de comparación
+    lte,
+    lt,
+    gt,
+    gte
+) where
 
 import Prelude hiding (const, exponent)
 
@@ -119,7 +146,7 @@ fromNumber = return . Number
 
 function :: String -> [Expr] -> Expr
 function f [] = symbol f
-function f xs = sequence xs >>= return . Fun f
+function f xs = sequence xs >>= simplifyFun . Fun f
 
 symbol :: String -> Expr
 symbol = return . flip SymbolWithAssumptions emptyAssumptions

@@ -1,6 +1,11 @@
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-type-defaults #-}
+
+{-|
+    Module      : Simplification.Algebraic
+    Description : Módulo que implementa la expansión de expresiones algebraicas.
+-}
 module Simplification.Algebraic (
     expand,
     expandMainOp
