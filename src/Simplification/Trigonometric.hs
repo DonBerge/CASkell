@@ -1,7 +1,11 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module Simplification.Trigonometric where
+module Simplification.Trigonometric (
+  trigSubstitute,
+  trigExpand,
+  contractTrig,
+) where
 
 import Calculus.Utils
 import Assumptions
@@ -13,21 +17,36 @@ import Simplification.Algebraic (expandMainOp)
 import qualified Simplification.Algebraic as Algebraic
 import Structure
 
+-- $setup
+-- >>> let x = symbol "x"
+-- >>> let y = symbol "y"
+-- >>> let z = symbol "z"
+
+-- | Aplica una función a cada subexpresión de una expresión dada.
+bottomUp :: (Expr -> Expr) -> Expr -> Expr
+bottomUp f = f . mapStructure f
+
 -- * Substitucion de funciones trigonometricas
 
 -- |
 --    Reemplaza las ocurrencias de 'tan', 'cot', 'sec' y 'csc' por sus equivalentes en seno y coseno.
 --
---    > trigSubstitute (tan x) = sin x / cos xç
---    > trigSubstitute (cot x) = cos x / sin x
---    > trigSubstitute (cosec x + sec y) = 1 / sin x + 1 / cos y
+--    === Ejemplos
+--
+--    >>> trigSubstitute (tan x)
+--    Cos(x)^(-1)*Sin(x)
+--    >>> trigSubstitute (cot x)
+--    Cos(x)*Sin(x)^(-1)
+--    >>> trigSubstitute (csc x + sec y)
+--    Cos(y)^(-1)+Sin(x)^(-1)
 trigSubstitute :: Expr -> Expr
-trigSubstitute = mapStructure trigSubstitute . trigSubstitute'
+trigSubstitute = bottomUp trigSubstitute'
   where
     trigSubstitute' (Tan x) = sin x / cos x
     trigSubstitute' (Cot x) = cos x / sin x
     trigSubstitute' (Sec x) = 1 / cos x
     trigSubstitute' (Csc x) = 1 / sin x
+    trigSubstitute' (Tanh x) = sinh x / cosh x
     trigSubstitute' x = x
 
 -- * Expansion de expresiones trigonometricas
@@ -66,7 +85,7 @@ expandTrigRules u@(Add (x :|| _)) =
       c = snd f * snd r - fst f * fst r
    in (s, c)
 expandTrigRules u@(Mul (f :|| _))
-  | Number f' <- structure f,
+  | Number f' <- f,
     true (isInteger f') -- u = n * v
     =
       let f'' = toInteger f'
@@ -147,7 +166,7 @@ contractTrigRules v@(Mul _) =
   let (c, d) = separateSinCos v
    in if d == 1
         then v
-        else case structure d of
+        else case d of
           Sin _ -> v
           Cos _ -> v
           Pow _ _ -> expandMainOp (c * contractTrigPower d)
@@ -186,9 +205,9 @@ separateSinCos u
 --   Contraccion de productos de funciones trigonometricas.
 contractTrigProduct :: TwoList Expr -> Expr
 contractTrigProduct (a :|| b :| [])
-  | Pow _ _ <- structure a = contractTrigRules $ (contractTrigPower a) * b
-  | Pow _ _ <- structure b = contractTrigRules $ a * contractTrigPower b
-  | otherwise = case (structure a, structure b) of -- a y b son funciones trigonometricas
+  | Pow _ _ <- a = contractTrigRules $ (contractTrigPower a) * b
+  | Pow _ _ <- b = contractTrigRules $ a * contractTrigPower b
+  | otherwise = case (a, b) of -- a y b son funciones trigonometricas
       (Sin p, Sin q) -> cos (p - q) / 2 - cos (p + q) / 2
       (Cos p, Cos q) -> cos (p - q) / 2 + cos (p + q) / 2
       (Sin p, Cos q) -> sin (p + q) / 2 + sin (p - q) / 2
@@ -200,7 +219,7 @@ contractTrigProduct (a :|| b :| c : cs) = contractTrigRules $ a * contractTrigPr
 --    Contraccion de potencias de funciones trigonometricas.
 contractTrigPower :: Expr -> Expr
 contractTrigPower a@(MonomialTerm u n) =
-  case structure u of
+  case u of
     Sin u' -> contractSinPower n u'
     Cos u' -> contractCosPower n u'
     _ -> a

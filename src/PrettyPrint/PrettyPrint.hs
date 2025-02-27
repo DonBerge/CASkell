@@ -20,6 +20,7 @@ import Data.Foldable (toList)
 import Data.TwoList (sortBy, reverse)
 import Data.Function
 import Data.Char (toLower, toUpper)
+import Data.Number (Number)
 
 numberFactor :: Expr -> Expr
 numberFactor n@(Number _) = n
@@ -36,8 +37,8 @@ numberFactor _ = 1
 mulByNeg :: Expr -> Bool
 mulByNeg = true . isNegative . numberFactor
 
-toNumberSuperscript :: Expr -> String
-toNumberSuperscript (Number n) = map toSuperscript $ show n
+toNumberSuperscript :: Number -> String
+toNumberSuperscript n = map toSuperscript $ show n
   where
     toSuperscript '-' = '⁻'
     toSuperscript '/' = 'ᐟ'
@@ -52,7 +53,6 @@ toNumberSuperscript (Number n) = map toSuperscript $ show n
     toSuperscript '8' = '⁸'
     toSuperscript '9' = '⁹'
     toSuperscript x = x
-toNumberSuperscript x = show x
 
 -- instance Pretty Expr where
 instance Pretty Expr where
@@ -95,8 +95,7 @@ instance Pretty Expr where
           mkPretty v@(Add _) = parens $ pretty v
           mkPretty v = pretty v
 
-      pretty' (Pow x n)
-        | Number _ <- structure n = mkPretty x <> pretty (toNumberSuperscript n)
+      pretty' (Pow x (Number n)) = mkPretty x <> pretty (toNumberSuperscript n)
         where
             mkPretty u@(Symbol _) = pretty u
             mkPretty u@(Exp _) = parens $ pretty u

@@ -67,8 +67,7 @@ eval ctx (DefiniteIntegral u x a b) =
 eval ctx u = eval' $ mapStructure (eval ctx) u
   where
     -- evaluar funciones con numeros como argumento, ademas de potencias de numeros
-    eval' (Pow a b)
-      | Number n <- structure a, Number m <- structure b = fromNumber $ n ** m -- potencias de numeros
+    eval' (Pow (Number n) (Number m)) = fromNumber $ n ** m -- potencias de numeros
     eval' (Sin x) = evalFloatingOp sin x -- uno de los sin evalua a numeros y otro a expresiones
     eval' (Cos x) = evalFloatingOp cos x
     eval' (Tan x) = evalFloatingOp tan x

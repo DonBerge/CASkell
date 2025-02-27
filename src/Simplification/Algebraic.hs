@@ -25,7 +25,7 @@ expand :: Expr -> Expr
 expand (Add xs) = expandFraction $ sum $ fmap expand xs
 expand (Mul xs) = foldr1 expandProduct $ fmap expand xs
 expand (Pow b e)
-    | Number f <- structure e = let
+    | Number f <- e = let
                                     b' = expand b
                                     (fl, m) = properFraction f
                                  in 
@@ -94,5 +94,5 @@ expandMainOp (Mul xs) = foldr1 expandProduct' xs
         expandProduct' u@(Add _) v = expandProduct v u
         expandProduct' u v = u * v
 expandMainOp (Pow b e)
-    | Number f <- structure e, true (isInteger f) = expandPower b (toInteger f)
+    | Number f <- e, true (isInteger f) = expandPower b (toInteger f)
 expandMainOp u = u

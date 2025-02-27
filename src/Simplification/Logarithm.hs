@@ -50,7 +50,7 @@ import Data.TwoList (partition)
     Log(z)+(Log(w)+Log(x))*a+Log(y)*b
 -}
 expand :: Expr -> Expr
-expand (mapStructure expand -> v) = case structure v of
+expand (mapStructure expand -> v) = case v of
     Log w -> expandRules w
     _ -> v
     where

@@ -84,7 +84,7 @@ integralTable (Pow a n) x
     | n == x && a `freeOf` x = a**x / log a
 -- Integracion de funciones conocidas
 integralTable f@(Fun _ (a:|[])) x
-    | a == x = integrateFun (structure f)
+    | a == x = integrateFun f
     where
         integrateFun (Exp x) = exp x
         integrateFun (Log x) = x * log x - x
@@ -283,6 +283,6 @@ integrate f x = integralTable f x
 definiteIntegral :: Expr -> Expr -> Expr -> Expr -> Expr
 definiteIntegral u x a b = let
                             u' = integrate u x
-                           in case structure u' of
+                           in case u' of
                                 Integral _ _ -> makeUnevaluatedDefiniteIntegral u x a b
                                 _ -> (substitute u' x b) - (substitute u' x a)

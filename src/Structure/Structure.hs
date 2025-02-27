@@ -6,66 +6,70 @@
 -- |
 --    Module      : Structure
 --    Description : Manipulacion de la estructura de datos de las expresiones
-module Structure (
-                     -- SExpr(..),
-                     structure,
-                     TwoList(..),
-                     NonEmpty(..),
+module Structure
+  ( -- SExpr(..),
+    TwoList (..),
+    NonEmpty (..),
 
-                     pattern Number,
-                     pattern Symbol,
-                     pattern Add,
-                     pattern Mul,
-                     pattern Pow,
-                     pattern Fun,
-                     pattern Undefined,
-
-
-                     pattern Pi,
-                     pattern Exp,
-                     pattern Log,
-                     pattern Sin,
-                     pattern Cos,
-                     pattern Tan,
-                     pattern Cot,
-                     pattern Sec,
-                     pattern Csc,
-                     pattern Asin,
-                     pattern Acos,
-                     pattern Atan,
-                     pattern Asinh,
-                     pattern Acosh,
-                     pattern Atanh,
-                     pattern Sinh,
-                     pattern Cosh,
-                     pattern Tanh,
-                     pattern Derivative,
-                     pattern Integral,
-                     pattern DefiniteIntegral,
-                     pattern MonomialTerm,
-                     freeOf,
-                     operands,
-                     --construct,
-                     mapStructure,
-                     --showStruct
-                 ) where
+    -- * Sinonimos de patrones
+    -- ** Patrones basicos
+    pattern Number,
+    pattern Symbol,
+    pattern Add,
+    pattern Mul,
+    pattern Pow,
+    pattern Fun,
+    pattern Undefined,
+    pattern MonomialTerm,
+    -- ** Simbolos y funciones conocidas
+    -- *** Constantes
+    pattern Pi,
+    -- *** Exponencial y logaritmo
+    pattern Exp,
+    pattern Log,
+    -- *** Trigonometricas
+    pattern Sin,
+    pattern Cos,
+    pattern Tan,
+    pattern Sec,
+    pattern Csc,
+    pattern Cot,
+    -- *** Trigonometricas inversas
+    pattern Asin,
+    pattern Acos,
+    pattern Atan,
+    -- *** Hiperbolicas
+    pattern Sinh,
+    pattern Cosh,
+    pattern Tanh,
+    pattern Sech,
+    pattern Csch,
+    pattern Coth,
+    -- *** Hiperbolicas inversas
+    pattern Asinh,
+    pattern Acosh,
+    pattern Atanh,
+    -- *** Derivadas e integrales
+    pattern Derivative,
+    pattern Integral,
+    pattern DefiniteIntegral,
+    freeOf,
+    operands,
+    mapStructure,
+  )
+where
 
 import Assumptions
 import Classes.EvalSteps (runEvalSteps)
-
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE (fromList, toList)
-
 import Data.Number (Number)
 import Data.TwoList (TwoList (..))
 import qualified Data.TwoList as TL (fromList, toList)
 import Expr
 import PExpr (PExpr)
 import qualified PExpr as P
-import Symplify (simplifyFun, simplifySum, simplifyProduct)
-
-structure :: a -> a
-structure = id
+import Symplify (simplifyFun, simplifyProduct, simplifySum)
 
 makeExpr :: PExpr -> Expr
 makeExpr = return
@@ -99,10 +103,6 @@ matchFun e = case runEvalSteps e of
   Right (P.Fun s (x : xs)) -> Just (s, fmap return (x :| xs))
   _ -> Nothing
 
--- * Sinonimos de patrones
-
--- ** Patrones de expresiones
-
 pattern Number :: Number -> Expr
 pattern Number n <- (runEvalSteps -> Right (P.Number n))
 
@@ -123,8 +123,6 @@ pattern Fun s xs <- (matchFun -> Just (s, xs))
 
 pattern Undefined :: String -> Expr
 pattern Undefined e <- (runEvalSteps -> Left e)
-
--- ** Patrones de funciones
 
 pattern Pi :: Expr
 pattern Pi <- Symbol "Pi"
@@ -180,6 +178,15 @@ pattern Cosh x <- (matchUnaryFun "Cosh" -> Just x)
 pattern Tanh :: Expr -> Expr
 pattern Tanh x <- (matchUnaryFun "Tanh" -> Just x)
 
+pattern Coth :: Expr -> Expr
+pattern Coth x <- Fun "Coth" (x :| [])
+
+pattern Sech :: Expr -> Expr
+pattern Sech x <- Fun "Sech" (x :| [])
+
+pattern Csch :: Expr -> Expr
+pattern Csch x <- Fun "Csch" (x :| [])
+
 pattern Derivative :: Expr -> Expr -> Expr
 pattern Derivative u x <- (matchAnyarityFun "Derivate" -> Just (u :| [x]))
 
@@ -196,14 +203,14 @@ pattern MonomialTerm x n <- (matchMonomialTerm -> Just (x, n))
 
 freeOf :: Expr -> Expr -> Bool
 freeOf u t
-    | u == t = False
+  | u == t = False
 freeOf (Symbol _) _ = True
 freeOf (Number _) _ = True
 freeOf u t = all (`freeOf` t) $ operands u
 
 operands :: Expr -> [Expr]
-operands (Add (x :|| y :| xs)) = x:y:xs
-operands (Mul (x :|| y :| xs)) = x:y:xs
+operands (Add (x :|| y :| xs)) = x : y : xs
+operands (Mul (x :|| y :| xs)) = x : y : xs
 operands (Pow b e) = [b, e]
 operands (Fun _ xs) = NE.toList xs
 operands _ = []

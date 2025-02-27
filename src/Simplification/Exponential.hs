@@ -75,11 +75,11 @@ separateIntegerTerms u
 
 -- Primero se expanden las subexpresiones algebraicas
 expand :: Expr -> Expr
-expand (mapStructure expand -> v) = case structure v of
+expand (mapStructure expand -> v) = case v of
   Exp w -> expandRules w -- Si la expresión raiz es una exponencial, aplicar las propiedades de expansión
   _ -> v
   where
-    expandRules (Algebraic.expandMainOp -> v') = case structure v' of
+    expandRules (Algebraic.expandMainOp -> v') = case v' of
       Add us -> product $ fmap expandRules us -- Propiedad de expansión para sumas
       Mul _ -> let (a, b) = separateIntegerTerms v' in (exp b) ** a -- Propiedad de expansión para productos
       _ -> exp v' -- Si no es una suma o producto, no se puede expandir
@@ -111,8 +111,8 @@ contract (mapStructure contract -> v)
       mulOrPow (Pow _ _) = True
       mulOrPow _ = False
 
-      contractRules (Algebraic.expandMainOp -> v') = case structure v' of
-        Pow b s -> case structure b of
+      contractRules (Algebraic.expandMainOp -> v') = case v' of
+        Pow b s -> case b of
                     Exp b' -> let p = b'*s in if mulOrPow p then exp(contractRules p) else exp p
                     _ -> v'
         Mul vs -> let (p,s) = foldl combineMul (1,0) vs in (exp s) * p
