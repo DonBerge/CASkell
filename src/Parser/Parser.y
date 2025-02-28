@@ -1,5 +1,30 @@
 -- filepath: /home/don-berge/Documentos/ALP-TP-FINAL/src/Parser/Parser.y
 {
+{-|
+  Module: Parser
+  Description: Parseo de expresiones algebraicas
+
+  Este modulo se encarga de parsear expresiones algebraicas y convertirlas al tipo 'Expr'.
+
+  El parseo se realiza con la siguiente gramatica abstracta:
+
+  @
+    Expression : Expression '+' Expression
+               | Expression '-' Expression
+               | Expression '*' Expression
+               | Expression '/' Expression
+               | Expression '**' Expression
+               | Expression '^' Expression 
+               | Expression '^^' Expression
+               | '(' Expression ')'         
+               | Number                     
+               | Symbol                    
+               | Symbol '(' Arguments ')' 
+
+    Arguments  : Expression 
+               | Expression ',' Arguments
+  @
+-}
 module Parser (
   parseExpr
 ) where
@@ -28,8 +53,8 @@ import Data.Char
   '**'   { TokenPow }
   '^'    { TokenPow }
   '^^'   { TokenPow }
-  number { TokenNumber $$ }
-  symbol { TokenSymbol $$ }
+  Number { TokenNumber $$ }
+  Symbol { TokenSymbol $$ }
 
 %left '+' '-'
 %left '*' '/'
@@ -37,21 +62,19 @@ import Data.Char
 %%
 
 Expression :   Expression '+' Expression  { $1 + $3 }
-             | Expression '-' Expression  { $1 - $3 }
-             | Expression '*' Expression  { $1 * $3 }
-             | Expression '/' Expression  { $1 / $3 }
-             | Expression '**' Expression { $1 ** $3 }
-             | Expression '^' Expression  { $1 ** $3 }
-             | Expression '^^' Expression { $1 ** $3 }
-             | '(' Expression ')'         { $2 }
-             | number                     { $1 }
-             | symbol                     { mkSymbol $1 } -- Si se trata de un simbolo, dejar el nombre como esta
-             | symbol Arguments           { mkFun $1 $2 }--construct (Fun (mkFunName $1) $2) } 
+           |   Expression '-' Expression  { $1 - $3 }
+           |   Expression '*' Expression  { $1 * $3 }
+           |   Expression '/' Expression  { $1 / $3 }
+           |   Expression '**' Expression { $1 ** $3 }
+           |   Expression '^' Expression  { $1 ** $3 }
+           |   Expression '^^' Expression { $1 ** $3 }
+           |   '(' Expression ')'         { $2 }
+           |   Number                     { $1 }
+           |   Symbol                     { mkSymbol $1 } -- Si se trata de un simbolo, dejar el nombre como esta
+           |   Symbol '(' Arguments ')'   { mkFun $1 $3 } 
 
-Arguments : '(' CommaArguments ')' { $2 }
-
-CommaArguments : Expression { $1 : [] } 
-               | Expression ',' CommaArguments { $1 : $3 }
+Arguments : Expression { $1 : [] } 
+          | Expression ',' Arguments      { $1 : $3 }
                
 
 {
@@ -125,13 +148,6 @@ lexSymbolOrFunction cs = let
     processArgs cs = let
                       (arg, cs') = span (/= ',') cs
                     in lexer arg ++ processArgs cs'
-    -- lexFunction cs = processArgs args : TokenRParen : lexer cs
-    -- 
-    -- processArgs [] = []
-    -- processArgs (',',cs) = TokenComma : splitComma cs
-    -- processArgs cs = let
-    --                   (arg, cs') = span (/= ',') cs
-    --                 in lexer arg ++ splitComma cs'
 
 lexNumber cs = let
                 (is, cs') = span isDigit cs -- Leer parte entera

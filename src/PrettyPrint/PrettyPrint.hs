@@ -9,7 +9,8 @@
 --  Description : Pretty printing de expresiones
 --
 --  La gramatica para el parseo de expresiones es similar a la siguiente:
---
+--  
+--  @
 --  Expression : Expression '+' Expression
 --             | Expression '-' Expression
 --             | Expression '*' Expression
@@ -23,9 +24,11 @@
 --
 --  CommaArguments : Expression
 --                 | Expression ',' CommaArguments
+--  @
 --
 --  Esta gramatica puede desambiguarse en la siguiente gramatica:
 --
+--  @
 --  Expression : Term '+' Expression
 --             | Term '-' Expression
 --             | Term
@@ -43,6 +46,7 @@
 --
 --  CommaArguments : Expression ',' CommaArguments
 --                 | Expression
+--  @
 --
 --  Esta ultima gramatica es la que se utiliza en el PrettyPrint de las expresiones.
 module PrettyPrint (
