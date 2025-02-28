@@ -20,6 +20,7 @@ module Structure
     pattern Pow,
     pattern Fun,
     pattern Undefined,
+    pattern Neg,
     pattern MonomialTerm,
     -- ** Simbolos y funciones conocidas
     -- *** Constantes
@@ -84,6 +85,14 @@ mkFunOperands [] = Nothing
 mkFunOperands xs = Just $ NE.fromList $ map return xs
 
 -- * Funciones de matcheo
+
+matchMulByNegative :: Expr -> Maybe Expr
+matchMulByNegative e = case runEvalSteps e of
+  Right (P.Number n) | true (isNegative n) -> Just $ negate e
+  Right (P.Mul (P.Number n : _)) | true (isNegative n) -> Just $ negate e
+  _ -> Nothing
+  --Right (P.Mul [P.Number n, x]) | true (isInteger n &&& n < 0) -> Just (return x)
+  --_ -> Nothing
 
 matchUnaryFun :: String -> Expr -> Maybe Expr
 matchUnaryFun s e = case runEvalSteps e of
@@ -200,6 +209,9 @@ pattern DefiniteIntegral u x a b <- (matchAnyarityFun "Definite_Integral" -> Jus
 
 pattern MonomialTerm :: Expr -> Integer -> Expr
 pattern MonomialTerm x n <- (matchMonomialTerm -> Just (x, n))
+
+pattern Neg :: Expr -> Expr
+pattern Neg x <- (matchMulByNegative -> Just x)
 
 -- * Manipulación de la estructura de las expresiones
 

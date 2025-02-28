@@ -93,6 +93,7 @@ library
                       prettyprinter,
                       array,
                       mtl,
+                      text,
                       exact-combinatorics
 
     -- Directories containing source files.

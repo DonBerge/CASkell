@@ -1,146 +1,96 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
-module PrettyPrint (
-    pretty,
-) where
+-- |
+--  Module      : PrettyPrint
+--  Description : Pretty printing de expresiones
+--
+--  La gramatica para el parseo de expresiones es similar a la siguiente:
+--
+--  Expression : Expression '+' Expression
+--             | Expression '-' Expression
+--             | Expression '*' Expression
+--             | Expression '^' Expression
+--             | '(' Expression ')'
+--             | number
+--             | symbol
+--             | symbol Arguments
+--
+--  Arguments : '(' CommaArguments ')'
+--
+--  CommaArguments : Expression
+--                 | Expression ',' CommaArguments
+--
+--  Esta gramatica puede desambiguarse en la siguiente gramatica:
+--
+--  Expression : Term '+' Expression
+--             | Term '-' Expression
+--             | Term
+--
+--  Term : Factor '*' Term
+--       | Factor
+--
+--  Factor : Base '^' Factor
+--         | Base
+--
+--  Base : '(' Expression ')'
+--       | number
+--       | symbol
+--       | symbol '(' CommaArguments ')'
+--
+--  CommaArguments : Expression ',' CommaArguments
+--                 | Expression
+--
+--  Esta ultima gramatica es la que se utiliza en el PrettyPrint de las expresiones.
+module PrettyPrint where
 
-import Prelude hiding (reverse)
-
-import Assumptions
+import Data.Foldable (toList)
+import Data.Function
+import Data.TwoList (reverse, sortBy)
 import Expr
 import Prettyprinter
 import Simplification.PolyTools
 import Structure
+import Prelude hiding (reverse)
 
-import Data.Foldable (toList)
-import Data.TwoList (sortBy, reverse)
-import Data.Function
-import Data.Char (toLower, toUpper)
-import Data.Number (Number)
+-- * Pretty printing de los simbolos no terminales
 
-numberFactor :: Expr -> Expr
-numberFactor n@(Number _) = n
-numberFactor (Mul vs) = product $ fmap numberFactor vs
-numberFactor (Pow u v) =
-  let -- (a*b)**c = a**c * b**c, solo si a y b son positivos
-      u' = numberFactor u
-      u'' = u / u'
-   in if true (isPositive u' &&& isPositive u'')
-        then u' ** v
-        else 1
-numberFactor _ = 1
-
-mulByNeg :: Expr -> Bool
-mulByNeg = true . isNegative . numberFactor
-
-toNumberSuperscript :: Number -> String
-toNumberSuperscript n = map toSuperscript $ show n
+prettyExpression :: Expr -> Doc ann
+prettyExpression u@(Add us) =
+  let vars = variables u
+      (v :|| vs) = reverse $ sortBy (compare `on` (multidegree vars)) us -- ordenar los monomios segun el multigrado
+   in fillSep $ prettyTerm v : map addSigns (toList vs)
   where
-    toSuperscript '-' = '⁻'
-    toSuperscript '/' = 'ᐟ'
-    toSuperscript '0' = '⁰'
-    toSuperscript '1' = '¹'
-    toSuperscript '2' = '²'
-    toSuperscript '3' = '³'
-    toSuperscript '4' = '⁴'
-    toSuperscript '5' = '⁵'
-    toSuperscript '6' = '⁶'
-    toSuperscript '7' = '⁷'
-    toSuperscript '8' = '⁸'
-    toSuperscript '9' = '⁹'
-    toSuperscript x = x
+    -- Agrega un operador + o - dependiendo del elemento
+    addSigns (Neg y) = pretty "-" <+> prettyTerm y
+    addSigns y = pretty "+" <+> prettyTerm y
+prettyExpression u = prettyTerm u
 
--- instance Pretty Expr where
+prettyTerm :: Expr -> Doc ann
+prettyTerm (Mul us) = concatWith (surround (pretty "*")) $ fmap prettyFactor us
+prettyTerm u = prettyFactor u
+
+prettyFactor :: Expr -> Doc ann
+prettyFactor (Pow x@(Exp _) y) = parens (prettyBase x) <> pretty "^" <> prettyFactor y -- Caso especial, la exponencial se repreenta como e^x
+prettyFactor (Pow x y) = prettyBase x <> pretty "^" <> prettyFactor y
+prettyFactor u = prettyBase u
+
+prettyBase :: Expr -> Doc ann
+prettyBase (Number n) = viaShow n
+prettyBase (Symbol s) = pretty s
+prettyBase (Exp x) = pretty "e" <> pretty "^" <> prettyFactor x
+prettyBase (Fun name us) = pretty name <> parens (concatWith (surround comma) (fmap prettyExpression us))
+prettyBase u = parens $ prettyExpression u
+
+-- * Funcion de pretty printing
+
 instance Pretty Expr where
   pretty u =
     let n = numerator u
         d = denominator u
      in if d == 1
-          then pretty' n
-          else prettyDivision n d --pretty' n <+> slash <+> pretty' d
-    where
-      prettyDivision n d = mkPretty n <> slash <> mkPretty d
-        where
-          mkPretty u@(Add _) = parens $ pretty' u
-          mkPretty u@(Mul _) = parens $ pretty' u
-          mkPretty u = pretty' u
-
-
-      pretty' v
-        | mulByNeg v = pretty "-" <> mkPretty (negate v)
-        where
-          mkPretty u@(Add _) = parens $ pretty u
-          mkPretty u = pretty u
-
-      pretty' (Number n) = viaShow n
-      
-      pretty' u'@(Add us) = 
-        let
-            vars = variables u'
-            (v :|| vs) = reverse $ sortBy (compare `on` (multidegree vars)) us -- ordenar los monomios
-        in 
-            fillSep $ pretty v : (map addSigns $ toList vs)
-        where
-          addSigns y -- Agrega un operador + o - dependiendo del elemento
-            | mulByNeg y = pretty "-" <+> pretty (negate y)
-            | otherwise = pretty "+" <+> pretty y
-
-      pretty' (Mul vs) = concatWith (surround (pretty "∙")) $ fmap mkPretty $ toList vs
-        where
-          -- Cerrar entre parentesis si no es entero positivo o es una suma
-          mkPretty v@(Add _) = parens $ pretty v
-          mkPretty v = pretty v
-
-      pretty' (Pow x (Number n)) = mkPretty x <> pretty (toNumberSuperscript n)
-        where
-            mkPretty u@(Symbol _) = pretty u
-            mkPretty u@(Exp _) = parens $ pretty u
-            mkPretty u@(Fun _ _) = pretty u
-            mkPretty u = parens $ pretty u
-      
-      pretty' (Pow x y) = mkPretty x <> pretty "^" <> mkPretty y
-        where
-          mkPretty v@(Add _) = parens $ pretty v
-          mkPretty v@(Mul _) = parens $ pretty v
-          mkPretty v@(Pow _ _) = parens $ pretty v
-          mkPretty v = pretty v
-      
-      pretty' (Symbol s) = pretty s
-      
-      pretty' (Exp x) =
-        let e = symbol "e"
-         in pretty $ e ** x
-      pretty' (Fun f (x :| [])) = pretty (camelCase f) <> parens (pretty x)
-        where
-            camelCase (words -> []) = ""
-            camelCase (words -> (y:ys)) = lower y ++ concatMap capitalize ys
-
-            capitalize [] = ""
-            capitalize (y:ys) = toUpper y : lower ys
-
-            lower = map toLower
-
-
-      pretty' v = viaShow v
-
-{-
-toDoc :: Expr -> String
-toDoc u = let
-                n = numerator u
-                d = denominator u
-             in
-                if d == 1 then showExpr' n
-                else showExpr' n ++ " / " ++ showExpr' d
-    where
-        showExpr' v@(Add vs) =
-            let
-                vars = variables v
-            in
-                intercalate " + " $ fmap showExpr $ sortBy (compare `on` (multidegree vars)) $ vs
-        -- showExpr' (Exp x)
-        showExpr' v = show v
--}
+          then prettyExpression n
+          else prettyTerm n <> slash <> prettyTerm d
