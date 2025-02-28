@@ -45,7 +45,9 @@
 --                 | Expression
 --
 --  Esta ultima gramatica es la que se utiliza en el PrettyPrint de las expresiones.
-module PrettyPrint where
+module PrettyPrint (
+  pretty
+) where
 
 import Data.Foldable (toList)
 import Data.Function
@@ -74,14 +76,14 @@ prettyTerm (Mul us) = concatWith (surround (pretty "*")) $ fmap prettyFactor us
 prettyTerm u = prettyFactor u
 
 prettyFactor :: Expr -> Doc ann
-prettyFactor (Pow x@(Exp _) y) = parens (prettyBase x) <> pretty "^" <> prettyFactor y -- Caso especial, la exponencial se repreenta como e^x
-prettyFactor (Pow x y) = prettyBase x <> pretty "^" <> prettyFactor y
+prettyFactor (Pow x@(Exp _) y) = parens (prettyBase x) <> pretty "^" <> prettyBase y -- Caso especial, la exponencial se repreenta como e^x
+prettyFactor (Pow x y) = prettyBase x <> pretty "^" <> prettyBase y -- El exponente se imprime usando 'prettyBase' para desambiguar expresiones como x**y**z
 prettyFactor u = prettyBase u
 
 prettyBase :: Expr -> Doc ann
 prettyBase (Number n) = viaShow n
 prettyBase (Symbol s) = pretty s
-prettyBase (Exp x) = pretty "e" <> pretty "^" <> prettyFactor x
+prettyBase (Exp x) = pretty "e" <> pretty "^" <> prettyBase x
 prettyBase (Fun name us) = pretty name <> parens (concatWith (surround comma) (fmap prettyExpression us))
 prettyBase u = parens $ prettyExpression u
 

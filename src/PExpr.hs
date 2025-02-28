@@ -1,7 +1,6 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# OPTIONS_GHC -Wno-noncanonical-monad-instances #-}
 {-# OPTIONS_GHC -Wall #-}
-{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 
 module PExpr (
     PExpr(..),
@@ -94,47 +93,30 @@ instance Ord PExpr where
 
     u <= v = u<v || u==v
 
-paren :: String -> String
-paren s = "(" ++ s ++ ")"
+-- * Funciones de impresion
 
--- ===
+showExpression :: PExpr -> String
+showExpression (Add xs) = intercalate "+" $ map showTerm xs
+showExpression x = showTerm x
 
--- isNegative :: PExpr -> Bool
--- isNegative (Number x) = x < 0
--- isNegative _ = False
+showTerm :: PExpr -> String
+showTerm (Mul xs) = intercalate "*" $ map showFactor xs
+showTerm x = showFactor x
 
-showNumberFactor :: Number -> String
-showNumberFactor x
-    | elem '-' s = paren s
-    | otherwise = s
-    where
-        s = show x
+showFactor :: PExpr -> String
+showFactor (Pow x y) = showBase x ++ "^" ++ showBase y
+showFactor x = showBase x
+
+showBase :: PExpr -> String
+showBase (Number x)
+    | true (isNegative x) = "(" ++ show x ++ ")"
+    | otherwise = show x
+showBase (Symbol x) = x
+showBase (Fun f xs) = f ++ "(" ++ intercalate "," (map show xs) ++ ")"
+showBase x = "(" ++ showExpression x ++ ")"
 
 instance Show PExpr where
-    show (Number x) = show x
-    show (Symbol x) = x
-    
-    show (Mul []) = "1"
-    show (Mul xs) = intercalate "*" $ map parenExpr xs
-        where
-            parenExpr (Number s) = showNumberFactor s
-            parenExpr s@(Add _) = paren $ show s
-            parenExpr s = show s
-    show (Add []) = "0"
-    show (Add xs) = intercalate "+" $ map parenExpr xs
-        where
-            parenExpr s@(Add _) = paren $ show s
-            parenExpr s = show s
-    
-    show (Pow x y) = parenExpr x ++ "^" ++ parenExpr y
-        where
-            parenExpr (Number s) = showNumberFactor s
-            parenExpr s@(Add _) = "(" ++ show s ++ ")"
-            parenExpr s@(Mul _) = "(" ++ show s ++ ")"
-            parenExpr s@(Pow _ _) = "(" ++ show s ++ ")"
-            parenExpr s = show s
-    show (Fun f []) = f
-    show (Fun f xs) = f ++ "(" ++ intercalate "," (map show xs) ++ ")"
+    show = showExpression
 
 instance Assumptions PExpr where
     isZero (SymbolWithAssumptions _ a) = askZero a
