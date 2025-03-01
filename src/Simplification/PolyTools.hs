@@ -141,6 +141,33 @@ leadingMonomial u (x:l) = let
 
 -- * Division de polinomios
 
+-- ** Division de polinomios en una variable
+svPolyDivide :: Expr -> Expr -> Expr -> (Expr,Expr)
+svPolyDivide u v x = let
+                        q = 0
+                        r = u
+                     in
+                        svPolyDivideLoop q r
+    where
+        n = degreeGPE v x
+        lcv = leadingCoefficient v x
+
+        svPolyDivideLoop q r = let
+                                m = degreeGPE r x
+                               in if m >= n
+                                    then let
+                                            lcr = leadingCoefficient r x
+                                            s = lcr / lcv
+                                            q' = q + s * x ^^ (m-n)
+                                            r' = Algebraic.expand $ (r-lcr * x^m) - (v-lcv * x^n) * s * x^(m-n)
+                                          in
+                                            svPolyDivideLoop q' r'
+                                    else (q,r)
+
+-- ** Division de polinomios multivariabless
+
+-- *** Division recursiva
+
 {-|
     Algoritmo que permite obtener la division entre \(u\) y \(v\) donde ambos son polinomios
     multivariables en \(\mathbb{Q}[x_1,x_2,...,x_n]\), la lista de simbolos \(l=[x_1,x_2,...,x_n]\) se pasa
@@ -203,6 +230,8 @@ recQuotient u v l = fst $ recPolyDivide u v l
 recRemainder :: Expr -> Expr -> [Expr] -> Expr
 recRemainder u v l = snd $ recPolyDivide u v l
 
+-- *** Division basada en monomios
+
 {-|
     Algoritmo alternativo para dividir polinomios multivariables en un conjunto de simbolos. Se basa en la estructura monomial de los polinomios
     en lugar de su estructura recursiva. Puede determinar si \(u | v\), pero si \(u \! \! \! \not | v\) puede producir un resultado
@@ -253,6 +282,8 @@ mbQuotient p q l = fst $ mbPolyDivide p q l
 mbRemainder :: Expr -> Expr -> [Expr] -> Expr
 mbRemainder p q l = snd $ mbPolyDivide p q l
 
+
+-- *** Pseudodivisión
 
 {-|
     Proceso similar a la división de polinomios donde el resto de la división satisface la propiedad euclidiana
@@ -487,6 +518,3 @@ lcmList us = let
             where
                 removeEachElement :: [a] -> [[a]]
                 removeEachElement xs = [take i xs ++ drop (i + 1) xs | i <- [0..length xs - 1]]
-
-{-
--}

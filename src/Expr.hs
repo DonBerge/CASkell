@@ -99,7 +99,12 @@ instance Floating Expr where
     acosh = makeFun Acosh
     atanh = makeFun Atanh
 
-    sqrt x = x ** 0.5
+    sqrt x = do
+                x' <- x
+                case x' of
+                    -- caso especial para numeros, intentar evaluar la raiz cuadrada y si el resultado es un entero, devolverlo
+                    Number a | a>=0 && true (isInteger (sqrt a)) -> return $ Number $ sqrt a 
+                    _ -> simplifyPow x' 0.5
 
     p ** q =  do
                 p' <- p
