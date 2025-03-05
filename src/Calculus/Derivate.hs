@@ -51,17 +51,17 @@ makeUnevaluatedDerivative u x = function "Derivate" [u,x]
 --  === Ejemplos
 --
 --  >>> derivate (x**2 + 2*x + 1) x
---  2+2*x
+--  2*x+2
 --  >>> derivate (sin x) x
 --  Cos(x)
 --  >>> derivate (exp(x**2)) x
---  2*Exp(x^2)*x
+--  2*e^(x^2)*x
 --  >>> derivate (x*log(x)-x) x
 --  Log(x)
 --  >>> derivate (f[x]) x 
 --  Derivate(f(x),x)
 --  >>> derivate (f[x]*exp(x)) x 
---  Derivate(f(x),x)*Exp(x)+Exp(x)*f(x)
+--  Derivate(f(x),x)*e^x+e^x*f(x)
 --  >>> derivate (f[g[x]]) x
 --  Derivate(f(g(x)),g(x))*Derivate(g(x),x)
 derivate :: Expr -> Expr -> Expr
@@ -99,7 +99,7 @@ derivate u x = makeUnevaluatedDerivative u x
 --      >>> derivateTable (sin x)
 --      Cos(x)
 --      >>> derivateTable (exp x)
---      Exp(x)
+--      e^x
 --      >>> derivateTable (f[x])
 --      Derivate(f(x),x)
 derivateTable :: Expr -> Expr

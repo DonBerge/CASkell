@@ -31,11 +31,13 @@ module Expr.Parser (
 
 import Expr.ExprType
 import Expr.Structure
+import Expr.PrettyPrint -- Usado por los testcase
 
 import Data.Number
 import Data.List.NonEmpty (NonEmpty(..), (<|))
 import Data.List (intercalate)
 import Data.Char
+
 
 }
 

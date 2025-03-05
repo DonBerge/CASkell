@@ -19,6 +19,7 @@ import Math.Combinatorics.Exact.Binomial (choose)
 import Assumptions (true, Assumptions (isInteger))
 
 -- $setup
+-- >>> import Expr.PrettyPrint
 -- >>> x = symbol "x"
 -- >>> y = symbol "y"
 -- >>> z = symbol "z"
@@ -34,22 +35,22 @@ import Assumptions (true, Assumptions (isInteger))
     == Ejemplos
     
     >>> expand ((x+2)*(x+3)*(x+4))
-    24+26*x+9*x^2+x^3
+    x^3+9*x^2+26*x+24
     >>> expand ((x+y+z)**3)
-    x^3+3*x^2*y+3*x*y^2+y^3+3*x^2*z+6*x*y*z+3*y^2*z+3*x*z^2+3*y*z^2+z^3
+    x^3+3*x^2*y+3*x^2*z+3*x*y^2+6*x*y*z+3*x*z^2+y^3+3*y^2*z+3*y*z^2+z^3
     >>> expand ((x+1)**2+(y+1)**2)
-    2+2*x+x^2+2*y+y^2
+    x^2+2*x+y^2+2*y+2
     >>> expand (((x+2)**2 + 3)**2)
-    49+56*x+30*x^2+8*x^3+x^4
+    x^4+8*x^3+30*x^2+56*x+49
     >>> expand (sin(a*(b+c)))
     Sin(a*b+a*c)
     >>> expand (a/(b*(c+d)))
-    a*(b*c+b*d)^(-1)
+    a/(b*c+b*d)
 
     La expansion algebraica tambien expande expresiones con exponentes fraccionarios:
     
     >>> expand ((x+1)**(5/2))
-    (1+x)^(1/2)+2*(1+x)^(1/2)*x+(1+x)^(1/2)*x^2
+    (x+1)^1/2*x^2+2*(x+1)^1/2*x+(x+1)^1/2
 
     La expansion anterior se realiza haciendo la transformación \((1+x)^{5/2} = (1+x)^{1/2}(x+1)^2\) y luego expandiendo \((x+1)^2\)
 
@@ -119,9 +120,9 @@ expandFraction x = let
     === Ejemplos:
     
     >>> expandMainOp (x*(2+(1+x)**2))
-    2*x+(1+x)^2*x
+    (x+1)^2*x+2*x
     >>> expandMainOp ((x+(1+x)**2)**2)
-    (1+x)^4+2*(1+x)^2*x+x^2 
+    x^2+2*(x+1)^2*x+(x+1)^4
 -}
 expandMainOp :: Expr -> Expr
 expandMainOp (Mul xs) = foldr1 expandProduct' xs
