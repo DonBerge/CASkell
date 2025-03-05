@@ -106,6 +106,7 @@ class BAlgebra a b where
 not3 :: BAlgebra a a => a -> TriBool
 not3 p = p !&& p
 
+-- | Funcion auxiliar para elevar operadores booleanos a ternarios
 liftBoolOp :: (Bool -> Bool -> Bool) -> Bool -> Bool -> TriBool
 liftBoolOp f a b = liftBool $ f a b
 
@@ -177,5 +178,6 @@ or3 f (x:xs)
     | true (f x) = T
     | otherwise = or3 f xs
 
+-- | @foldTri g e f@ es equivalente a @foldl g e . map f@
 foldTri :: (TriBool -> TriBool -> TriBool) -> TriBool -> (a -> TriBool) -> [a] -> TriBool
 foldTri g e f = foldl (\x y -> g x (f y)) e

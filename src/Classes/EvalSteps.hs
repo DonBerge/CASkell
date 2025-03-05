@@ -18,6 +18,7 @@ type Error = String
 -- | El tipo 'EvalSteps' encapsula una computación que puede resultar en un error o en un valor.
 newtype EvalSteps a = EvalSteps { unEvalSteps :: Except Error a }
 
+-- | Ejecuta una computación 'EvalSteps' y devuelve el resultado o un mensaje de error.
 runEvalSteps :: EvalSteps a -> Either Error a
 runEvalSteps = runExcept . unEvalSteps
 

@@ -25,6 +25,7 @@ import Prelude hiding (reverse)
 import Data.List.NonEmpty ( NonEmpty(..), (<|) ) 
 import qualified Data.List.NonEmpty as NE
 
+-- | Una lista con al menos 2 elementos
 data TwoList a = a :|| NonEmpty a
   deriving (Eq, Show)
 
