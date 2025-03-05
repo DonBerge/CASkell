@@ -72,7 +72,7 @@ import qualified Data.TwoList as TL (fromList, toList)
 import Expr.ExprType
 import PExpr (PExpr)
 import qualified PExpr as P
-import Symplify (simplifyFun, simplifyProduct, simplifySum)
+import Expr.Simplify (simplifyFun, simplifyProduct, simplifySum)
 
 makeExpr :: PExpr -> Expr
 makeExpr = return

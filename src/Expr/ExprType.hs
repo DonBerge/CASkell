@@ -39,7 +39,7 @@ import Prelude hiding (const, exponent)
 
 import PExpr
 
-import Symplify
+import Expr.Simplify
 
 import Data.Number (Number)
 import qualified Data.Number as Number

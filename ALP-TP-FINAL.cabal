@@ -68,7 +68,6 @@ library
                       Classes.EvalSteps
                       Data.TriBool
                       PrettyPrint
-                      Symplify
                       Expr
                       Data.TwoList
                       Calculus.Derivate
@@ -82,6 +81,7 @@ library
                     Parser
                     Expr.Structure
                     Expr.ExprType
+                    Expr.Simplify
                     Calculus.Utils
 
     -- LANGUAGE extensions used by modules in this package.

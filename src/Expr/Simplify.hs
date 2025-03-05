@@ -17,7 +17,7 @@
 --    La autosimplificación no realiza todas las simplificaciones posibles, por ejemplo, la expresión
 --    @a*x+b*x+2*x@ no se simplifica a @(a+b+2)*x@, ya que simplificaciones de este tipo colisionan con
 --    funciones como 'expand'.
-module Symplify
+module Expr.Simplify
   ( module Classes.EvalSteps,
     module PExpr,
     automaticSymplify,
