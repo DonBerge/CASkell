@@ -97,12 +97,14 @@ prettyTerm u
     d = denominator u
 
 prettyFactor :: Expr -> Doc ann
+prettyFactor (Sqrt x) = pretty "√" <> prettyBase x
 prettyFactor (Pow x y) = prettyBase x <> pretty "^" <> prettyBase y -- El exponente se imprime usando 'prettyBase' para desambiguar expresiones como x**y**z
 prettyFactor (Exp x) = pretty "e" <> pretty "^" <> prettyBase x
 prettyFactor u = prettyBase u
 
 prettyBase :: Expr -> Doc ann
 prettyBase (Number n) = viaShow n
+prettyBase Pi = pretty "π"
 prettyBase (Symbol s) = pretty s
 prettyBase u@(Exp _) = parens $ prettyFactor u -- Tratar e^x como un factor
 prettyBase (Fun name us) = pretty name <> parens (concatWith (surround comma) (fmap prettyExpression us))

@@ -18,13 +18,48 @@ import qualified Simplification.Algebraic as Algebraic
 
 import Data.List
 
+-- $setup
+-- >>> import Expr.PrettyPrint
+-- >>> x = symbol "x"
+-- >>> y = symbol "y"
+-- >>> z = symbol "z"
+-- >>> a = symbol "a"
+-- >>> b = symbol "b"
+-- >>> c = symbol "c"
+-- >>> n = assume (symbol "n") ["integer"] 
+
 -- * Funciones auxiliares
 
+{-|
+    La estructura de un polinomio depende de las expresiones que se eligan como variables. 
+    La función 'variables' genera una lista de variables a partir de una expresión algebraica.
+
+    === Ejemplos:
+
+    >>> variables (x**3 + 3*x**2*y + 3*x*y**2 + y**3)
+    [x,y]
+
+    >>> variables (3*x*(x+1)*y**2*z**n)
+    [x+1,x,y,z^n]
+
+    >>> variables (a*sin(x)**2 + 2*b*sin(x) + 3*c)
+    [Sin(x),a,b,c]
+
+    >>> variables (1/2)
+    []
+
+    'variables' puede seleccionar expresiones que son matematicamente constantes
+    >>> variables (sqrt(2)*x**2+sqrt(3)*x+sqrt(5))
+    [√5,√3,x,√2]
+-}
 variables :: Expr -> [Expr]
 variables (Number _) = []
 variables (MonomialTerm v _) = variables v
 variables (Add us) = foldl union [] $ fmap variables us
-variables (Mul us) = foldl union [] $ fmap variables us
+variables (Mul us) = foldl union [] $ fmap varMuls us
+    where
+        varMuls u@(Add _) = [u] -- Si u es una suma, considerarla como una variable
+        varMuls u = variables u
 variables u = [u]
 
 -- * Manipulación de polinomios
@@ -47,21 +82,42 @@ coefficientMonomial u@(Mul us) x = foldl combine (u,0) $ fmap (`coefficientMonom
 coefficientMonomial u _ = (u,0) -- TODO: NO ESTOY SEGURO DE ESTO
 
 {-|
-    Devuelve el grado de una expresion algebraica \(u\) respecto a la variable \(x\), siempre y cuando \(u\) sea un polinomio
-    sobre \(x\). Si \(u\) no es un polinomio sobre \(x\) entonces devuelve un error.
+    Devuelve el grado de una expresion algebraica \(u\) respecto a la variable \(x\).
 
     Ejemplos:
 
-    > degree 0 x = -1
-    > degree (x^2 + 2*x + 1) x = 2
-    > degree (x**2 + 2*y*x) x = 2
-    > degree (x**2 + 2*y*x) y = 1
-    > degree (e^x) x = Undefined: e^x no es un monomio sobre x
+    >>> degree 0 x
+    -1
+    >>> degree (x**2 + 2*x + 1) x
+    2
+    >>> degree (x**2 + 2*y*x) x
+    2
+    >>> degree (x**2 + 2*y*x) y
+    1
+    >>> degree (exp(x)) x
+    0
 -}
 degree :: Expr -> Expr -> Integer
-degree (Add us) x = maximum $ fmap (`degree` x) us -- foldM (\d u -> max d . snd <$> coefficientMonomial u x) (-1) us --maximum $ map (`degree` x) us
+degree (Add us) x = maximum $ fmap (`degree` x) us
 degree u x = snd $ coefficientMonomial u x
 
+{-|
+    Devuelve el multigrado de una expresion algebraica \(u\) respecto a una lista de variables \(l\).
+
+    El multigrado de \(u\) respecto a \(l=[x_1,x_2,\dots,x_n]\) es la lista de grados de \(u\) respecto a cada variable
+    en \(l\).
+
+    Ejemplos:
+
+    >>> multidegree [x,y] (x**2 + 2*x + 1)
+    [2,0]
+    >>> multidegree [x,y] (x**2 + 2*y*x)
+    [2,1]
+    >>> multidegree [x,y] (x**2 + 2*y*x + y**2)
+    [2,2]
+    >>> multidegree [x,y] (exp(x))
+    [0,0]
+-}
 multidegree :: [Expr] -> Expr -> [Integer]
 multidegree vars u = map (degree u) vars
 
@@ -148,32 +204,7 @@ leadingMonomial u (x:l) = let
 
 -- * Division de polinomios
 
--- ** Division de polinomios en una variable
-svPolyDivide :: Expr -> Expr -> Expr -> (Expr,Expr)
-svPolyDivide u v x = let
-                        q = 0
-                        r = u
-                     in
-                        svPolyDivideLoop q r
-    where
-        n = degree v x
-        lcv = leadingCoefficient v x
-
-        svPolyDivideLoop q r = let
-                                m = degree r x
-                               in if m >= n
-                                    then let
-                                            lcr = leadingCoefficient r x
-                                            s = lcr / lcv
-                                            q' = q + s * x ^^ (m-n)
-                                            r' = Algebraic.expand $ (r-lcr * x^m) - (v-lcv * x^n) * s * x^(m-n)
-                                          in
-                                            svPolyDivideLoop q' r'
-                                    else (q,r)
-
--- ** Division de polinomios multivariabless
-
--- *** Division recursiva
+-- ** Division recursiva
 
 {-|
     Algoritmo que permite obtener la division entre \(u\) y \(v\) donde ambos son polinomios
@@ -237,7 +268,7 @@ recQuotient u v l = fst $ recPolyDivide u v l
 recRemainder :: Expr -> Expr -> [Expr] -> Expr
 recRemainder u v l = snd $ recPolyDivide u v l
 
--- *** Division basada en monomios
+-- ** Division basada en monomios
 
 {-|
     Algoritmo alternativo para dividir polinomios multivariables en un conjunto de simbolos. Se basa en la estructura monomial de los polinomios
@@ -290,7 +321,7 @@ mbRemainder :: Expr -> Expr -> [Expr] -> Expr
 mbRemainder p q l = snd $ mbPolyDivide p q l
 
 
--- *** Pseudodivisión
+-- ** Pseudodivisión
 
 {-|
     Proceso similar a la división de polinomios donde el resto de la división satisface la propiedad euclidiana

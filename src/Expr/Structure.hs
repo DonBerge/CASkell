@@ -20,8 +20,10 @@ module Expr.Structure
     pattern Pow,
     pattern Fun,
     pattern Undefined,
+    -- ** Patrones utiles
     pattern Neg,
     pattern MonomialTerm,
+    pattern Sqrt,
     -- ** Simbolos y funciones conocidas
     -- *** Constantes
     pattern Pi,
@@ -212,6 +214,9 @@ pattern MonomialTerm x n <- (matchMonomialTerm -> Just (x, n))
 
 pattern Neg :: Expr -> Expr
 pattern Neg x <- (matchMulByNegative -> Just x)
+
+pattern Sqrt :: Expr -> Expr
+pattern Sqrt x <- Pow x (Number 0.5)
 
 -- * Manipulación de la estructura de las expresiones
 
