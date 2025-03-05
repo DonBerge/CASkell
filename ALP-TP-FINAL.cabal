@@ -99,7 +99,6 @@ library
 
     -- Directories containing source files.
     hs-source-dirs:   src
-                      src/Data
                       src/Calculus
                       src/Expr
                       src/Simplification

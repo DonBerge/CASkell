@@ -32,6 +32,7 @@ module Expr.Parser (
 import Expr.ExprType
 import Expr.Structure
 
+import Data.Number
 import Data.List.NonEmpty (NonEmpty(..), (<|))
 import Data.List (intercalate)
 import Data.Char
@@ -69,7 +70,7 @@ Expression :   Expression '+' Expression  { $1 + $3 }
            |   Expression '^' Expression  { $1 ** $3 }
            |   Expression '^^' Expression { $1 ** $3 }
            |   '(' Expression ')'         { $2 }
-           |   Number                     { $1 }
+           |   Number                     { fromNumber $1 }
            |   Symbol                     { mkSymbol $1 } -- Si se trata de un simbolo, dejar el nombre como esta
            |   Symbol '(' Arguments ')'   { mkFun $1 $3 } 
 
@@ -88,7 +89,7 @@ data Token
   | TokenLParen
   | TokenRParen
   | TokenComma
-  | TokenNumber Expr
+  | TokenNumber Number
   | TokenSymbol String
   deriving (Show)
 
