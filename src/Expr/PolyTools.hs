@@ -186,9 +186,12 @@ leadingCoefficient u x = let
 
     El monomio lider depende del orden de las variables en la lista de simbolos.
 
-    > u = 3*x^2*y+4*x*y**2+y^3+x+1
-    > leadingMonomial u [x,y] = 3*x^2*y
-    > leadingMonomial u [y,x] = y^3
+    >>> u = 3*x**2*y+4*x*y**2+y**3+x+1
+    >>> leadingMonomial u [x,y] 
+    3*x^2*y
+    
+    >>> leadingMonomial u [y,x] 
+    y^3
 
 -}
 leadingMonomial :: Expr -> [Expr] -> Expr
@@ -340,7 +343,7 @@ mbRemainder p q l = snd $ mbPolyDivide p q l
     
         * \(\operatorname{lc}(v,x)\) es el coeficiente líder de \(v\) respecto a \(x\).
 
-        * \(\delta\) es \(\max(\operatorname{deg}(u,x) - \operatorname{deg}(v,x) + 1, 0)\).
+        * \(\delta = \max(\operatorname{deg}(u,x) - \operatorname{deg}(v,x) + 1, 0)\).
 
         * \(u\) y \(v\) son los polinomios a dividir.
 
@@ -348,8 +351,16 @@ mbRemainder p q l = snd $ mbPolyDivide p q l
     
     Ejemplos:
 
-    > pseudoDivision (x^2 + 2*x + 1) (x + 1) x = (x + 1, 0) -- 1^(2) * (x^2 + 2*x + 1) = (x + 1)(x + 1) + 0
-    > pseudoDivision (2*x+2*y) 2 x = (4*x+4*y, 0) -- 2^2 * (2*x+2*y) = (4*x+4*y)*2 + 0
+    >>> pseudoDivision (x**2 + 2*x + 1) (x + 1) x 
+    (x+1,0)
+
+    Ya que \(1^2 \cdot (x^2 + 2x + 1) = (x + 1)(x + 1) + 0\)
+    
+    
+    >>> pseudoDivision (2*x+2*y) 2 x
+    (4*x+4*y,0) 
+    
+    Ya que \(2^2 \cdot (2x+2y) = (4x+4y)\cdot 2 + 0\)
     
 
 -}

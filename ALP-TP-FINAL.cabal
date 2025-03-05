@@ -62,7 +62,6 @@ library
     exposed-modules:  Simplification.Algebraic
                       Simplification.Exponential
                       Simplification.Logarithm
-                      Expr.PolyTools
                       Simplification.Rationalize
                       Simplification.Trigonometric
                       Classes.EvalSteps
@@ -79,6 +78,7 @@ library
                     PExpr
                     Expr.Parser
                     Expr.Structure
+                    Expr.PolyTools
                     Expr.PrettyPrint
                     Expr.ExprType
                     Expr.Simplify

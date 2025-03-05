@@ -3,8 +3,6 @@
 module Simplification.Rationalize (
     rationalize,
     rationalSimplify,
-    numerator,
-    denominator
 ) where
 
 import Expr
@@ -14,6 +12,26 @@ import Data.List
 import qualified Data.Number as Number
 import qualified Simplification.Algebraic as Algebraic
 
+-- $setup
+-- >>> x = symbol "x"
+-- >>> a = symbol "a"
+-- >>> b = symbol "b"
+-- >>> c = symbol "c"
+
+{-|
+  'rationalize' combina los numeradores y denominadores de los operadores en una expresión
+
+  >>> u = 1 + 1/(1+1/x)
+  >>> rationalize u
+  (2*x+1)/(x+1)
+
+  >>> (numerator u, denominator u)
+  (1/(1/x+1)+1,1)
+
+  >>> (numerator (rationalize u), denominator (rationalize u))
+  (2*x+1,x+1)
+
+-}
 rationalize :: Expr -> Expr
 rationalize (Pow x y) = (rationalize x) ** y
 rationalize (Mul xs) = product $ fmap rationalize xs
@@ -24,6 +42,7 @@ rationalize u@(Add (f :|| _)) = let
                                                 rationalizeSum g h
 rationalize u = u
 
+-- Combina los denominadores de dos expresiones sumadas
 rationalizeSum :: Expr -> Expr -> Expr
 rationalizeSum u v = let
                         m = numerator u
@@ -34,6 +53,32 @@ rationalizeSum u v = let
                         if r == 1 && s == 1
                             then u + v
                             else (rationalizeSum (m*s) (n*r)) / (r*s)
+
+{-|
+  'rationalSimplify' comvierte una expresión en su forma racional simplificada
+
+  Una expresión \(u\) esta en forma racional simplificada si:
+
+    1. \(u\) es un polinomio multivariable con coeficientes enteros
+    2. Sea \(n\) y \(d\) el numerador y el denominador de \(u\) entonces:
+
+      2.1 \(n\) y \(d\) son polinomios multivariables con coeficientes enteros.
+      2.2 \(d \neq 0\) y \(d \neq 1\).
+      2.3 \(n\) y \(d\) no tienen factores comunes.
+      2.4 \(n\) y \(d\) estan normalizados.
+    3. \(u=(-1)v\) donde \(v\) cumple la condición 2.
+
+  === Ejemplos:
+
+  >>> rationalSimplify $ (-4*a**2 + 4*b**2) / (8*a**2 - 16*a*b + 8*b**2)
+  (a+b)/(-2*a+2*b)
+
+  >>> rationalSimplify $ (1/(1/a + c/(a*b))) + ((a*b*c+a*c**2)/((b+c)**2))
+  a
+
+  >>> rationalSimplify $ (2*a**3 + 22*a*b + 6*a**2 + 7*a + 6*a**2*b + 12*b**2 + 21*b) / (7*a**2 - 2*a**2*b - 5*a - 5*a*b**2 + 21*a*b - 15*b + 3*b**3)
+  (-2*a^2-6*a-4*b-7)/(2*a*b-7*a-b^2+5)
+-}
 rationalSimplify :: Expr -> Expr
 rationalSimplify u = let
                         u' = rationalize u
