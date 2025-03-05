@@ -101,9 +101,6 @@ library
                       src/Data
                       src/Calculus
                       src/Expr
-                      src/PrettyPrint
-                      src/Parser
-                      src/Structure
                       src/Simplification
                       src/Classes
 
