@@ -25,7 +25,7 @@
                | Expression ',' Arguments
   @
 -}
-module Parser (
+module Expr.Parser (
   parseExpr
 ) where
 

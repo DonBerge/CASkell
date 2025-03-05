@@ -49,7 +49,7 @@
 --  @
 --
 --  Esta ultima gramatica es la que se utiliza en el PrettyPrint de las expresiones.
-module PrettyPrint
+module Expr.PrettyPrint
   ( pretty,
   )
 where

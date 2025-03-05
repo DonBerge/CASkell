@@ -67,7 +67,6 @@ library
                       Simplification.Trigonometric
                       Classes.EvalSteps
                       Data.TriBool
-                      PrettyPrint
                       Expr
                       Data.TwoList
                       Calculus.Derivate
@@ -78,8 +77,9 @@ library
     -- Modules included in this library but not exported.
     other-modules:  Data.Number
                     PExpr
-                    Parser
+                    Expr.Parser
                     Expr.Structure
+                    Expr.PrettyPrint
                     Expr.ExprType
                     Expr.Simplify
                     Calculus.Utils
