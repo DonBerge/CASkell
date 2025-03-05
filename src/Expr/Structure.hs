@@ -4,9 +4,9 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 -- |
---    Module      : Structure
+--    Module      : Expr.Structure
 --    Description : Manipulacion de la estructura de datos de las expresiones
-module Structure
+module Expr.Structure
   ( 
     TwoList (..),
     NonEmpty (..),

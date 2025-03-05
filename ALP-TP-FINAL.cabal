@@ -68,7 +68,6 @@ library
                       Classes.EvalSteps
                       Data.TriBool
                       PrettyPrint
-                      Structure
                       Symplify
                       Expr
                       Data.TwoList
@@ -81,6 +80,7 @@ library
     other-modules:  Data.Number
                     PExpr
                     Parser
+                    Expr.Structure
                     Expr.ExprType
                     Calculus.Utils
 

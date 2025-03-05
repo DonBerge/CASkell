@@ -57,7 +57,10 @@ where
 import Data.Foldable (toList)
 import Data.Function
 import Data.TwoList (reverse, sortBy)
-import Expr
+
+import Expr.ExprType
+import Expr.Structure
+
 import Prettyprinter
 import Expr.PolyTools
 import Prelude hiding (reverse)

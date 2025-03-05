@@ -3,7 +3,9 @@
 module Expr.PolyTools where
 import Prelude hiding (exponent)
 
-import Expr
+import Expr.ExprType
+import Expr.Structure
+
 import qualified Simplification.Algebraic as Algebraic
 
 import Data.List

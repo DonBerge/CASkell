@@ -29,8 +29,8 @@ module Parser (
   parseExpr
 ) where
 
-import Expr
-import Structure
+import Expr.ExprType
+import Expr.Structure
 
 import Data.List.NonEmpty (NonEmpty(..), (<|))
 import Data.List (intercalate)

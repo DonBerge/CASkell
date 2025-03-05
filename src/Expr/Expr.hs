@@ -1,7 +1,7 @@
 module Expr (
     module Expr.ExprType,
-    module Structure
+    module Expr.Structure
 ) where
 
 import Expr.ExprType
-import Structure
+import Expr.Structure

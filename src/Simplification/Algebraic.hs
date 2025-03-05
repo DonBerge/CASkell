@@ -12,7 +12,8 @@ module Simplification.Algebraic (
 ) where
 
 
-import Expr
+import Expr.ExprType
+import Expr.Structure
 
 import Math.Combinatorics.Exact.Binomial (choose)
 import Assumptions (true, Assumptions (isInteger))
