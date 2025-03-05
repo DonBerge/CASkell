@@ -19,7 +19,6 @@
 module Simplification.Logarithm where
 
 import Expr
-import Structure
 import PExpr (Assumptions(isPositive), true)
 import Data.TwoList (partition)
 

@@ -15,7 +15,6 @@ import Expr
 import Math.Combinatorics.Exact.Binomial (choose)
 import Simplification.Algebraic (expandMainOp)
 import qualified Simplification.Algebraic as Algebraic
-import Structure
 
 -- $setup
 -- >>> let x = symbol "x"

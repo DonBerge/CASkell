@@ -60,7 +60,6 @@ import Data.TwoList (reverse, sortBy)
 import Expr
 import Prettyprinter
 import Expr.PolyTools
-import Structure
 import Prelude hiding (reverse)
 
 -- * Pretty printing de los simbolos no terminales

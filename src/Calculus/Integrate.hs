@@ -12,7 +12,6 @@
 module Calculus.Integrate where
 
 import Expr
-import Structure
 
 import Control.Applicative
 

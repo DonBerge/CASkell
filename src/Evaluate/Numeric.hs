@@ -12,7 +12,6 @@ where
 
 import Expr
 import Data.Number
-import Structure
 import Calculus.Derivate (makeUnevaluatedDerivative)
 import Calculus.Integrate (makeUnevaluatedIntegral, makeUnevaluatedDefiniteIntegral)
 

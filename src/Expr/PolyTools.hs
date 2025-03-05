@@ -4,7 +4,6 @@ module Expr.PolyTools where
 import Prelude hiding (exponent)
 
 import Expr
-import Structure
 import qualified Simplification.Algebraic as Algebraic
 
 import Data.List

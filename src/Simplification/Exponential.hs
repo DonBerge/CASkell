@@ -20,7 +20,6 @@ module Simplification.Exponential where
 import Assumptions
 import Expr
 import qualified Simplification.Algebraic as Algebraic
-import Structure
 import Simplification.Rationalize (rationalize)
 
 -- $setup

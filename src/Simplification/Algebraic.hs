@@ -13,7 +13,6 @@ module Simplification.Algebraic (
 
 
 import Expr
-import Structure
 
 import Math.Combinatorics.Exact.Binomial (choose)
 import Assumptions (true, Assumptions (isInteger))

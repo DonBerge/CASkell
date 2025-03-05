@@ -5,7 +5,6 @@ module Calculus.Utils where
 
 import Expr
 import Expr.PolyTools (variables)
-import Structure
 
 -- | Verifica si una expresión dada es una variable
 notAVariable :: Expr -> Bool

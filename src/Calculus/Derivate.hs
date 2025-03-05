@@ -9,7 +9,6 @@
 module Calculus.Derivate where
 
 import Expr
-import Structure
 
 import Calculus.Utils (notAVariable)
 

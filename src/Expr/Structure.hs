@@ -69,7 +69,7 @@ import qualified Data.List.NonEmpty as NE (fromList, toList)
 import Data.Number (Number)
 import Data.TwoList (TwoList (..))
 import qualified Data.TwoList as TL (fromList, toList)
-import Expr
+import Expr.ExprType
 import PExpr (PExpr)
 import qualified PExpr as P
 import Symplify (simplifyFun, simplifyProduct, simplifySum)

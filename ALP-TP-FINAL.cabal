@@ -81,6 +81,7 @@ library
     other-modules:  Data.Number
                     PExpr
                     Parser
+                    Expr.ExprType
                     Calculus.Utils
 
     -- LANGUAGE extensions used by modules in this package.

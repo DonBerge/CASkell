@@ -8,7 +8,6 @@ module Simplification.Rationalize (
 ) where
 
 import Expr
-import Structure
 import Expr.PolyTools
 import Data.Bifunctor
 import Data.List
