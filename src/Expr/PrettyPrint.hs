@@ -51,6 +51,7 @@
 --  Esta ultima gramatica es la que se utiliza en el PrettyPrint de las expresiones.
 module Expr.PrettyPrint
   ( pretty,
+    showTree
   )
 where
 
@@ -64,6 +65,7 @@ import Expr.Structure
 import Prettyprinter
 import Expr.PolyTools
 import Prelude hiding (reverse)
+import Expr.Simplify (runEvalSteps)
 
 -- * Pretty printing de los simbolos no terminales
 
@@ -80,14 +82,16 @@ prettyExpression u@(Add us) =
 prettyExpression u = prettyTerm u
 
 prettyTerm :: Expr -> Doc ann
-prettyTerm u@(Number _) = prettyBase u -- Ignorar numeros
 prettyTerm u@(Exp _) = prettyBase u -- Evita separar denominador y numerador de expresiones como e^(-x) 
+prettyTerm (MulByNum n v) = viaShow n <> pretty "*" <> prettyTerm v
 prettyTerm u
   | d == 1 = case u of
-              Mul us -> concatWith (surround (pretty "*")) $ fmap prettyFactor us
+              Mul us -> prettyMul us
               _ -> prettyFactor u
   | otherwise = prettyFactor n <> slash <> prettyBase d
   where
+    prettyMul us = concatWith (surround (pretty "*")) $ fmap prettyFactor us
+
     n = numerator u
     d = denominator u
 
@@ -110,3 +114,9 @@ instance Pretty Expr where
 
 instance Show Expr where
   show = show . pretty
+
+
+showTree :: Expr -> String
+showTree t = case runEvalSteps t of
+                Left e -> "Undefined: " ++ e
+                Right e -> show e

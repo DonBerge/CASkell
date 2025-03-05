@@ -44,7 +44,6 @@ module PExpr (
 
 import Data.Number
 
-import Data.List
 
 import Assumptions
 
@@ -58,7 +57,7 @@ data AssumptionsEnviroment = AssumptionsEnviroment {
     askEven :: TriBool,
     askOdd :: TriBool,
     askInteger :: TriBool
-}
+} deriving (Show)
 
 -- | Entorno de suposiciones con todas las suposiciones desconocidas
 emptyAssumptions :: AssumptionsEnviroment
@@ -89,6 +88,7 @@ data PExpr = Number Number
                 | Add [PExpr] 
                 | Pow PExpr PExpr
                 | Fun String [PExpr]
+             deriving Show
 
 instance Eq PExpr where
     (Number a) == (Number b) = a == b
@@ -139,38 +139,6 @@ instance Ord PExpr where
     v >= u = not (v < u)
 
     u <= v = u<v || u==v
-
--- * Funciones de impresion
-
-showExpression :: PExpr -> String
-showExpression (Add xs) = intercalate "+" $ map showTerm xs
-showExpression x = showTerm x
-
-showTerm :: PExpr -> String
-showTerm (Mul xs) = intercalate "*" $ map showFactor xs
-showTerm x = showFactor x
-
-showFactor :: PExpr -> String
-showFactor (Pow x y) = showBase x ++ "^" ++ showExp y
-    where
-        showExp u = let
-                        sb = showBase u
-                    in if '/'`elem` sb
-                        then "(" ++ sb ++ ")"
-                        else sb
-
-showFactor x = showBase x
-
-showBase :: PExpr -> String
-showBase (Number x)
-    | true (isNegative x) = "(" ++ show x ++ ")"
-    | otherwise = show x
-showBase (Symbol x) = x
-showBase (Fun f xs) = f ++ "(" ++ intercalate "," (map show xs) ++ ")"
-showBase x = "(" ++ showExpression x ++ ")"
-
-instance Show PExpr where
-    show = showExpression
 
 instance Assumptions PExpr where
     isZero (SymbolWithAssumptions _ a) = askZero a

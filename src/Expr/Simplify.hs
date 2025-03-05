@@ -297,7 +297,7 @@ freeOf u t = all (`freeOf` t) $ operands u
 linearForm :: PExpr -> PExpr -> EvalSteps (PExpr, PExpr)
 linearForm u x
   | u == x = return (Number 1, Number 0)
-  | notASymbol x = throwError $ show x ++ " must be a symbol"
+  | notASymbol x = throwError $ "x must be a symbol"
   where
     notASymbol (Symbol _) = False
     notASymbol _ = True
