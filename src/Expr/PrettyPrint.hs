@@ -82,7 +82,7 @@ prettyExpression u@(Add us) =
 prettyExpression u = prettyTerm u
 
 prettyTerm :: Expr -> Doc ann
-prettyTerm u@(Exp _) = prettyBase u -- Evita separar denominador y numerador de expresiones como e^(-x) 
+prettyTerm u@(Exp _) = prettyFactor u -- Evita separar denominador y numerador de expresiones como e^(-x) 
 prettyTerm u
   | d == 1 = case u of
               Neg u -> pretty "-" <> prettyMul u
@@ -97,14 +97,14 @@ prettyTerm u
     d = denominator u
 
 prettyFactor :: Expr -> Doc ann
-prettyFactor (Pow x@(Exp _) y) = parens (prettyBase x) <> pretty "^" <> prettyBase y -- Caso especial, la exponencial se repreenta como e^x
 prettyFactor (Pow x y) = prettyBase x <> pretty "^" <> prettyBase y -- El exponente se imprime usando 'prettyBase' para desambiguar expresiones como x**y**z
+prettyFactor (Exp x) = pretty "e" <> pretty "^" <> prettyBase x
 prettyFactor u = prettyBase u
 
 prettyBase :: Expr -> Doc ann
 prettyBase (Number n) = viaShow n
 prettyBase (Symbol s) = pretty s
-prettyBase (Exp x) = pretty "e" <> pretty "^" <> prettyBase x
+prettyBase u@(Exp _) = parens $ prettyFactor u -- Tratar e^x como un factor
 prettyBase (Fun name us) = pretty name <> parens (concatWith (surround comma) (fmap prettyExpression us))
 prettyBase u = parens $ prettyExpression u
 

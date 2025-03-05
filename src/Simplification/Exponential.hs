@@ -129,7 +129,7 @@ expand (Algebraic.expandMainOp . mapStructure expand -> v) = case v of
 
 -}
 contract :: Expr -> Expr
-contract (Algebraic.expandMainOp . mapStructure contract -> v)
+contract (mapStructure contract -> v)
   | mulOrPow v = contractRules v -- contraer exponenciales en productos o potencias
   | otherwise = v
     where
