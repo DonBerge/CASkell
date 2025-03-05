@@ -4,6 +4,19 @@
 
 module PExpr (
     PExpr(..),
+
+    
+    -- * Entorno de suposiciones
+    AssumptionsEnviroment(..),
+    emptyAssumptions,
+    -- ** Setters
+    setPositive,
+    setNegative,
+    setZero,
+    setEven,
+    setOdd,
+    setInteger,
+
     module Assumptions,
     -- * Patrones
     -- ** Simbolos
@@ -34,6 +47,40 @@ import Data.Number
 import Data.List
 
 import Assumptions
+
+-- = Entorno de suposiciones
+
+-- | Entorno de suposiciones, contiene las suposiciones que se han hecho sobre un cierto tipo de datos
+data AssumptionsEnviroment = AssumptionsEnviroment {
+    askPositive :: TriBool,
+    askNegative :: TriBool,
+    askZero :: TriBool,
+    askEven :: TriBool,
+    askOdd :: TriBool,
+    askInteger :: TriBool
+}
+
+-- | Entorno de suposiciones con todas las suposiciones desconocidas
+emptyAssumptions :: AssumptionsEnviroment
+emptyAssumptions = AssumptionsEnviroment U U U U U U
+
+setPositive :: TriBool -> AssumptionsEnviroment -> AssumptionsEnviroment
+setPositive p env = env { askPositive = p }
+
+setNegative :: TriBool -> AssumptionsEnviroment -> AssumptionsEnviroment
+setNegative n env = env { askNegative = n }
+
+setZero :: TriBool -> AssumptionsEnviroment -> AssumptionsEnviroment
+setZero z env = env { askZero = z }
+
+setEven :: TriBool -> AssumptionsEnviroment -> AssumptionsEnviroment
+setEven e env = env { askEven = e }
+
+setOdd :: TriBool -> AssumptionsEnviroment -> AssumptionsEnviroment
+setOdd o env = env { askOdd = o }
+
+setInteger :: TriBool -> AssumptionsEnviroment -> AssumptionsEnviroment
+setInteger i env = env { askInteger = i }
 
 -- Las PExpre construyen a partir de un conjunto de simbolos y constantes numericas
 data PExpr = Number Number 
