@@ -9,7 +9,7 @@
 --  Description : Pretty printing de expresiones
 --
 --  La gramatica para el parseo de expresiones es similar a la siguiente:
---  
+--
 --  @
 --  Expression : Expression '+' Expression
 --             | Expression '-' Expression
@@ -49,9 +49,10 @@
 --  @
 --
 --  Esta ultima gramatica es la que se utiliza en el PrettyPrint de las expresiones.
-module PrettyPrint (
-  pretty
-) where
+module PrettyPrint
+  ( pretty,
+  )
+where
 
 import Data.Foldable (toList)
 import Data.Function
@@ -76,8 +77,16 @@ prettyExpression u@(Add us) =
 prettyExpression u = prettyTerm u
 
 prettyTerm :: Expr -> Doc ann
-prettyTerm (Mul us) = concatWith (surround (pretty "*")) $ fmap prettyFactor us
-prettyTerm u = prettyFactor u
+prettyTerm u =
+  let n = numerator u
+      d = denominator u
+   in if d == 1 -- primero mostrar como cociente si es posible
+        then prettyTerm' n
+        else prettyTerm' n <> slash <> prettyTerm' d
+  where
+    -- y luego mostrar como producto
+    prettyTerm' (Mul us) = concatWith (surround (pretty "*")) $ fmap prettyFactor us
+    prettyTerm' u = prettyFactor u
 
 prettyFactor :: Expr -> Doc ann
 prettyFactor (Pow x@(Exp _) y) = parens (prettyBase x) <> pretty "^" <> prettyBase y -- Caso especial, la exponencial se repreenta como e^x
@@ -94,9 +103,4 @@ prettyBase u = parens $ prettyExpression u
 -- * Funcion de pretty printing
 
 instance Pretty Expr where
-  pretty u =
-    let n = numerator u
-        d = denominator u
-     in if d == 1
-          then prettyExpression n
-          else prettyTerm n <> slash <> prettyTerm d
+  pretty = prettyExpression

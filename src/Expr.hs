@@ -232,16 +232,3 @@ denominator = (=<<) denominator'
         denominator' (Exp x)
             | mulByNeg x = simplifyNegate x >>= simplifyFun . Exp
         denominator' _ = return 1
-
--- * Pattern synonyms
-
-{-
-pattern SNumber :: Number -> Expr
-pattern SNumber n <- (runEvalSteps -> Right (Number n))
-
-pattern SSymbol :: String -> Expr
-pattern SSymbol s <- (runEvalSteps -> Right (SymbolWithAssumptions s _))
-
-pattern SAdd :: [Expr] -> Expr
-pattern SAdd xs <- (runEvalSteps -> Right (Add (map return -> xs)))
--}
