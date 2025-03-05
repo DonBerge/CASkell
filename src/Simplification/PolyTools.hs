@@ -365,7 +365,7 @@ mostLeadingCoefficient = foldl leadingCoefficient
     Un polinomio en \(\mathbb{Q}[x]\) esta normalizado si es 0 o si su coeficiente lider es 1.
 -}
 normalize :: Foldable t => Expr -> t Expr -> Expr
-normalize 0 _ = return 0
+normalize 0 _ = 0
 -- Dividir por el coeficiente lider entre todos los coeficientes y expandir
 normalize u l = Algebraic.expand $ u / (mostLeadingCoefficient u l)
 

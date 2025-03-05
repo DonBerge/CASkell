@@ -69,13 +69,13 @@ isConstant _ = False
 
 -- | Extrae la parte constante de una multiplicación
 const :: PExpr -> PExpr
-const (Mul []) = 1
+const (Mul []) = Number 1
 const (Mul (x : _))
   | isConstant x = x
-  | otherwise = 1
+  | otherwise = Number 1
 const u
   | isConstant u = error "Constants dont have terms"
-  | otherwise = 1
+  | otherwise = Number 1
 
 -- | Extrae la parte variable de una multiplicación
 term :: PExpr -> PExpr
@@ -99,7 +99,7 @@ exponent :: PExpr -> PExpr
 exponent (Number _) = error "Exponent of a number is not defined"
 -- exponent (Exp x) = x
 exponent (Pow _ x) = x
-exponent _ = 1
+exponent _ = Number 1
 
 ---------------------------------------------------------------------------------------
 
@@ -129,10 +129,10 @@ exponent _ = 1
 --    === Ejemplos
 simplifyPow :: PExpr -> PExpr -> EvalSteps PExpr
 -- SPOW-1 es manejada automaticamente por la monada EvalSteps
-simplifyPow 0 w -- SPOW-2
-  | true $ isPositive w = return 0 -- SPOW-2.1
+simplifyPow (Number 0) w -- SPOW-2
+  | true $ isPositive w = return (Number 0) -- SPOW-2.1
   | true $ (isNegative w ||| isZero w) = throwError "Division por cero" -- SPOW-2.2
-simplifyPow 1 _ = return 1 -- SPOW-3
+simplifyPow (Number 1) _ = return (Number 1) -- SPOW-3
 simplifyPow v w
   | true $ isInteger w = simplifyIntPow v w -- SPOW.4
   | otherwise = return (Pow v w) -- SPOW.5
@@ -158,8 +158,8 @@ simplifyPow v w
 --    [@SINTPOW-6@]: Si ninguna regla aplica, entonces @'simplifyIntPow' v n = Pow v n@
 simplifyIntPow :: PExpr -> PExpr -> EvalSteps PExpr
 simplifyIntPow (Number x) (Number n) = return $ Number $ x ^^ (toInteger n) -- SINTPOW-1
-simplifyIntPow _ 0 = return 1 -- SINTPOW-2
-simplifyIntPow x 1 = return x -- SINTPOW-3
+simplifyIntPow _ (Number 0) = return (Number 1) -- SINTPOW-2
+simplifyIntPow x (Number 1) = return x -- SINTPOW-3
 simplifyIntPow (Pow r s) n = do
   p <- simplifyProduct [s, n]
   if true (isInteger p)
@@ -169,14 +169,14 @@ simplifyIntPow (Mul rs) n = mapM (`simplifyIntPow` n) rs >>= simplifyProduct -- 
 simplifyIntPow x n = return $ Pow x n -- SINTPOW-6
 
 simplifyProduct :: [PExpr] -> EvalSteps PExpr
-simplifyProduct [] = return 1
+simplifyProduct [] = return (Number 1)
 simplifyProduct [x] = return x -- SPRD.3
 simplifyProduct xs
-  | 0 `elem` xs = return 0 -- SPRD.2
+  | (Number 0) `elem` xs = return (Number 0) -- SPRD.2
   | otherwise = do
       xs' <- simplifyProductRec xs
       case xs' of -- SPRD.4
-        [] -> return 1
+        [] -> return (Number 1)
         [x] -> return x
         [u, Add vs] | isConstant u -> Add . sort <$> mapM (simplifyProduct . reverse . (: [u])) vs
         _ -> return $ Mul $ sort xs'
@@ -200,7 +200,7 @@ simplifyProductRec [u, v]
   | base u == base v = do
       s <- simplifySum [exponent u, exponent v]
       p <- simplifyPow (base u) s
-      if p == 1
+      if p == Number 1
         then return []
         else return [p]
   | otherwise = return [u, v]
@@ -210,16 +210,16 @@ simplifyProductRec (u : vs) = simplifyProductRec vs >>= mergeProducts [u]
 
 simplifyDiv :: PExpr -> PExpr -> EvalSteps PExpr
 simplifyDiv x y = do
-  y' <- simplifyPow y (-1)
+  y' <- simplifyPow y (Number (-1))
   simplifyProduct [x, y']
 
 simplifySum :: [PExpr] -> EvalSteps PExpr
-simplifySum [] = return 0
+simplifySum [] = return (Number 0)
 simplifySum [x] = return x
 simplifySum xs = do
   xs' <- simplifySumRec xs
   case xs' of -- SPRD.4
-    [] -> return 0
+    [] -> return (Number 0)
     [x] -> return x
     _ -> return $ Add $ sort xs'
 
@@ -232,8 +232,8 @@ simplifySumRec [u, Add vs] = mergeSums [u] vs
 simplifySumRec [Number u, Number v]
   | u + v == 0 = return []
   | otherwise = return [Number $ u + v]
-simplifySumRec [0, v] = return [v]
-simplifySumRec [u, 0] = return [u]
+simplifySumRec [Number 0, v] = return [v]
+simplifySumRec [u, Number 0] = return [u]
 simplifySumRec [u, v]
   | v < u = simplifySumRec [v, u]
   | isConstant u = return [u, v] -- evita undefined en el caso de abajo
@@ -244,7 +244,7 @@ simplifySumRec [u, v]
        in do
             s <- simplifySum [uc, vc]
             p <- simplifyProduct [s, vt]
-            if p == 0
+            if p == Number 0
               then return []
               else return [p]
   | otherwise = return [u, v]
@@ -254,7 +254,7 @@ simplifySumRec (u : vs) = simplifySumRec vs >>= mergeSums [u]
 
 simplifySub :: PExpr -> PExpr -> EvalSteps PExpr
 simplifySub x y = do
-  y' <- simplifyProduct [y, -1]
+  y' <- simplifyProduct [y, Number (-1)]
   simplifySum [x, y']
 
 mergeOps :: (Monad m, Eq a) => ([a] -> m [a]) -> [a] -> [a] -> m [a]
@@ -278,7 +278,7 @@ mergeSums :: [PExpr] -> [PExpr] -> EvalSteps [PExpr]
 mergeSums = mergeOps simplifySumRec
 
 simplifyNegate :: PExpr -> EvalSteps PExpr
-simplifyNegate a = simplifyProduct [a, -1]
+simplifyNegate a = simplifyProduct [a, Number (-1)]
 
 operands :: PExpr -> [PExpr]
 operands (Add xs) = xs
@@ -296,21 +296,21 @@ freeOf u t = all (`freeOf` t) $ operands u
 
 linearForm :: PExpr -> PExpr -> EvalSteps (PExpr, PExpr)
 linearForm u x
-  | u == x = return (1, 0)
+  | u == x = return (Number 1, Number 0)
   | notASymbol x = throwError $ show x ++ " must be a symbol"
   where
     notASymbol (Symbol _) = False
     notASymbol _ = True
-linearForm u@(Number _) _ = return (0, u)
-linearForm u@(Symbol _) _ = return (0, u)
+linearForm u@(Number _) _ = return (Number 0, u)
+linearForm u@(Symbol _) _ = return (Number 0, u)
 linearForm u@(Mul _) x
-  | freeOf u x = return (0, u)
+  | freeOf u x = return (Number 0, u)
   | otherwise = do
       udivx <- simplifyDiv u x
       if freeOf udivx x
-        then return (udivx, 0)
+        then return (udivx, Number 0)
         else throwError "not a linear form"
-linearForm u@(Add []) _ = return (0, u)
+linearForm u@(Add []) _ = return (Number 0, u)
 linearForm (Add (u : us)) x = do
   (a, b) <- linearForm u x
   (c, d) <- linearForm (Add us) x
@@ -318,7 +318,7 @@ linearForm (Add (u : us)) x = do
   b' <- simplifySum [b, d]
   return (a', b')
 linearForm u x
-  | freeOf u x = return (0, u)
+  | freeOf u x = return (Number 0, u)
   | otherwise = throwError "not a linear form"
 
 mulByNeg :: PExpr -> Bool
@@ -327,7 +327,7 @@ mulByNeg (Add xs) = all mulByNeg xs
 mulByNeg x = true $ isNegative x
 
 simplifySqrt :: PExpr -> EvalSteps PExpr
-simplifySqrt x = simplifyPow x 0.5
+simplifySqrt x = simplifyPow x (Number 0.5)
 
 ----------------
 
@@ -349,58 +349,58 @@ simplifyFun (Sin x)
 simplifyFun (Sin x) = handlePeriod cases simplifyNegate x <|> return (Sin x)
   where
     cases r b = case (r, b) of
-      (0, 0) -> return 0
+      (0, Number 0) -> return (Number 0)
       (0, _) ->
         if mulByNeg b
           then simplifyNegate b >>= simplifyNegate . Sin
           else return $ Sin b
-      (_, 0) | r == 1 / 6 -> return $ 1 / 2
-      (_, 0) | r == 1 / 4 -> simplifySqrt 2 >>= (`simplifyDiv` 2)
-      (_, 0) | r == 1 / 3 -> simplifySqrt 3 >>= (`simplifyDiv` 2)
-      (_, 0) | r == 1 / 2 -> return 1
+      (_, Number 0) | r == 1 / 6 -> return $ Number $ 1 / 2
+      (_, Number 0) | r == 1 / 4 -> simplifySqrt (Number 2) >>= (`simplifyDiv` (Number 2))
+      (_, Number 0) | r == 1 / 3 -> simplifySqrt (Number 3) >>= (`simplifyDiv` (Number 2))
+      (_, Number 0) | r == 1 / 2 -> return $ Number 1
       (_, _) -> Sin <$> (simplifyProduct [Number r, Pi] >>= simplifySum . (: [b]))
 simplifyFun (Cos x)
   | mulByNeg x = simplifyNegate x >>= simplifyFun . Cos
 simplifyFun (Cos x) = handlePeriod cases simplifyNegate x <|> return (Cos x)
   where
     cases r b = case (r, b) of
-      (0, 0) -> return 1
+      (0, Number 0) -> return $ Number 1
       (0, _) ->
         if mulByNeg b
           then Cos <$> simplifyNegate b
           else return $ Cos b
-      (_, 0) | r == 1 / 6 -> simplifySqrt 3 >>= (`simplifyDiv` 2)
-      (_, 0) | r == 1 / 4 -> simplifySqrt 2 >>= (`simplifyDiv` 2)
-      (_, 0) | r == 1 / 3 -> return $ 1 / 2
-      (_, 0) | r == 1 / 2 -> return 0
+      (_, Number 0) | r == 1 / 6 -> simplifySqrt (Number 3) >>= (`simplifyDiv` Number 2)
+      (_, Number 0) | r == 1 / 4 -> simplifySqrt (Number 2) >>= (`simplifyDiv` Number 2)
+      (_, Number 0) | r == 1 / 3 -> return $ Number $ 1 / 2
+      (_, Number 0) | r == 1 / 2 -> return $ Number 0
       (_, _) -> Cos <$> (simplifyProduct [Number r, Pi] >>= simplifySum . (: [b]))
 simplifyFun (Tan x)
   | mulByNeg x = simplifyNegate x >>= simplifyFun . Tan >>= simplifyNegate
 simplifyFun (Tan x) = handlePeriod cases return x <|> return (Tan x)
   where
     cases r b = case (r, b) of
-      (0, 0) -> return 0
+      (0, Number 0) -> return $ Number 0
       (0, _) ->
         if mulByNeg b
           then simplifyNegate b >>= simplifyNegate . Tan
           else return $ Tan b
-      (_, 0) | r == 1 / 6 -> return $ 1 / 3
-      (_, 0) | r == 1 / 4 -> return 1
-      (_, 0) | r == 1 / 3 -> simplifySqrt 3
-      (_, 0) | r == 1 / 2 -> return $ 1 / 0
+      (_, Number 0) | r == 1 / 6 -> return $ Number $ 1 / 3
+      (_, Number 0) | r == 1 / 4 -> return $ Number 1
+      (_, Number 0) | r == 1 / 3 -> simplifySqrt $ Number 3
+      (_, Number 0) | r == 1 / 2 -> fail "Tangente de pi/2"
       (_, _) -> Tan <$> (simplifyProduct [Number r, Pi] >>= simplifySum . (: [b]))
 
 -- exponenciales
 simplifyFun (Exp x) = do
   y' <- simplifyPow e x
   case y' of
-    Pow (Exp 1) y -> return $ Exp y
+    Pow (Exp (Number 1)) y -> return $ Exp y
     y -> return y
   where
-    e = Exp 1
+    e = Exp (Number 1)
 
 -- logaritmos
-simplifyFun (Log 1) = return 0
+simplifyFun (Log (Number 1)) = return $ Number 0
 simplifyFun (Log x)
   --     | true $ isNegative x = fail $ "Logaritmo de un número negativo( Log(" ++ show x ++  ") )"
   | otherwise = return $ Log x

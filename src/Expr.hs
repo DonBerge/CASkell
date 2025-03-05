@@ -61,7 +61,7 @@ instance Num Expr where
               q' <- q
               simplifyProduct [p',q']
 
-    negate p = p >>= simplifyProduct . (:[-1])
+    negate p = p >>= simplifyProduct . (:[Number (-1)])
     
     abs x = do
               x' <- x
@@ -75,7 +75,7 @@ instance Num Expr where
 instance Fractional Expr where
     fromRational = return . Number . fromRational
 
-    recip p = p >>= (`simplifyPow` (-1))
+    recip p = p >>= (`simplifyPow` (Number (-1)))
 
 makeFun :: (PExpr -> PExpr) -> Expr -> Expr
 makeFun f = (=<<) (simplifyFun . f)
@@ -104,7 +104,7 @@ instance Floating Expr where
                 case x' of
                     -- caso especial para numeros, intentar evaluar la raiz cuadrada y si el resultado es un entero, devolverlo
                     Number a | a>=0 && true (isInteger (sqrt a)) -> return $ Number $ sqrt a 
-                    _ -> simplifyPow x' 0.5
+                    _ -> simplifyPow x' (Number 0.5)
 
     p ** q =  do
                 p' <- p
@@ -215,20 +215,20 @@ numerator = (=<<) numerator'
     where
         -- Multiplicación rapida de PExpr, ya que no es necesaria simplificación
         numerator' (Number n) = fromInteger $ Number.numerator n
-        numerator' (Mul xs) = mapM numerator' xs >>= return . product
+        numerator' (Mul xs) = mapM numerator' xs >>= simplifyProduct
         numerator' (Pow _ y)
-            | mulByNeg y = return 1
+            | mulByNeg y = return (Number 1)
         numerator' (Exp x)
-            | mulByNeg x = return 1
+            | mulByNeg x = return (Number 1)
         numerator' x = return x
 
 denominator :: Expr -> Expr
 denominator = (=<<) denominator'
     where
         denominator' (Number n) = fromInteger $ Number.denominator n
-        denominator' (Mul xs) = mapM denominator' xs >>= return . product
+        denominator' (Mul xs) = mapM denominator' xs >>= simplifyProduct
         denominator' u@(Pow _ y)
-            | mulByNeg y = simplifyDiv 1 u
+            | mulByNeg y = simplifyDiv (Number 1) u
         denominator' (Exp x)
             | mulByNeg x = simplifyNegate x >>= simplifyFun . Exp
-        denominator' _ = return 1
+        denominator' _ = return (Number 1)

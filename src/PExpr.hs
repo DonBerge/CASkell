@@ -127,7 +127,7 @@ instance Show PExpr where
 
 instance Assumptions PExpr where
     isZero (SymbolWithAssumptions _ a) = askZero a
-    isZero u = liftBool $ u==0
+    isZero u = liftBool $ u==(Number 0)
 
 
     isNegative (Number x) = isNegative x
@@ -178,38 +178,6 @@ instance Assumptions PExpr where
     isOdd = not3 . isEven
 
 
-instance Num PExpr where
-    fromInteger x = Number (fromInteger x)
-    0 + x = x
-    x + 0 = x
-    (Add ps) + (Add qs) = Add $ ps ++ qs
-    p + (Add qs) = Add $ p:qs
-    (Add ps) + q = Add $ ps ++ [q]
-    p + q = Add [p, q]
-
-    1 * x = x
-    x * 1 = x
-    (Mul ps) * (Mul qs) = Mul $ ps ++ qs
-    p * (Mul qs) = Mul $ p:qs
-    (Mul ps) * q = Mul $ ps ++ [q]
-    p * q = Mul [p, q]
-
-    negate (Number x) = Number (negate x)
-    negate (Add ps) = Add $ map negate ps
-    negate (Mul ((Number a): ps))
-        | a == -1 = Mul ps
-        | otherwise = Mul $ Number (negate a):ps
-    negate (Mul ps) = Mul (fromInteger (-1):ps)
-    negate e = Mul [fromInteger (-1), e]
-
-    abs x = Pow (Pow x 2) (Number 0.5)
-    signum 0 = 0
-    signum x = abs x / x
-
-instance Fractional PExpr where
-    fromRational x = Number (fromRational x)
-    recip (Number x) = Number (recip x)
-    recip x = Pow x (-1)
 
 pattern Symbol :: String -> PExpr
 pattern Symbol x <- SymbolWithAssumptions x _
