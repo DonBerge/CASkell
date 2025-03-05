@@ -4,7 +4,7 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 {-|
-    Module      : Expr
+    Module      : Expr.ExprType
     Description : Módulo que define el tipo 'Expr' y sus operaciones.
     
 -}
