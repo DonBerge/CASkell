@@ -28,12 +28,12 @@ import Simplification.Rationalize (rationalize)
 -- >>> let z = symbol "z"
 -- >>> let w = symbol "w"
 
-bottomUp :: (Expr -> Expr) -> Expr -> Expr
-bottomUp f = f . mapStructure (bottomUp f)
+-- bottomUp :: (Expr -> Expr) -> Expr -> Expr
+-- bottomUp f = f . mapStructure (bottomUp f)
 
--- * Sustitución de exponenciales
+--  Sustitución de exponenciales
 
--- |
+--
 --    Reemplaza las ocurrencias de 'sinh', 'cosh', 'tanh', 'cot', 'sec' y 'csc' por sus equivalentes en seno y coseno.
 --
 --    === Ejemplos
@@ -44,16 +44,16 @@ bottomUp f = f . mapStructure (bottomUp f)
 --    1/2*Exp((-1)*x)+1/2*Exp(x)
 --    >>> expSubstitute (csch x + sech y)
 --    2*((-1)*Exp((-1)*x)+Exp(x))^(-1)+2*(Exp((-1)*y)+Exp(y))^(-1)
-expSubstitute :: Expr -> Expr
-expSubstitute = bottomUp expSubstitute'
-  where
-    expSubstitute' (Sinh x) = (exp x - exp (-x)) / 2
-    expSubstitute' (Cosh x) = (exp x + exp (-x)) / 2
-    expSubstitute' (Tanh x) = (exp x - exp (-x)) / (exp x + exp (-x))
-    expSubstitute' (Coth x) = (exp x + exp (-x)) / (exp x - exp (-x))
-    expSubstitute' (Sech x) = 2 / (exp x + exp (-x))
-    expSubstitute' (Csch x) = 2 / (exp x - exp (-x))
-    expSubstitute' x = x
+-- expSubstitute :: Expr -> Expr
+-- expSubstitute = bottomUp expSubstitute'
+--   where
+--     expSubstitute' (Sinh x) = (exp x - exp (-x)) / 2
+--     expSubstitute' (Cosh x) = (exp x + exp (-x)) / 2
+--     expSubstitute' (Tanh x) = (exp x - exp (-x)) / (exp x + exp (-x))
+--     expSubstitute' (Coth x) = (exp x + exp (-x)) / (exp x - exp (-x))
+--     expSubstitute' (Sech x) = 2 / (exp x + exp (-x))
+--     expSubstitute' (Csch x) = 2 / (exp x - exp (-x))
+--     expSubstitute' x = x
 
 -- * Expansion de exponenciales
 
@@ -85,19 +85,19 @@ separateIntegerTerms u
 --    Ejemplos:
 --
 --        >>> expand (exp (2*w*x + 3*y*z))
---        Exp(w*x)^2*Exp(y*z)^3
+--        (e^(w*x))^2*(e^(y*z))^3
 --
 --        >>> expand (exp(x+y) ** 2)
---        Exp(x)^2*Exp(y)^2
+--        (e^x)^2*(e^y)^2
 --
 --        >>> expand (1 / (exp(2*x) - exp(x)**2))
 --        Undefined: Division por cero
 -- 
 --        >>> expand (exp((x+y)*(x-y)))
---        Exp(x^2)*Exp(y^2)^(-1)
+--        e^(x^2)/e^(y^2)
 --
 --        >>> expand (exp((x+y)**2))
---        Exp(x^2)*Exp(x*y)^2*Exp(y^2)
+--        e^(x^2)*(e^(x*y))^2*e^(y^2)
 
 -- Primero se expanden las subexpresiones algebraicas
 expand :: Expr -> Expr
@@ -122,10 +122,10 @@ expand (Algebraic.expandMainOp . mapStructure expand -> v) = case v of
     Ejemplos:
 
       >>> contract (exp(x) * (exp(x)+exp(y)))
-      Exp(2*x)+Exp(x+y)
+      e^(2*x)+e^(x+y)
 
       >>> contract (exp(exp(x)) ** exp(y))
-      Exp(Exp(x+y))
+      e^(e^(x+y))
 
 -}
 contract :: Expr -> Expr

@@ -60,10 +60,10 @@ instance Alternative EvalSteps where
                 _ -> a
 
 -- | Instancia de 'Show' para 'EvalSteps'.
-instance Show a => Show (EvalSteps a) where
-    show x = case runEvalSteps x of
-                Left e -> "Undefined: " ++ e
-                Right e -> show e
+-- instance Show a => Show (EvalSteps a) where
+--     show x = case runEvalSteps x of
+--                 Left e -> "Undefined: " ++ e
+--                 Right e -> show e
 
 isUndefined :: EvalSteps a -> Bool
 isUndefined = isLeft . runEvalSteps

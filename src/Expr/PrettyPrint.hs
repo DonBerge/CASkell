@@ -68,27 +68,28 @@ import Prelude hiding (reverse)
 -- * Pretty printing de los simbolos no terminales
 
 prettyExpression :: Expr -> Doc ann
+prettyExpression (Undefined e) = pretty "Undefined:" <+> pretty e
 prettyExpression u@(Add us) =
   let vars = variables u
       (v :|| vs) = reverse $ sortBy (compare `on` (multidegree vars)) us -- ordenar los monomios segun el multigrado
-   in fillSep $ prettyTerm v : map addSigns (toList vs)
+   in cat $ prettyTerm v : map addSigns (toList vs)
   where
     -- Agrega un operador + o - dependiendo del elemento
-    addSigns (Neg y) = pretty "-" <+> prettyTerm y
-    addSigns y = pretty "+" <+> prettyTerm y
+    addSigns (Neg y) = pretty "-" <> prettyTerm y
+    addSigns y = pretty "+" <> prettyTerm y
 prettyExpression u = prettyTerm u
 
 prettyTerm :: Expr -> Doc ann
-prettyTerm u =
-  let n = numerator u
-      d = denominator u
-   in if d == 1 -- primero mostrar como cociente si es posible
-        then prettyTerm' n
-        else prettyTerm' n <> slash <> prettyTerm' d
+prettyTerm u@(Number _) = prettyBase u -- Ignorar numeros
+prettyTerm u@(Exp _) = prettyBase u -- Evita separar denominador y numerador de expresiones como e^(-x) 
+prettyTerm u
+  | d == 1 = case u of
+              Mul us -> concatWith (surround (pretty "*")) $ fmap prettyFactor us
+              _ -> prettyFactor u
+  | otherwise = prettyFactor n <> slash <> prettyBase d
   where
-    -- y luego mostrar como producto
-    prettyTerm' (Mul us) = concatWith (surround (pretty "*")) $ fmap prettyFactor us
-    prettyTerm' u = prettyFactor u
+    n = numerator u
+    d = denominator u
 
 prettyFactor :: Expr -> Doc ann
 prettyFactor (Pow x@(Exp _) y) = parens (prettyBase x) <> pretty "^" <> prettyBase y -- Caso especial, la exponencial se repreenta como e^x
@@ -106,3 +107,6 @@ prettyBase u = parens $ prettyExpression u
 
 instance Pretty Expr where
   pretty = prettyExpression
+
+instance Show Expr where
+  show = show . pretty

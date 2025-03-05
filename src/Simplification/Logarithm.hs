@@ -40,7 +40,7 @@ import Data.TwoList (partition)
     Ejemplos:
 
     >>> expand (log(x/y))
-    Log(x)+(-1)*Log(y)
+    Log(x)-Log(y)
 
     >>> expand (log(a*b*x*y))
     Log(a*b)+Log(x)+Log(y)

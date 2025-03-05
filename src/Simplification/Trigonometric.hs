@@ -33,11 +33,11 @@ bottomUp f = f . mapStructure (bottomUp f)
 --    === Ejemplos
 --
 --    >>> trigSubstitute (tan x)
---    Cos(x)^(-1)*Sin(x)
+--    Sin(x)/Cos(x)
 --    >>> trigSubstitute (cot x)
---    Cos(x)*Sin(x)^(-1)
+--    Cos(x)/Sin(x)
 --    >>> trigSubstitute (csc x + sec y)
---    Cos(y)^(-1)+Sin(x)^(-1)
+--    1/Cos(y)+1/Sin(x)
 trigSubstitute :: Expr -> Expr
 trigSubstitute = bottomUp trigSubstitute'
   where
