@@ -1,5 +1,13 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
+
+{-|
+    Module      : Expr.PolyTools
+    Description : Herramientas para manipular polinomios en varias variables
+
+    Este modulo contiene funciones para manipular polinomios en varias variables. Se incluyen funciones para
+    calcular el maximo común divisor entre polinomios, el minimo común multiplo, la division de polinomios, entre otras.
+-}
 module Expr.PolyTools where
 import Prelude hiding (exponent)
 
@@ -10,9 +18,7 @@ import qualified Simplification.Algebraic as Algebraic
 
 import Data.List
 
-isSymbol :: Expr -> Bool
-isSymbol (Symbol _) = True
-isSymbol _ = False
+-- * Funciones auxiliares
 
 variables :: Expr -> [Expr]
 variables (Number _) = []
@@ -28,17 +34,17 @@ variables u = [u]
     devuelve el par \((c,m)\) donde \(c\) es el coeficiente del monomio y \(m\) es el grado del monomio.
     Si la expresion no es un monomio sobre \(x\), \(c\) es Undefined y \(m\) es 0.
 -}
-coefficientMonomialGPE :: Expr -> Expr-> (Expr, Integer)
-coefficientMonomialGPE 0 _ = (0,-1)
-coefficientMonomialGPE u x
+coefficientMonomial :: Expr -> Expr-> (Expr, Integer)
+coefficientMonomial 0 _ = (0,-1)
+coefficientMonomial u x
     | u == x = (1, 1)
-coefficientMonomialGPE (MonomialTerm base exponent) x
+coefficientMonomial (MonomialTerm base exponent) x
     | base == x = (1, exponent)
-coefficientMonomialGPE u@(Mul us) x = foldl combine (u,0) $ fmap (`coefficientMonomialGPE` x) us
+coefficientMonomial u@(Mul us) x = foldl combine (u,0) $ fmap (`coefficientMonomial` x) us
     where
         combine (c,m) (_,0) = (c,m)
         combine (_,_) (_,m) = (u / (x ** (fromInteger m)),m)
-coefficientMonomialGPE u _ = (u,0) -- TODO: NO ESTOY SEGURO DE ESTO
+coefficientMonomial u _ = (u,0) -- TODO: NO ESTOY SEGURO DE ESTO
 
 {-|
     Devuelve el grado de una expresion algebraica \(u\) respecto a la variable \(x\), siempre y cuando \(u\) sea un polinomio
@@ -46,18 +52,18 @@ coefficientMonomialGPE u _ = (u,0) -- TODO: NO ESTOY SEGURO DE ESTO
 
     Ejemplos:
 
-    > degreeGPE 0 x = -1
-    > degreeGPE (x^2 + 2*x + 1) x = 2
-    > degreeGPE (x**2 + 2*y*x) x = 2
-    > degreeGPE (x**2 + 2*y*x) y = 1
-    > degreeGPE (e^x) x = Undefined: e^x no es un monomio sobre x
+    > degree 0 x = -1
+    > degree (x^2 + 2*x + 1) x = 2
+    > degree (x**2 + 2*y*x) x = 2
+    > degree (x**2 + 2*y*x) y = 1
+    > degree (e^x) x = Undefined: e^x no es un monomio sobre x
 -}
-degreeGPE :: Expr -> Expr -> Integer
-degreeGPE (Add us) x = maximum $ fmap (`degreeGPE` x) us -- foldM (\d u -> max d . snd <$> coefficientMonomialGPE u x) (-1) us --maximum $ map (`degreeGPE` x) us
-degreeGPE u x = snd $ coefficientMonomialGPE u x
+degree :: Expr -> Expr -> Integer
+degree (Add us) x = maximum $ fmap (`degree` x) us -- foldM (\d u -> max d . snd <$> coefficientMonomial u x) (-1) us --maximum $ map (`degree` x) us
+degree u x = snd $ coefficientMonomial u x
 
 multidegree :: [Expr] -> Expr -> [Integer]
-multidegree vars u = map (degreeGPE u) vars
+multidegree vars u = map (degree u) vars
 
 {-|
     Devuelve el coeficiente del monomio \(x^j) de una expresion algebraica (\u\), siempre y cuando \(u\) sea un polinomio
@@ -65,24 +71,24 @@ multidegree vars u = map (degreeGPE u) vars
 
     Ejemplos:
 
-    > coefficientGPE 0 x 21 = 0 
-    > coefficientGPE (x^2 + 2*x + 1) x 2 = 1
-    > coefficientGPE (y*x**2 + 2*y*x) x 1 = 2*y
-    > coefficientGPE (y*x**2 + 2*y*x) y 1 = x**2 + 2*x
-    > coefficientGPE (e^x) x 2 = Undefined: e^x no es un monomio sobre x
+    > coefficient 0 x 21 = 0 
+    > coefficient (x^2 + 2*x + 1) x 2 = 1
+    > coefficient (y*x**2 + 2*y*x) x 1 = 2*y
+    > coefficient (y*x**2 + 2*y*x) y 1 = x**2 + 2*x
+    > coefficient (e^x) x 2 = Undefined: e^x no es un monomio sobre x
 -}
-coefficientGPE :: Expr -> Expr -> Integer -> Expr
-coefficientGPE u@(Add us) x j
+coefficient :: Expr -> Expr -> Integer -> Expr
+coefficient u@(Add us) x j
     | u == x = if j == 1 then 1 else 0
     | otherwise = foldl combine 0 us
         where
             combine c mon = let
-                                (c', m) = coefficientMonomialGPE mon x
+                                (c', m) = coefficientMonomial mon x
                             in if m==j
                                 then c + c'
                                 else c
-coefficientGPE u x j = let
-                        (c,m) = coefficientMonomialGPE u x
+coefficient u x j = let
+                        (c,m) = coefficientMonomial u x
                        in
                         if j == m
                             then c
@@ -92,11 +98,11 @@ coefficientGPE u x j = let
     Devuelve la lista de los coeficientes del polinomio \(u\) sobre \(x\). Si \(u\) no es un polinomio sobre \(x\)
     entonces devuelve un error.
 -}
-coefficientListGPE :: Expr -> Expr -> [Expr]
-coefficientListGPE u x = let
-                            m = degreeGPE u x
+coefficientList :: Expr -> Expr -> [Expr]
+coefficientList u x = let
+                            m = degree u x
                          in
-                            fmap (coefficientGPE u x) [0..m]
+                            fmap (coefficient u x) [0..m]
 
 {-|
     Devuelve el coeficiente lider del polinomio \(u\) sobre \(x\). EL coeficiente líder es el coeficiente del monomio
@@ -105,9 +111,9 @@ coefficientListGPE u x = let
 leadingCoefficient :: Expr -> Expr -> Expr
 leadingCoefficient 0 _ = 0
 leadingCoefficient u x = let
-                            m = degreeGPE u x
+                            m = degree u x
                          in
-                            coefficientGPE u x m
+                            coefficient u x m
 
 
 {-|
@@ -133,8 +139,8 @@ leadingMonomial :: Expr -> [Expr] -> Expr
 leadingMonomial 0 _ = 0
 leadingMonomial u [] = u
 leadingMonomial u (x:l) = let
-                            m = degreeGPE u x
-                            c = coefficientGPE u x m
+                            m = degree u x
+                            c = coefficient u x m
                             xm = x ** (fromInteger m)
                             lm = leadingMonomial c l
                           in
@@ -150,11 +156,11 @@ svPolyDivide u v x = let
                      in
                         svPolyDivideLoop q r
     where
-        n = degreeGPE v x
+        n = degree v x
         lcv = leadingCoefficient v x
 
         svPolyDivideLoop q r = let
-                                m = degreeGPE r x
+                                m = degree r x
                                in if m >= n
                                     then let
                                             lcr = leadingCoefficient r x
@@ -192,8 +198,8 @@ recPolyDivide :: Expr -> Expr -> [Expr] -> (Expr, Expr)
 recPolyDivide u v [] = (u/v, 0)
 recPolyDivide u v (x:tl) = let
                             r = u
-                            m = degreeGPE u x
-                            n = degreeGPE v x
+                            m = degree u x
+                            n = degree v x
                             q = 0
                             lcv = leadingCoefficient v x
                            in
@@ -213,7 +219,7 @@ recPolyDivide u v (x:tl) = let
                                     xmn = x ** (fromInteger $ m-n)
                                     q' = q + c*xmn
                                     r' = Algebraic.expand $ r - c*v*xmn
-                                    m' = degreeGPE r' x
+                                    m' = degree r' x
                                   in
                                     recPolyDivideLoop lcv q' r' m' n
             | otherwise = recPolyDivideLoopReturn q r
@@ -321,22 +327,22 @@ pseudoDivision _ 0 _ = let f = undefinedExpr "Pseudo-division por cero" in (f,f)
 pseudoDivision u v x = let
                         p = 0
                         s = u
-                        m = degreeGPE u x
-                        n = degreeGPE v x
+                        m = degree u x
+                        n = degree v x
                         delta = max (m-n+1) 0
-                        lcv = coefficientGPE v x n -- Equivalente a lcv = leadingCoefficient v x, pero mas eficiente porque el grado ya esta computado
+                        lcv = coefficient v x n -- Equivalente a lcv = leadingCoefficient v x, pero mas eficiente porque el grado ya esta computado
                         sigma = 0
                        in 
                         pseudoDivision' p s m n delta lcv sigma
     where
         pseudoDivision' p s m n delta lcv sigma
             | m >= n = let
-                        lcs = coefficientGPE s x m -- Equivalente a lcs = leadingCoefficient s x, pero mas eficiente porque el grado ya esta computado
+                        lcs = coefficient s x m -- Equivalente a lcs = leadingCoefficient s x, pero mas eficiente porque el grado ya esta computado
                         x' = x ** (fromInteger (m-n))
                         p' = lcv * p + lcs * x' 
                         s' = Algebraic.expand $ lcv * s - lcs * v * x'
                         sigma' = sigma+1
-                        m' = degreeGPE s' x
+                        m' = degree s' x
                         in
                             pseudoDivision' p' s' m' n delta lcv sigma'
             | otherwise = let
@@ -398,7 +404,7 @@ normalized u l = let
 -}
 polyContent :: Expr -> Expr -> [Expr] -> Expr
 polyContent u x r = let
-                      cfl = coefficientListGPE u x 
+                      cfl = coefficientList u x 
                     in
                         gcdList cfl r
 
