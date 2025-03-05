@@ -104,7 +104,14 @@ showTerm (Mul xs) = intercalate "*" $ map showFactor xs
 showTerm x = showFactor x
 
 showFactor :: PExpr -> String
-showFactor (Pow x y) = showBase x ++ "^" ++ showBase y
+showFactor (Pow x y) = showBase x ++ "^" ++ showExp y
+    where
+        showExp u = let
+                        sb = showBase u
+                    in if '/'`elem` sb
+                        then "(" ++ sb ++ ")"
+                        else sb
+
 showFactor x = showBase x
 
 showBase :: PExpr -> String
