@@ -1,6 +1,6 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
-module Simplification.PolyTools where
+module Expr.PolyTools where
 import Prelude hiding (exponent)
 
 import Expr

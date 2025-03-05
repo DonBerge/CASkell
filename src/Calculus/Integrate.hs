@@ -16,7 +16,6 @@ import Structure
 
 import Control.Applicative
 
-import Simplification.PolyTools (variables)
 import qualified Simplification.Algebraic as Algebraic (expand)
 
 import Data.Bifunctor
@@ -192,13 +191,12 @@ substitutionMethod f x = foldr ((<|>) . makeSubstitution) failSubstitution $ tri
         -- Obtiene un nombre de variable de integración que no este en la expresion
         getIntegrationVariable u (Symbol x) = getIntegrationVariable' x
             where
-                vars = variables u
                 getIntegrationVariable' x = let
                                                 _x = '_' : x
                                                 symbol_x  = symbol $ _x
-                                            in if symbol_x `elem` vars
-                                                then getIntegrationVariable' _x
-                                                else symbol_x
+                                            in if u `freeOf` symbol_x
+                                                then symbol_x
+                                                else getIntegrationVariable' _x
         getIntegrationVariable _ _ = undefinedExpr "La variable de integración debe ser un simbolo"
 
         --makeSubstitution = undefined

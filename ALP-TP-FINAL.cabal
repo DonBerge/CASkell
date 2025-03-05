@@ -62,7 +62,7 @@ library
     exposed-modules:  Simplification.Algebraic
                       Simplification.Exponential
                       Simplification.Logarithm
-                      Simplification.PolyTools
+                      Expr.PolyTools
                       Simplification.Rationalize
                       Simplification.Trigonometric
                       Classes.EvalSteps
@@ -100,6 +100,7 @@ library
     hs-source-dirs:   src
                       src/Data
                       src/Calculus
+                      src/Expr
                       src/PrettyPrint
                       src/Parser
                       src/Structure

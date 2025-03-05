@@ -59,7 +59,7 @@ import Data.Function
 import Data.TwoList (reverse, sortBy)
 import Expr
 import Prettyprinter
-import Simplification.PolyTools
+import Expr.PolyTools
 import Structure
 import Prelude hiding (reverse)
 

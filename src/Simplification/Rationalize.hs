@@ -9,7 +9,7 @@ module Simplification.Rationalize (
 
 import Expr
 import Structure
-import Simplification.PolyTools
+import Expr.PolyTools
 import Data.Bifunctor
 import Data.List
 
