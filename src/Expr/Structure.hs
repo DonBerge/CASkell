@@ -21,7 +21,6 @@ module Expr.Structure
     pattern Fun,
     pattern Undefined,
     pattern Neg,
-    pattern MulByNum,
     pattern MonomialTerm,
     -- ** Simbolos y funciones conocidas
     -- *** Constantes
@@ -115,13 +114,6 @@ matchFun e = case runEvalSteps e of
   Right (P.Fun s (x : xs)) -> Just (s, fmap return (x :| xs))
   _ -> Nothing
 
-
-matchMulByNum :: Expr -> Maybe (Number, Expr)
-matchMulByNum e = case runEvalSteps e of
-  Right (P.Mul [P.Number n, x]) -> Just (n, makeExpr x)
-  Right (P.Mul (P.Number n : xs)) -> Just (n, makeExpr (P.Mul xs))
-  _ -> Nothing
-
 pattern Number :: Number -> Expr
 pattern Number n <- (runEvalSteps -> Right (P.Number n))
 
@@ -142,9 +134,6 @@ pattern Fun s xs <- (matchFun -> Just (s, xs))
 
 pattern Undefined :: String -> Expr
 pattern Undefined e <- (runEvalSteps -> Left e)
-
-pattern MulByNum :: Number -> Expr -> Expr
-pattern MulByNum n xs <- (matchMulByNum -> Just (n, xs))
 
 pattern Pi :: Expr
 pattern Pi <- Symbol "Pi"

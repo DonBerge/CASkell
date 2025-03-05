@@ -12,6 +12,7 @@ module Data.Number (
     -- * Funciones
     numerator,
     denominator,
+    printAsFraction
 ) where
 
 import qualified Data.Ratio as R

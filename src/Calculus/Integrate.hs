@@ -63,9 +63,9 @@ makeUnevaluatedDefiniteIntegral u x a b = function "Definite_Integral" [u,x,a,b]
     === Ejemplos:
     
     >>> integralTable (log x) x
-    (-1)*x+Log(x)*x
+    Log(x)*x-x
     >>> integralTable (x**2) x
-    1/3*x^3
+    x^3/3
     >>> integralTable (2 * sin x * cos x) x
     Undefined: Integral no aparece en la tabla de integrales
 -}
@@ -106,7 +106,7 @@ integralTable _ _ = undefinedExpr "Integral no aparece en la tabla de integrales
     (1,x^2)
     
     >>> separateFactors (x**2 + 1) x
-    (1,1+x^2)
+    (1,x^2+1)
     
     >>> separateFactors (21*x) x
     (21,x)
@@ -169,10 +169,10 @@ linearProperties _ _ = undefinedExpr "No se puede aplicar linealidad de la integ
     Sin(x^2)
 
     >>> substitutionMethod ((2*x+1)*cos(x**2+x)) x
-    Sin(x+x^2)
+    Sin(x^2+x)
 
     >>> substitutionMethod (((x+1)*log(cos((x+1)**2))*sin((x+1)**2)) / (cos((x+1)**2))) x
-    (-1/4)*Log(Cos((1+x)^2))^2
+    -Log(Cos((x+1)^2))^2/4
     
     >>> substitutionMethod (2*x/(x**4+1)) x 
     Undefined: No se puede aplicar sustitución

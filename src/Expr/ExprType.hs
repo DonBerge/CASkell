@@ -214,7 +214,9 @@ numerator :: Expr -> Expr
 numerator = (=<<) numerator'
     where
         -- Multiplicación rapida de PExpr, ya que no es necesaria simplificación
-        numerator' (Number n) = fromInteger $ Number.numerator n
+        numerator' (Number n) 
+            | Number.printAsFraction n = fromInteger $ Number.numerator n
+            | otherwise = return (Number n)
         numerator' (Mul xs) = mapM numerator' xs >>= simplifyProduct
         numerator' (Pow _ y)
             | mulByNeg y = return (Number 1)
@@ -225,7 +227,9 @@ numerator = (=<<) numerator'
 denominator :: Expr -> Expr
 denominator = (=<<) denominator'
     where
-        denominator' (Number n) = fromInteger $ Number.denominator n
+        denominator' (Number n)
+            | Number.printAsFraction n = fromInteger $ Number.denominator n
+            | otherwise = return (Number 1)
         denominator' (Mul xs) = mapM denominator' xs >>= simplifyProduct
         denominator' u@(Pow _ y)
             | mulByNeg y = simplifyDiv (Number 1) u
