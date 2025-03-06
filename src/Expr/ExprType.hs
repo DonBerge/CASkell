@@ -37,8 +37,6 @@ module Expr.ExprType (
 
 import Prelude hiding (const, exponent)
 
-import PExpr
-
 import Expr.Simplify
 
 import Data.Number (Number)
@@ -92,18 +90,22 @@ instance Floating Expr where
     asin = makeFun Asin
     acos = makeFun Acos
     atan = makeFun Atan
-    sinh = makeFun Sinh
-    cosh = makeFun Cosh
-    tanh = makeFun Tanh
-    asinh = makeFun Asinh
-    acosh = makeFun Acosh
-    atanh = makeFun Atanh
 
+    -- Las funciones hiperbolicas se definen en terminos de la exponencial
+    sinh x = exp x / 2 - exp(-x) / 2
+    cosh x = exp x / 2 + exp(-x) / 2
+    tanh x = (exp x - exp (-x)) / (exp x + exp (-x))
+
+    -- Las funciones inversas hiperbolicas se definen en terminos del logaritmo
+    asinh x = log(x + sqrt (x ** 2 + 1))
+    acosh x = log(x + sqrt (x ** 2 - 1))
+    atanh x = log(1+x)/2 - log(1-x)/2
     sqrt x = do
                 x' <- x
                 case x' of
                     -- caso especial para numeros, intentar evaluar la raiz cuadrada y si el resultado es un entero, devolverlo
-                    Number a | a>=0 && true (isInteger (sqrt a)) -> return $ Number $ sqrt a 
+                    Number a | true (isInteger (sqrt a)) -> return $ Number $ sqrt a
+                    -- sino, simplificar la potencia 
                     _ -> simplifyPow x' (Number 0.5)
 
     p ** q =  do
@@ -191,25 +193,6 @@ assume u a = foldl (\x y -> x >>= assume' y) u a
 undefinedExpr :: String -> Expr
 undefinedExpr = throwError
 
---
-
--- | Muestra la estructura interna de la expresion, util para debuggear
--- showStruct :: Expr -> String
--- showStruct (EvalSteps (Left e, _)) = "Undefined: " ++ e 
--- showStruct (EvalSteps (Right e, _)) = showStruct' e
---     where
---         unquote :: String -> String
---         unquote [] = []
---         unquote [x] = [x]
---         unquote (x:xs) = if x == last xs then init xs else x:xs
--- 
---         showStruct' (Number n) = "Number " ++ show n
---         showStruct' (Symbol x) = unquote x
---         showStruct' (Mul xs) = "Mul ( (" ++ intercalate ") , (" (map showStruct' xs) ++ ") )"
---         showStruct' (Add xs) = "Add ( (" ++ intercalate ") , (" (map showStruct' xs) ++ ") )"
---         showStruct' (Pow x y) = "Pow (" ++ showStruct' x ++ "), (" ++ showStruct' y ++ ")"
---         showStruct' (Fun f xs) ="Fun " ++ unquote f ++ " " ++ intercalate "," (map showStruct' xs)
-
 numerator :: Expr -> Expr
 numerator = (=<<) numerator'
     where
@@ -220,8 +203,8 @@ numerator = (=<<) numerator'
         numerator' (Mul xs) = mapM numerator' xs >>= simplifyProduct
         numerator' (Pow _ y)
             | mulByNeg y = return (Number 1)
-        numerator' (Exp x)
-            | mulByNeg x = return (Number 1)
+        --numerator' (Exp x)
+        --    | mulByNeg x = return (Number 1)
         numerator' x = return x
 
 denominator :: Expr -> Expr
@@ -233,6 +216,6 @@ denominator = (=<<) denominator'
         denominator' (Mul xs) = mapM denominator' xs >>= simplifyProduct
         denominator' u@(Pow _ y)
             | mulByNeg y = simplifyDiv (Number 1) u
-        denominator' (Exp x)
-            | mulByNeg x = simplifyNegate x >>= simplifyFun . Exp
+        --denominator' (Exp x)
+        --    | mulByNeg x = simplifyNegate x >>= simplifyFun . Exp
         denominator' _ = return (Number 1)

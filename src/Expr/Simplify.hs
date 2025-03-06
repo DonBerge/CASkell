@@ -391,6 +391,10 @@ simplifyFun (Tan x) = handlePeriod cases return x <|> return (Tan x)
       (_, _) -> Tan <$> (simplifyProduct [Number r, Pi] >>= simplifySum . (: [b]))
 
 -- exponenciales
+simplifyFun (Exp (Log x)) =
+  if mulByNeg x
+    then simplifyNegate x
+    else return x
 simplifyFun (Exp x) = do
   y' <- simplifyPow e x
   case y' of
@@ -401,8 +405,9 @@ simplifyFun (Exp x) = do
 
 -- logaritmos
 simplifyFun (Log (Number 1)) = return $ Number 0
+-- simplifyFun (Log (Exp x)) = return x
 simplifyFun (Log x)
-  --     | true $ isNegative x = fail $ "Logaritmo de un número negativo( Log(" ++ show x ++  ") )"
+  | true $ isNegative x = fail $ "Logaritmo de un número negativo"
   | otherwise = return $ Log x
 simplifyFun x = return x
 

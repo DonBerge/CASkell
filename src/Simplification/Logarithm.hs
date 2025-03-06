@@ -19,7 +19,7 @@
 module Simplification.Logarithm where
 
 import Expr
-import PExpr (Assumptions(isPositive), true)
+import Assumptions
 import Data.TwoList (partition)
 
 -- $setup
