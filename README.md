@@ -175,6 +175,8 @@ expExpand (1/(exp(2*x) - exp(x)**2)) -- Undefined: division por 0
 rationalSimplify ((x+1)**3 / (2*x**2+4*x+2)) -- x/2 + 1/2
 ```
 
+### 2.3 Pattern Matching sobre Expr
+
 ## 3. Modulos especiales
 Los modulos especiales se construyen a partir del tipo `Expr` y permiten realizar las siguientes 4 funcionalidades:
 - Evaluación numerica
@@ -369,10 +371,16 @@ La estructura del proyecto es la siguiente:
 |   |   |-- Logarithm.hs
 |   |   |-- Rationalize.hs
 |   |   |-- Trigonometric.hs
-|-- AutomataCel.pdf
-|-- celauto.cabal
-|-- freeglut.dll -- necesario para que corra en windows
-|-- parse.y
+|-- CASkell.cabal
 |-- README.md
-
 ```
+
+## 5. Decisiones de diseño
+### 5.1 EDSL
+### 5.2 Representación de expresiones
+### 5.3 Manejo de errores con monadas
+### 5.4 Suposiciones con logica ternaria
+
+## 6. Testing y documentación
+
+## 7. Bibilografia, librerías externas y referencias
