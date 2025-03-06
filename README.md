@@ -376,10 +376,86 @@ La estructura del proyecto es la siguiente:
 ```
 
 ## 5. Decisiones de diseño
-### 5.1 EDSL
+### 5.1 EDSL por sobre DSL
+La decisición inicial fue si crear un DSL (Domain Specific Language) o un EDSL (Embedded Domain Specific Language). Un DSL es un lenguaje de programación especializado en un dominio particular, mientras que un EDSL es un DSL que se construye dentro de un lenguaje de programación general, aprovechando su sintaxis y funcionalidades. 
+
+Hay 2 razones por las que termine implementando un EDSL:
+
+1. **Pattern Matching**: El pattern matching a la hora de trabajar con expresiones matemáticas es fundamental y es utilizado en la mayoría de las funciones del proyecto. El soporte de Haskell para realizar Pattern Matching, junto con las extensiones `PatternSynonyms` y `ViewPatterns`, resultó fundamental para simplificar y hacer más legible el código. En un DSL habria que implementar alguna forma de Pattern Matching desde 0, la cual seria potencialmente inferior a la de Haskell.
+2. **Reutilización de la infraestructura de Haskell**: Al construir un EDSL dentro de Haskell, se puede aprovechar toda la infraestructura existente del lenguaje, incluyendo su sistema de tipos, funciones de alto orden, y librerías estándar. Esto reduce el esfuerzo de implementación y permite utilizar modulos especializados como `Happy` o `PrettyPrinter`.
+
 ### 5.2 Representación de expresiones
+Internamente, las expresiones se representan como arboles de expresiones
+
+![alt text](imgs/Arbol%20de%20imagenes.png)
+Ejemplo de representación de $a/b+c-d$, sacada de *Computer alegebra and symbolic computation: Elementary Algorithms*
+
+Estos arboles de expresiones se representan en codigo mediante el tipo `PExpr`, definido en `src/Expr/PExpr.hs`
+```haskell
+data PExpr = Number Number 
+                | SymbolWithAssumptions String AssumptionsEnviroment
+                | Mul [PExpr] 
+                | Add [PExpr] 
+                | Pow PExpr PExpr
+                | Fun String [PExpr]
+```
+
+La expresión $a/b+c-d$ en `PExpr` seria similar a la siguiente
+```haskell
+a/b+c-d = Add [
+        Mul [
+            Symbol "a", 
+            Pow (Symbol "b") (Number (-1))
+        ],
+        Symbol "c",
+        Symbol "d"
+    ]
+```
+
+Las funciones de autosimplificación operan con tipos `PExpr` y evaluan a una `Expr`, por ejemplo la función `simplifyPow` que realiza la simplificación de potencias.
+```haskell
+simplifyPow :: PExpr -> PExpr -> Expr
+```
+
 ### 5.3 Manejo de errores con monadas
+El tipo `PExpr` no realiza el manejo de expresiones indefinidas(`Undefined: ***`), sino que el mismo se realiza mediante el uso de monadas.
+
+En particular se utiliza la monada `EvalResult`, la cual es una monada de error encapsulada.
+```haskell
+newtype EvalResult a = EvalResult { runEvalResult :: Either Error a }
+```
+
+El tipo `Expr` es simplemente una `PExpr` encapsulada en una monada `EvalResult`.
+```haskell
+type Expr = EvalResult PExpr
+```
+
+Los operadores matematicos se construyen utilizando la notación `do` y las funciones de autosimplificación, por ejemplo, la potenciación de expresiones:
+```haskell
+(**): Expr -> Expr -> Expr
+a ** b = do
+            a' <- a -- a' y b' son PExpr
+            b' <- b
+            simplifyPow a b 
+```
+
+Esto permite a los operadores matematicos detectar cuando trabajan con operadores indefinidos y actuar de manera acorde.
+
 ### 5.4 Suposiciones con logica ternaria
+La autosimplificación necesita poder realizar suposiciones sobre las expresiones para hacer o no hacer simplificaciones. Estas suposiciones pueden ser verdaderas o falsas, pero no siempre se puede asignar alguno de estos dos valores.
+
+Por ejemplo, en la expresión `0^x`. `x` es un simbolo con valor desconocido, por lo que no es posible asignar una suposición de positivo o negativo a `x`. Es decir los valores de verdad de `x>=0` o `x<=0` son desconocidos.
+
+La logica ternaria aborda este problema, introduciendo un tercer valor de verdad a las expresiones booleanas, **Desconocido(U)**.
+
+Esto permite que las suposiciones como `¿x es positivo?` tengan 3 posibles respuestas Verdadero(`T`), Falso(`F`) o Desconocido(`U`).
+
+Las suposiciones se guardan directamente en el tipo `PExpr`, especificamente en las hojas de tipo `Symbol`. Para determinar el valor de verdad de una suposición sobre una expresión, se analiza el arbol de expresiones y se construye la suposición en base a los operandos involucrados(Ejemplo, si todos los operandos de una suma son positivos, la suma debe ser positiva).
+
+Las operaciones para trabajar con valores de logica ternaria se encuentran en el archivo `Data/TriBool.hs`.
+
+Mas información sobre logica ternaria: <https://en.wikipedia.org/wiki/Three-valued_logic>
+
 
 ## 6. Testing y documentación
 
