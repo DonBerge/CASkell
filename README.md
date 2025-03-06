@@ -68,6 +68,9 @@ y = assume (symbol "y") ["negative"] -- y ahora es negativo
 v = u -- v = 0
 ```
 
+##### Preguntar por suposiciones
+*completar*
+
 ##### El simbolo pi
 
 `pi` es un simbolo predefinido, por lo que es tenido en cuenta para ciertas simplificaciones:
