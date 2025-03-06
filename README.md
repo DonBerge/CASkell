@@ -335,3 +335,44 @@ y*2*x + y**2 + x**2 -- se muestra como x^2 + 2*x*y + y^2, los terminos se reorga
 exp(x)+exp(y) -- se muestra como e^x+e^y
 2 * x**(-1) * y**(-1) -- se muestra como 2/(x*y)
 ```
+
+## 4. Organización de los archivos
+La estructura del proyecto es la siguiente:
+```
+.
+|-- src
+|   |-- Calculus
+|   |   |-- Derivate.hs -- Derivación de expresiones
+|   |   |-- Integrate.hs -- Integración de expresiones
+|   |   |-- Utils.hs
+|   |-- Classes
+|   |   |-- Assumptions.hs -- Funciones para suposiciones
+|   |   |-- EvalResult.hs  -- Monada EvalResult
+|   |-- Data
+|   |   |-- Number.hs
+|   |   |-- TriBool.hs -- Manejo de logica ternaria
+|   |   |-- TwoList.hs
+|   |-- Evaluate
+|   |   |-- Numeric.hs
+|   |-- Expr
+|   |   |-- Expr.hs
+|   |   |-- ExprType.hs -- Definición del tipo Expr
+|   |   |-- Parser.y    -- Parser de expresiones
+|   |   |-- PExpr.hs    
+|   |   |-- PolyTools.hs -- Manejo de polinomios multivariables
+|   |   |-- PrettyPrint.hs -- Prettyprinting de expresiones
+|   |   |-- Simplify.hs -- Autosimplificación
+|   |   |-- Structure.hs -- Pattern matching de expresiones
+|   |-- Simplification
+|   |   |-- Algebraic.hs
+|   |   |-- Exponential.hs
+|   |   |-- Logarithm.hs
+|   |   |-- Rationalize.hs
+|   |   |-- Trigonometric.hs
+|-- AutomataCel.pdf
+|-- celauto.cabal
+|-- freeglut.dll -- necesario para que corra en windows
+|-- parse.y
+|-- README.md
+
+```

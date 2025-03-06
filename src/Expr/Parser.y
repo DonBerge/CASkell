@@ -1,4 +1,3 @@
--- filepath: /home/don-berge/Documentos/ALP-TP-FINAL/src/Parser/Parser.y
 {
 {-|
   Module: Parser
