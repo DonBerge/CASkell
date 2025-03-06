@@ -103,9 +103,9 @@ tan(9)+y
 exp((4::Expr)) -- casting necesario, sino evaluaria a un Double
 log(x-12*pi)
 
--- Tambien hay soporte para funciones anonimas
+-- Tambien hay soporte para funciones anonimas, solo hay que pasar una lista con los argumentos
 f = function "f"
-f(x)+f(x) = 2*f(x)
+f[x]+f[x] = 2*f(x)
 ```
 
 #### Autosimplificación
@@ -146,14 +146,14 @@ expExpand (1/(exp(2*x) - exp(x)**2)) -- Undefined: division por 0
 rationalSimplify ((x+1)**3 / (2*x**2+4*x+2)) -- x/2 + 1/2
 ```
 
-### 3.3 Modulos especiales
+## 3. Modulos especiales
 Los modulos especiales se construyen a partir del tipo `Expr` y permiten realizar las siguientes 4 funcionalidades:
 - Evaluación numerica
 - Simplificación avanzada
 - Derivación
 - Integración
 
-#### Evaluación númerica
+### 3.1 Evaluación númerica
 Para evaluar númericamente una expresión, hay que importar el modulo `Evaluate.Numeric`
 ```haskell
 import Evaluate.Numeric
@@ -163,7 +163,7 @@ Las expresiones podran evaluarse usando la función `eval`:
 eval [] (2*sin(pi/4)) = 1.4142135623730951 -- sqrt 2
 eval [(x,2.2)] (7.8+x) = 10-- Puedes reemplazar los simbolos por valores numericos
 ```
-#### Simplificación avanzada
+### 3.2 Simplificación avanzada
 Los modulos para simplificación se encuentran en la carpeta "Simplification", estos permiten realizar la simplificación en 4 áreas:
 
 - Expresiones algebraicas
@@ -209,19 +209,19 @@ exp(2*x) - exp(2*x)
 
 
 Los modulos que trabajan en cada área se destacan como sigue:
-##### Simplificación algebraica
+#### Simplificación algebraica
 Es realizada por los modulos `Simplification.Algebraic` y `Simplification.Rationalize`
 - Expansión: Realizada por la función `expand`, expande expresiones aplicando la propiedad distributiva y el binomio de Newton.
 - Contracción: El equivalente a la contración algebraica es la factorización de polinomios, esta operación no esta soportada, sin embargo no es necesaria para la simplificación algebraica.
 - Simplificación: Realizada por `rationalSimplify`, la simplificación se realizar usando el maximo común divisor entre polinomios.
 
-##### Simplificación trigonometrica
+#### Simplificación trigonometrica
 Es realizada por los modulos `Simplification.Trigonometric`:
 - Expansión: Realizada por la función `trigExpand`, expande los argumentos de los senos/cosenos aplicando la formula de la suma de angulos y la formula del angulo multiple.
 - Contración: Realizada por la función `trigContract`, contrae los productos entre senos y cosenos y elimina potencias enteras de senos/cosenos.
 - Simplificación: Realizada por `trigSimplify`, ver la documentación de la función para mas detalles de su funcionamiento.
 
-##### Simplificación de exponenciales
+#### Simplificación de exponenciales
 Es realizada por el modulo `Simplification.Exponential` aplicando las siguientes propiedades:
 
 1. `exp(x+y) = exp(x)*exp(y)`
@@ -231,7 +231,7 @@ Es realizada por el modulo `Simplification.Exponential` aplicando las siguientes
 - Contración: Realizada por `expContract` aplicando las propiedades 1 y 2 de derecha a izquierda.
 - Simplificación: Realizada por `expSimplifiy`, contrayendo numerador y denominador de una expresión racionalizada.
 
-##### Simplificación de logaritmos
+#### Simplificación de logaritmos
 Es realizada por el modulo `Simplification.Logarithm` aplicando las siguientes propiedades:
 
 1. `log(x*y) = log(x) + log(y)`
@@ -240,3 +240,40 @@ Es realizada por el modulo `Simplification.Logarithm` aplicando las siguientes p
 - Expansión: Realizada por `logExpand`, aplicando las propiedades 1 y 2 de izquierda a derecha.
 - Contración: Realizada por `logContract` aplicando las propiedades 1 y 2 de derecha a izquierda.
 - Simplificación: Realizada por `logSimplifiy`, contrayendo numerador y denominador de una expresión racionalizada.
+
+### 3.3 Derivación
+Para derivar expresiones, importar el modulo `Calculus.Derivate`:
+```haskell
+import Calculus.Derivate
+```
+
+Y luego usar la función `derivate`:
+```haskell
+derivate (x**2) x = 2*x
+derivate (exp(x)) x = exp(x)
+f = function "f"
+g = function "g"
+derivate (f[x]) = Derivate(f(x), x) -- Derivada desconocida, devuelvo una derivada sin evaluar
+derivate (f[g[x]]) x = Derivate(f(x),g(x)) * Derivate(g(x), x) -- Derivada sin evaluar aplicando la regla de la cadena
+```
+
+### 3.4 Integración
+Para integrar expresiones, importar el modulo `Calculus.Integrate`:
+```haskell
+import Calculus.Integrate
+```
+
+Y luego usar la función `integrate`:
+```haskell
+integrate (cos x) x = sin(x) -- Notar que no se agrega la constante de integración
+integrate (exp(x)) = exp(x)
+integrate (2*sin(x)*cos(x)) = -cos(x)^2
+```
+
+Si no se puede encontrar la integral de la función(ya sea porque no es una integral elemental, el algoritmo de integración no puede encontrarla o la misma se desconoce), se devuelve una integral desconocida:
+```haskell
+integrate (exp(-x**2)) x = Integral(e^(-x^2),x) -- Integral no elemental
+integrate (1/(x**2+1)) x = Integral(1/(x^2+1),x) -- Integral elemental, pero no obtenida por el algoritmo
+f = function "f"
+integrate (f[x]) x = Integral(f(x), x) -- Integral desconocida
+```
