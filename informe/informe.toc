@@ -1,0 +1,6 @@
+\babel@toc {nil}{}\relax 
+\contentsline {section}{\numberline {1}Introducción}{1}{}%
+\contentsline {section}{\numberline {2}Metodología}{1}{}%
+\contentsline {section}{\numberline {3}Resultados}{1}{}%
+\contentsline {section}{\numberline {4}Discusión}{1}{}%
+\contentsline {section}{\numberline {5}Conclusiones}{1}{}%

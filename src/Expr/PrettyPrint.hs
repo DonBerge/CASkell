@@ -65,7 +65,7 @@ import Expr.Structure
 import Prettyprinter
 import Expr.PolyTools
 import Prelude hiding (reverse)
-import Expr.Simplify (runEvalSteps)
+import Classes.EvalResult (EvalResult(runEvalResult))
 
 -- * Pretty printing de los simbolos no terminales
 
@@ -120,6 +120,6 @@ instance Show Expr where
 
 
 showTree :: Expr -> String
-showTree t = case runEvalSteps t of
+showTree t = case runEvalResult t of
                 Left e -> "Undefined: " ++ e
                 Right e -> show e

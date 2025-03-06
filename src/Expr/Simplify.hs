@@ -18,7 +18,7 @@
 --    @a*x+b*x+2*x@ no se simplifica a @(a+b+2)*x@, ya que simplificaciones de este tipo colisionan con
 --    funciones como 'expand'.
 module Expr.Simplify
-  ( module Classes.EvalSteps,
+  ( module Classes.EvalResult,
     module PExpr,
     automaticSymplify,
     simplifyProduct,
@@ -36,9 +36,8 @@ module Expr.Simplify
   )
 where
 
-import Classes.EvalSteps
+import Classes.EvalResult
 import Control.Applicative
-import Control.Monad.Except (MonadError (throwError))
 import Data.List
 import Data.Number (Number)
 import PExpr
@@ -47,7 +46,7 @@ import Prelude hiding (const, exponent)
 -- $setup
 -- >>> let x = Number 0
 
-automaticSymplify :: PExpr -> EvalSteps PExpr
+automaticSymplify :: PExpr -> EvalResult PExpr
 automaticSymplify (Mul xs) = mapM automaticSymplify xs >>= simplifyProduct
 automaticSymplify (Add xs) = mapM automaticSymplify xs >>= simplifySum
 automaticSymplify (Pow x y) = do
@@ -127,11 +126,11 @@ exponent _ = Number 1
 --    [@SPOW-5@]: Si ninguna regla aplica, entonces @'simplifyPow' u = u@
 --
 --    === Ejemplos
-simplifyPow :: PExpr -> PExpr -> EvalSteps PExpr
--- SPOW-1 es manejada automaticamente por la monada EvalSteps
+simplifyPow :: PExpr -> PExpr -> EvalResult PExpr
+-- SPOW-1 es manejada automaticamente por la monada EvalResult
 simplifyPow (Number 0) w -- SPOW-2
   | true $ isPositive w = return (Number 0) -- SPOW-2.1
-  | true $ (isNegative w ||| isZero w) = throwError "Division por cero" -- SPOW-2.2
+  | true $ (isNegative w ||| isZero w) = fail "Division por cero" -- SPOW-2.2
 simplifyPow (Number 1) _ = return (Number 1) -- SPOW-3
 simplifyPow v w
   | true $ isInteger w = simplifyIntPow v w -- SPOW.4
@@ -156,7 +155,7 @@ simplifyPow v w
 --    [@SINTPOW-5@]: Si @v = Mul rs@, entonces @'simplifyIntPow' v n = 'simplifyProduct' [u^n | u <- r]@
 --
 --    [@SINTPOW-6@]: Si ninguna regla aplica, entonces @'simplifyIntPow' v n = Pow v n@
-simplifyIntPow :: PExpr -> PExpr -> EvalSteps PExpr
+simplifyIntPow :: PExpr -> PExpr -> EvalResult PExpr
 simplifyIntPow (Number x) (Number n) = return $ Number $ x ^^ (toInteger n) -- SINTPOW-1
 simplifyIntPow _ (Number 0) = return (Number 1) -- SINTPOW-2
 simplifyIntPow x (Number 1) = return x -- SINTPOW-3
@@ -168,7 +167,7 @@ simplifyIntPow (Pow r s) n = do
 simplifyIntPow (Mul rs) n = mapM (`simplifyIntPow` n) rs >>= simplifyProduct -- SINTPOW-5
 simplifyIntPow x n = return $ Pow x n -- SINTPOW-6
 
-simplifyProduct :: [PExpr] -> EvalSteps PExpr
+simplifyProduct :: [PExpr] -> EvalResult PExpr
 simplifyProduct [] = return (Number 1)
 simplifyProduct [x] = return x -- SPRD.3
 simplifyProduct xs
@@ -183,7 +182,7 @@ simplifyProduct xs
 
 -- simplifyProductRec = undefined
 -- SPRDREC-2
-simplifyProductRec :: [PExpr] -> EvalSteps [PExpr]
+simplifyProductRec :: [PExpr] -> EvalResult [PExpr]
 simplifyProductRec [] = return []
 simplifyProductRec [Mul us, Mul vs] = mergeProducts us vs
 simplifyProductRec [Mul us, v] = mergeProducts us [v]
@@ -208,12 +207,12 @@ simplifyProductRec [u, v]
 simplifyProductRec ((Mul us) : vs) = simplifyProductRec vs >>= mergeProducts us
 simplifyProductRec (u : vs) = simplifyProductRec vs >>= mergeProducts [u]
 
-simplifyDiv :: PExpr -> PExpr -> EvalSteps PExpr
+simplifyDiv :: PExpr -> PExpr -> EvalResult PExpr
 simplifyDiv x y = do
   y' <- simplifyPow y (Number (-1))
   simplifyProduct [x, y']
 
-simplifySum :: [PExpr] -> EvalSteps PExpr
+simplifySum :: [PExpr] -> EvalResult PExpr
 simplifySum [] = return (Number 0)
 simplifySum [x] = return x
 simplifySum xs = do
@@ -223,7 +222,7 @@ simplifySum xs = do
     [x] -> return x
     _ -> return $ Add $ sort xs'
 
-simplifySumRec :: [PExpr] -> EvalSteps [PExpr]
+simplifySumRec :: [PExpr] -> EvalResult [PExpr]
 simplifySumRec [] = return []
 simplifySumRec [Add us, Add vs] = mergeSums us vs
 simplifySumRec [Add us, v] = mergeSums us [v]
@@ -252,7 +251,7 @@ simplifySumRec [u, v]
 simplifySumRec ((Add us) : vs) = simplifySumRec vs >>= mergeSums us
 simplifySumRec (u : vs) = simplifySumRec vs >>= mergeSums [u]
 
-simplifySub :: PExpr -> PExpr -> EvalSteps PExpr
+simplifySub :: PExpr -> PExpr -> EvalResult PExpr
 simplifySub x y = do
   y' <- simplifyProduct [y, Number (-1)]
   simplifySum [x, y']
@@ -271,13 +270,13 @@ mergeOps f (p : ps) (q : qs) = do
         else (q :) <$> mergeOps f (p : ps) qs
     _ -> error "mergeOps: unexpected pattern"
 
-mergeProducts :: [PExpr] -> [PExpr] -> EvalSteps [PExpr]
+mergeProducts :: [PExpr] -> [PExpr] -> EvalResult [PExpr]
 mergeProducts = mergeOps simplifyProductRec
 
-mergeSums :: [PExpr] -> [PExpr] -> EvalSteps [PExpr]
+mergeSums :: [PExpr] -> [PExpr] -> EvalResult [PExpr]
 mergeSums = mergeOps simplifySumRec
 
-simplifyNegate :: PExpr -> EvalSteps PExpr
+simplifyNegate :: PExpr -> EvalResult PExpr
 simplifyNegate a = simplifyProduct [a, Number (-1)]
 
 operands :: PExpr -> [PExpr]
@@ -294,10 +293,10 @@ freeOf (Symbol _) _ = True
 freeOf (Number _) _ = True
 freeOf u t = all (`freeOf` t) $ operands u
 
-linearForm :: PExpr -> PExpr -> EvalSteps (PExpr, PExpr)
+linearForm :: PExpr -> PExpr -> EvalResult (PExpr, PExpr)
 linearForm u x
   | u == x = return (Number 1, Number 0)
-  | notASymbol x = throwError $ "x must be a symbol"
+  | notASymbol x = fail "x must be a symbol"
   where
     notASymbol (Symbol _) = False
     notASymbol _ = True
@@ -309,7 +308,7 @@ linearForm u@(Mul _) x
       udivx <- simplifyDiv u x
       if freeOf udivx x
         then return (udivx, Number 0)
-        else throwError "not a linear form"
+        else fail "not a linear form"
 linearForm u@(Add []) _ = return (Number 0, u)
 linearForm (Add (u : us)) x = do
   (a, b) <- linearForm u x
@@ -319,19 +318,19 @@ linearForm (Add (u : us)) x = do
   return (a', b')
 linearForm u x
   | freeOf u x = return (Number 0, u)
-  | otherwise = throwError "not a linear form"
+  | otherwise = fail "not a linear form"
 
 mulByNeg :: PExpr -> Bool
 mulByNeg (Mul ((Number a) : _)) = a < 0
 mulByNeg (Add xs) = all mulByNeg xs
 mulByNeg x = true $ isNegative x
 
-simplifySqrt :: PExpr -> EvalSteps PExpr
+simplifySqrt :: PExpr -> EvalResult PExpr
 simplifySqrt x = simplifyPow x (Number 0.5)
 
 ----------------
 
-handlePeriod :: (Number -> PExpr -> EvalSteps PExpr) -> (PExpr -> EvalSteps PExpr) -> PExpr -> EvalSteps PExpr
+handlePeriod :: (Number -> PExpr -> EvalResult PExpr) -> (PExpr -> EvalResult PExpr) -> PExpr -> EvalResult PExpr
 handlePeriod cases onOddPi x = do
   p <- linearForm x Pi
   case p of
@@ -341,9 +340,9 @@ handlePeriod cases onOddPi x = do
        in if even m
             then q
             else q >>= onOddPi
-    _ -> throwError "Could not handle period"
+    _ -> fail "Could not handle period"
 
-simplifyFun :: PExpr -> EvalSteps PExpr
+simplifyFun :: PExpr -> EvalResult PExpr
 simplifyFun (Sin x)
   | mulByNeg x = simplifyNegate x >>= simplifyFun . Sin >>= simplifyNegate
 simplifyFun (Sin x) = handlePeriod cases simplifyNegate x <|> return (Sin x)

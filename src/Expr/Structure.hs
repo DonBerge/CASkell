@@ -65,7 +65,7 @@ module Expr.Structure
 where
 
 import Assumptions
-import Classes.EvalSteps (runEvalSteps)
+import Classes.EvalResult (runEvalResult)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE (fromList, toList)
 import Data.Number (Number)
@@ -89,7 +89,7 @@ mkFunOperands xs = Just $ NE.fromList $ map return xs
 -- * Funciones de matcheo
 
 matchMulByNegative :: Expr -> Maybe Expr
-matchMulByNegative e = case runEvalSteps e of
+matchMulByNegative e = case runEvalResult e of
   Right (P.Number n) | true (isNegative n) -> Just $ negate e
   Right (P.Mul (P.Number n : _)) | true (isNegative n) -> Just $ negate e
   _ -> Nothing
@@ -97,45 +97,45 @@ matchMulByNegative e = case runEvalSteps e of
   --_ -> Nothing
 
 matchUnaryFun :: String -> Expr -> Maybe Expr
-matchUnaryFun s e = case runEvalSteps e of
+matchUnaryFun s e = case runEvalResult e of
   Right (P.Fun s' [x]) | s == s' -> Just (return x)
   _ -> Nothing
 
 matchAnyarityFun :: String -> Expr -> Maybe (NonEmpty Expr)
-matchAnyarityFun s e = case runEvalSteps e of
+matchAnyarityFun s e = case runEvalResult e of
   Right (P.Fun s' xs) | s == s' -> mkFunOperands xs
   _ -> Nothing
 
 matchMonomialTerm :: Expr -> Maybe (Expr, Integer)
-matchMonomialTerm e = case runEvalSteps e of
+matchMonomialTerm e = case runEvalResult e of
   Right (P.Pow x (P.Number n)) | true (isInteger n &&& n > 1) -> Just (return x, toInteger n)
   _ -> Nothing
 
 matchFun :: Expr -> Maybe (String, NonEmpty Expr)
-matchFun e = case runEvalSteps e of
+matchFun e = case runEvalResult e of
   Right (P.Fun s (x : xs)) -> Just (s, fmap return (x :| xs))
   _ -> Nothing
 
 pattern Number :: Number -> Expr
-pattern Number n <- (runEvalSteps -> Right (P.Number n))
+pattern Number n <- (runEvalResult -> Right (P.Number n))
 
 pattern Symbol :: String -> Expr
-pattern Symbol s <- (runEvalSteps -> Right (P.Symbol s))
+pattern Symbol s <- (runEvalResult -> Right (P.Symbol s))
 
 pattern Add :: TwoList Expr -> Expr
-pattern Add xs <- (runEvalSteps -> Right (P.Add (mkTwoOrMoreOperands -> Just xs)))
+pattern Add xs <- (runEvalResult -> Right (P.Add (mkTwoOrMoreOperands -> Just xs)))
 
 pattern Mul :: TwoList Expr -> Expr
-pattern Mul xs <- (runEvalSteps -> Right (P.Mul (mkTwoOrMoreOperands -> Just xs)))
+pattern Mul xs <- (runEvalResult -> Right (P.Mul (mkTwoOrMoreOperands -> Just xs)))
 
 pattern Pow :: Expr -> Expr -> Expr
-pattern Pow x y <- (runEvalSteps -> Right (P.Pow (makeExpr -> x) (makeExpr -> y)))
+pattern Pow x y <- (runEvalResult -> Right (P.Pow (makeExpr -> x) (makeExpr -> y)))
 
 pattern Fun :: String -> NonEmpty Expr -> Expr
 pattern Fun s xs <- (matchFun -> Just (s, xs))
 
 pattern Undefined :: String -> Expr
-pattern Undefined e <- (runEvalSteps -> Left e)
+pattern Undefined e <- (runEvalResult -> Left e)
 
 pattern Pi :: Expr
 pattern Pi <- Symbol "Pi"

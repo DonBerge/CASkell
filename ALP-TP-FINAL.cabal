@@ -64,7 +64,7 @@ library
                       Simplification.Logarithm
                       Simplification.Rationalize
                       Simplification.Trigonometric
-                      Classes.EvalSteps
+                      Classes.EvalResult
                       Data.TriBool
                       Expr
                       Data.TwoList
@@ -93,8 +93,6 @@ library
                       matrix,
                       prettyprinter,
                       array,
-                      mtl,
-                      text,
                       exact-combinatorics
 
     -- Directories containing source files.

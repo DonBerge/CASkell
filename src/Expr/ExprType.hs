@@ -41,12 +41,11 @@ import Expr.Simplify
 
 import Data.Number (Number)
 import qualified Data.Number as Number
-import Control.Monad.Except (MonadError(throwError))
 import Data.Either (fromRight)
 
 -- import Simplification.Rationalize
 
-type Expr = EvalSteps PExpr
+type Expr = EvalResult PExpr
 
 instance Num Expr where
     fromInteger = return . Number . fromInteger
@@ -133,8 +132,8 @@ csch = makeFun (Fun "Csch" . (:[]))
 
 -- * Assumptions sobre las expresiones
 
-extractTriBool :: EvalSteps TriBool -> TriBool
-extractTriBool = fromRight U . runEvalSteps
+extractTriBool :: EvalResult TriBool -> TriBool
+extractTriBool = fromRight U . runEvalResult
 
 instance Assumptions Expr where
     isNegative = extractTriBool . fmap isNegative
@@ -191,7 +190,7 @@ assume u a = foldl (\x y -> x >>= assume' y) u a
 
 
 undefinedExpr :: String -> Expr
-undefinedExpr = throwError
+undefinedExpr = fail
 
 numerator :: Expr -> Expr
 numerator = (=<<) numerator'
