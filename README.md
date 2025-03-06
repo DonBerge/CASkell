@@ -108,9 +108,17 @@ f = function "f"
 f[x]+f[x] = 2*f(x)
 ```
 
+Los elementos de tipo `Expr` cumplen todos los axiomas de cuerpo, excepto el de la propiedad distributiva:
+```haskell
+x*2 == 2*x -- True
+(x+y)+9 == x+(y+9) -- True
+2*(x+y) == 2*x+2*y -- True, los numeros se distribuyen
+(x+y)*z == x*z + y*z -- False, los terminos no númericos no se distribuyen
+```
+
 #### Autosimplificación
 
-Las operaciones basicas realizan el proceso de **autosimplificación**, el cual realiza ciertas simplificaciones de manera automatica
+Las operaciones basicas ejecutan el proceso de **autosimplificación**, el cual realiza ciertas simplificaciones de manera automatica
 ```haskell
 x+x = 2*x
 x*x = x**2
@@ -118,20 +126,23 @@ x*x = x**2
 x + sin(pi/2) = 1 -- sin(pi/2) = 1
 ```
 
+Las funciones encargadas de realizar el procedimiento de autosimplificación se encuentran en el modulo `Expr.Simplify`, aunque nunca se usan en la practica, ya que son ejecutadas automaticamente por los operadores matematicos.
+
 #### Detección de expresiones indefinidas
 
-Ademas los operadores pueden detectar ciertas expresiones prohibidas, por ejemplo, aquellas que incluyen una división por 0
+La autosimplificación permite detectar ciertas expresiones prohibidas, por ejemplo, aquellas que incluyen una división por 0
 ```haskell
 1/(x-x) = Undefined: division por cero
 1/(log(x/x)) = Undefined: division por cero
 ```
 
-Autosimplificación siempre se pueden detectar casos como este, ya que el problema de determinar si una expresión matematica es igual a 0 es indecidible. Aun asi, muchos de estos casos son detectados.
-
+La autosimplificación no siempre puede detectar casos como este, ya que el problema de determinar si una expresión matematica es igual a 0 es indecidible(la siguiente sección ilustra un caso donde la autosimplificación no detecta una división por 0). Aun asi, muchos de estos casos si son detectados por el proceso de autosimplificación.
 
 #### Limites de la autosimplificación
 
-La **autosimplifiación** no realiza todas las simplificaciones posibles:
+La **autosimplifiación** no realiza todas las simplificaciones posibles, primero porque la lista de reglas de simplificación puede ser muy larga y segundo porque una autosimplificación con muchas reglas podria interferir con el funcionamiento de otras funciones(ejemplo, si la autosimplificación aplicara la propiedad distributiva siempre que pueda, seria imposible crear una función para factorizar polinomios):
+
+Esto hace que algunas expresiones queden sin simplificar:
 ```haskell
 sin(x)**2 + cos(x)**2 -- la expresión no cambia
 1/(exp(2*x) - exp(x)**2) -- division por cero no reconocida
@@ -277,3 +288,6 @@ integrate (1/(x**2+1)) x = Integral(1/(x^2+1),x) -- Integral elemental, pero no 
 f = function "f"
 integrate (f[x]) x = Integral(f(x), x) -- Integral desconocida
 ```
+
+### 3.5 Parseo de expresiones
+### 3.6 PrettyPrinting
