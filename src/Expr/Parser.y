@@ -179,14 +179,14 @@ lexNumber cs = let
 -- >>> parseExpr "2 + 3"
 -- 5
 -- >>> parseExpr "x + x + x - y"
--- 3*x+(-1)*y
+-- 3*x-y
 -- >>> parseExpr "f(x) + g(y) + sin(pi/2)"
--- 1+f(x)+g(y)
+-- f(x)+g(y)+1
 --
 -- Los nombres de las funciones y simbolos conocidos no son sensibles a las mayusculas
 --
 -- >>> parseExpr "sin(pi/2) + COS(PI) + tAN (pI/4) + funCIONrARA(2.2)"
--- 1+funCIONrARA(2.2) 
+-- funCIONrARA(2.2)+1
 parseExpr = parser . lexer
 
 }

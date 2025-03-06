@@ -110,13 +110,13 @@ instance Floating Expr where
                 simplifyPow p' q'
 
 sec :: Expr -> Expr
-sec = makeFun Sec
+sec = recip . cos
 
 csc :: Expr -> Expr
-csc = makeFun Csc
+csc = recip . sin
 
 cot :: Expr -> Expr
-cot = makeFun Cot
+cot = recip . tan
 
 -- * Assumptions sobre las expresiones
 
