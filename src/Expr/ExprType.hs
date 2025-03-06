@@ -14,9 +14,6 @@ module Expr.ExprType (
     sec,
     csc,
     cot,
-    coth,
-    sech,
-    csch,
     -- * Conversiones
     fromNumber,
     function,
@@ -120,15 +117,6 @@ csc = makeFun Csc
 
 cot :: Expr -> Expr
 cot = makeFun Cot
-
-coth :: Expr -> Expr
-coth = makeFun (Fun "Coth" . (:[]))
-
-sech :: Expr -> Expr
-sech = makeFun (Fun "Sech" . (:[]))
-
-csch :: Expr -> Expr
-csch = makeFun (Fun "Csch" . (:[]))
 
 -- * Assumptions sobre las expresiones
 
