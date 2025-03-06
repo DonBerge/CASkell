@@ -321,9 +321,9 @@ linearForm u x
   | otherwise = fail "not a linear form"
 
 mulByNeg :: PExpr -> Bool
+mulByNeg (Number a) = a < 0
 mulByNeg (Mul ((Number a) : _)) = a < 0
-mulByNeg (Add xs) = all mulByNeg xs
-mulByNeg x = true $ isNegative x
+mulByNeg _ = False
 
 simplifySqrt :: PExpr -> EvalResult PExpr
 simplifySqrt x = simplifyPow x (Number 0.5)

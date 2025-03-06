@@ -91,8 +91,7 @@ prettyTerm u
   where
     prettyMul (Mul us) = concatWith (surround (pretty "*")) $ fmap prettyFactor us
     prettyMul u = prettyFactor u
-    --prettyMul' us = concatWith (surround (pretty "*")) $ fmap prettyFactor us
-
+    
     n = numerator u
     d = denominator u
 
