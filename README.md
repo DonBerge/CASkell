@@ -114,6 +114,12 @@ x*2 == 2*x -- True
 (x+y)+9 == x+(y+9) -- True
 2*(x+y) == 2*x+2*y -- True, los numeros se distribuyen
 (x+y)*z == x*z + y*z -- False, los terminos no númericos no se distribuyen
+
+1/0 == log(-1)
+=>(autosimplifican a)
+Undefined: division por cero == Undefined: logaritmo de un numero negativo
+=>(la comparación evalua a)
+True -- Todas las expresiones indefinidas, son iguales entre si
 ```
 
 #### Autosimplificación
@@ -124,6 +130,18 @@ x+x = 2*x
 x*x = x**2
 (x**2)**3 = x**6
 x + sin(pi/2) = 1 -- sin(pi/2) = 1
+```
+
+La autosimplificación tambien se encarga de manejar expresiones que contengan terminos indefinidos:
+```haskell
+u = (1/0)::Expr -- Undefined: division por 0
+v = symbol "v"
+w = undefinedExpr "Undefined explicito"
+
+sin(w)+1 -- Undefined: Undefined explicito
+u**u -- Undefined: división por cero
+u+v+w -- Undefined: división por cero
+w+v+u -- Undefined: Undefined explicito, los indefinidos de mas a la izquierda tienen prioridad
 ```
 
 Las funciones encargadas de realizar el procedimiento de autosimplificación se encuentran en el modulo `Expr.Simplify`, aunque nunca se usan en la practica, ya que son ejecutadas automaticamente por los operadores matematicos.
@@ -290,26 +308,30 @@ integrate (f[x]) x = Integral(f(x), x) -- Integral desconocida
 ```
 
 ### 3.5 Parseo de expresiones
-Para parsear expresiones matemáticas desde una cadena de texto, se debe importar el módulo `Parse.Expression`:
+El modulo `Expr` viene incluida con la función `parseExpr` para parsear convertir una cadena de texto en una expresión
 
 ```haskell
-import Parse.Expression
+parseExpr "x" -- Devuelve el simbolo x
+parseExpr "x + x + sin(pi / 2)" -- Devuelve 2*x+1, la expresión se evalua usando autosimplificación
+parseExpr "f(x) + g(y)" -- Devuelve f(x)+g(y), puede detectar funciones anonimas
+
+a = symbol "a"
+u = parseExpr "b+c"
+a+u    -- Devuelve a+u, las expresiones parseadas pueden combinarse con expresiones no parseadas
 ```
 
-Luego, se puede utilizar la función `parseExpr` para convertir una cadena de texto en una expresión del tipo `Expr`:
+En caso de un error de parseo, se devuelve una expresión indefinida.
 
 ```haskell
-parseExpr "2 * sin(pi / 4)" -- Devuelve la expresión 2*sin(pi/4)
-parseExpr "x^2 + 3*x + 2" -- Devuelve la expresión x^2 + 3*x + 2
+u = symbol "2++x" -- Undefined: Error de parseo
 ```
 
-La función `parseExpr` devuelve un valor de tipo `Either String Expr`, donde `Left` indica un error de parseo y `Right` contiene la expresión parseada:
-
-```haskell
-case parseExpr "2 * sin(pi / 4)" of
-    Left err -> putStrLn $ "Error de parseo: " ++ err
-    Right expr -> print expr
-```
+El parser se construye a partir de una gramatica de Happy, el archivo de la gramatica se encuentra en el modulo `Expr/Parser.y`.
 
 ### 3.6 PrettyPrinting
-### 3.6 PrettyPrinting
+El prettyprinting de expresiones se realiza en el archivo `Expr/PrettyPrint.hs`, utilizando la libreria `PrettyPrinter`:
+```haskell
+y*2*x + y**2 + x**2 -- se muestra como x^2 + 2*x*y + y^2, los terminos se reorganizan
+exp(x)+exp(y) -- se muestra como e^x+e^y
+2 * x**(-1) * y**(-1) -- se muestra como 2/(x*y)
+```
