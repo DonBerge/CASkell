@@ -22,10 +22,9 @@ substitute u t r
 getNewVariable :: Expr -> Expr -> Expr
 getNewVariable u (Symbol x) = getNewVariable' x
   where
-    vars = variables u
     getNewVariable' x =
       let symbol_x = symbol x
-       in if symbol_x `elem` vars
-            then getNewVariable' ('_' : x)
-            else symbol_x
+       in if u `freeOf` symbol_x
+            then symbol_x 
+            else getNewVariable' ('_' : x)
 getNewVariable _ _ = undefinedExpr "La variable debe ser un simbolo"
