@@ -290,4 +290,26 @@ integrate (f[x]) x = Integral(f(x), x) -- Integral desconocida
 ```
 
 ### 3.5 Parseo de expresiones
+Para parsear expresiones matemáticas desde una cadena de texto, se debe importar el módulo `Parse.Expression`:
+
+```haskell
+import Parse.Expression
+```
+
+Luego, se puede utilizar la función `parseExpr` para convertir una cadena de texto en una expresión del tipo `Expr`:
+
+```haskell
+parseExpr "2 * sin(pi / 4)" -- Devuelve la expresión 2*sin(pi/4)
+parseExpr "x^2 + 3*x + 2" -- Devuelve la expresión x^2 + 3*x + 2
+```
+
+La función `parseExpr` devuelve un valor de tipo `Either String Expr`, donde `Left` indica un error de parseo y `Right` contiene la expresión parseada:
+
+```haskell
+case parseExpr "2 * sin(pi / 4)" of
+    Left err -> putStrLn $ "Error de parseo: " ++ err
+    Right expr -> print expr
+```
+
+### 3.6 PrettyPrinting
 ### 3.6 PrettyPrinting
