@@ -2,7 +2,6 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module Simplification.Trigonometric (
-  trigSubstitute,
   trigExpand,
   contractTrig,
 ) where
@@ -21,33 +20,6 @@ import qualified Simplification.Algebraic as Algebraic
 -- >>> let y = symbol "y"
 -- >>> let z = symbol "z"
 
--- | Aplica una función a cada subexpresión de una expresión dada.
-bottomUp :: (Expr -> Expr) -> Expr -> Expr
-bottomUp f = f . mapStructure (bottomUp f)
-
--- * Substitucion de funciones trigonometricas
-
--- |
---    Reemplaza las ocurrencias de 'tan', 'cot', 'sec' y 'csc' por sus equivalentes en seno y coseno.
---
---    === Ejemplos
---
---    >>> trigSubstitute (tan x)
---    Sin(x)/Cos(x)
---    >>> trigSubstitute (cot x)
---    Cos(x)/Sin(x)
---    >>> trigSubstitute (csc x + sec y)
---    1/Cos(y)+1/Sin(x)
-trigSubstitute :: Expr -> Expr
-trigSubstitute = bottomUp trigSubstitute'
-  where
-    trigSubstitute' (Tan x) = sin x / cos x
-    trigSubstitute' (Cot x) = cos x / sin x
-    trigSubstitute' (Sec x) = 1 / cos x
-    trigSubstitute' (Csc x) = 1 / sin x
-    trigSubstitute' (Tanh x) = sinh x / cosh x
-    trigSubstitute' x = x
-
 -- * Expansion de expresiones trigonometricas
 
 -- |
@@ -59,10 +31,19 @@ trigSubstitute = bottomUp trigSubstitute'
 --
 --        2. No es un producto con un operando que es un entero.
 --
+--    === Propiedades utilizadas:
+--    \(\sin(v+w) = \sin(v)\cos(w)+\cos(v)\sin(w)\)
+--
+--    \(\cos(v+w) = \cos(v)\cos(w)-\sin(v)\sin(w)\)
+--
+--    \(\cos(n \cdot x) = T_n(\cos x)\), donde \(T_n\) es el [polinomio de Chebyshev de primera clase de grado \(n\)](https://en.wikipedia.org/wiki/Chebyshev_polynomials#).
+--
+--    \(U_n(\cos x)\sin x = {\sin((n+1)x)}\), donde \(U_n\) es el [polinomio de Chebyshev de segunda clase de grado \(n\)](https://en.wikipedia.org/wiki/Chebyshev_polynomials#).
+--
 --    === Ejemplos :
 --    
 --    >>> trigExpand (cos (2*x))
---    2*Cos(x)**2-1
+--    2*Cos(x)^2-1
 --
 --    >>> trigExpand (sin (3*y))
 --    -4*sin(y)^3+3*sin(y)
@@ -79,22 +60,15 @@ trigExpand = Algebraic.expand . trigExpand' . mapStructure trigExpand
     trigExpand' x = x
 
 -- |
---  Dada una expresión @u@, 'expandTrigRules' calcula la forma trigonometrica expandida de @sin u@ y @cos u@.
---
---  La expansión se calcula utilizando las siguientes propiedades
---
---  - Si @u=v+w@ entonces la forma expandida se calcula usando las siguientes propiedades
---    \[\sin(v+w) = \sin(v)\cos(w)+\cos(v)\sin(w)\]
---    \[\cos(v+w) = \cos(v)\cos(w)-\sin(v)\sin(w)\]
---
---  - Si @u=n*v@ con @n@ un entero, entonces la forma expandida se calcula utilizando 'multipleAngleCos' y 'multipleAngleSin'
+--  'expandTrigRules u' calcula la forma expandida de sin(u) y cos(u).
+--  Devuelve el resultado en una tupla 
 expandTrigRules :: Expr -> (Expr, Expr)
 -- u = v + w
 expandTrigRules u@(Add (x :|| _)) =
   let f = expandTrigRules x
       r = expandTrigRules (u - x)
-      s = fst f * snd r + snd f * fst r
-      c = snd f * snd r - fst f * fst r
+      s = fst f * snd r + snd f * fst r -- sin(v)cos(w) + cos(v)sin(w)
+      c = snd f * snd r - fst f * fst r -- cos(v)cos(w) - sin(v)sin(w)
    in (s, c)
 expandTrigRules u@(Mul (f :|| _))
   | Number f' <- f,
@@ -106,7 +80,7 @@ expandTrigRules u@(Mul (f :|| _))
 expandTrigRules u = (sin u, cos u)
 
 -- |
---  Expansión de \(\cos(n \cdot x)\), utilizando los polinomios de Chebyshev de primera clase.
+--  Expansión de cos(n*x), utilizando los polinomios de Chebyshev de primera clase.
 multipleAngleCos :: Integer -> Expr -> Expr
 multipleAngleCos n u@(Add _) = trigExpand $ cos $ Algebraic.expandMainOp $ fromInteger n * u
 multipleAngleCos 0 _ = 1
@@ -118,7 +92,7 @@ multipleAngleCos n x
        in substitute (cheby1 x' n) x' (cos x)
 
 -- |
---  Expansión de \(\sin(n \cdot x)\), utilizando los polinomios de Chebyshev de segunda clase.
+--  Expansión de sin(n*x), utilizando los polinomios de Chebyshev de segunda clase.
 multipleAngleSin :: Integer -> Expr -> Expr
 multipleAngleSin n u@(Add _) = trigExpand $ sin $ Algebraic.expandMainOp $ fromInteger n * u
 multipleAngleSin 0 _ = 0
@@ -133,24 +107,14 @@ multipleAngleSin n x
        in Algebraic.expandMainOp $ poly * sin x
 
 -- |
---    Generación de polinomios de Chebyshev de primera clase.
---
---    Los polinomios de Chebyshev de primera clase cumplen la siguiente propiedad:
---        \[T_n(\cos x) = \cos(n \cdot x)\]
---
---    Por lo que son utiles para realizar la expansión de \(\cos(n \cdot x)\)
+--    Generación de polinomios de Chebyshev de primera clase en la variable x
 cheby1 :: (Integral b) => Expr -> b -> Expr
 cheby1 _ 0 = 1
 cheby1 x 1 = x
 cheby1 x n = Algebraic.expand $ Matrix.getElem 1 1 $ (Matrix.fromLists [[2 * x, -1], [1, 0]] ^ (n - 1)) * Matrix.fromLists [[x], [1]]
 
 -- |
---    Generación de polinomios de Chebyshev de segunda clase.
---
---    Los polinomios de Chebyshev de segunda clase cumplen la siguiente propiedad:
---        \[U_n(\cos x)\sin x = {\sin((n+1)x)}\]
---
---    Por lo que son utiles para realizar la expansión de \(\sin(n \cdot x)\)
+--    Generación de polinomios de Chebyshev de segunda clase en la variable x
 cheby2 :: (Integral b) => Expr -> b -> Expr
 cheby2 _ 0 = 1
 cheby2 x 1 = 2 * x
@@ -166,6 +130,19 @@ cheby2 x n = Algebraic.expand $ Matrix.getElem 1 1 $ (Matrix.fromLists [[2 * x, 
 --        1. Cualquier producto en la expresión tiene como mucho un operando que es un seno o coseno;
 --        2. Una potencia con exponente entero positivo no tiene como base a un seno o coseno;
 --        3. Cualquier subexpresión esta en forma expandida.
+--
+--    === Propiedades utilizadas:
+--    \(\sin(v)\sin(w) = \frac{1}{2}(\cos(v-w)-\cos(v+w))\)
+--    \(\sin(v)\cos(w) = \frac{1}{2}(\sin(v+w)+\sin(v-w))\)
+--    \(\cos(v)\cos(w) = \frac{1}{2}(\cos(v-w)+\cos(v+w))\)
+--
+--    === Ejemplos:
+--    >>> contractTrig (sin(x)**2 * cos(x)**2)
+--    -Cos(4*x)/8+1/8
+--    >>> contractTrig (cos(x)**4)
+--    1/8*cos(4*x)+1/2*cos(2*x)**2+3/8
+--    >>> contractTrig (sin(x)**2+cos(x)**2)
+--    1
 contractTrig :: Expr -> Expr
 contractTrig = mapStructure contractTrig . contractTrig'
   where
@@ -197,8 +174,8 @@ contractTrigRules v = v
 isSinOrCos :: Expr -> Bool
 isSinOrCos (Sin _) = True
 isSinOrCos (Cos _) = True
-isSinOrCos (Pow v w)
-  | true $ isSinOrCos v &&& isInteger w = True
+isSinOrCos (MonomialTerm v _)
+  | isSinOrCos v = True
 isSinOrCos _ = False
 
 -- |

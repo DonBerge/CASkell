@@ -1,8 +1,8 @@
 STACK = stack
 
-main: build test make-docs
+main: build test docs
 
-make-docs:
+docs:
 	cabal haddock --haddock-internal
 
 open-docs:
