@@ -40,13 +40,13 @@ import Data.TwoList (partition)
     Ejemplos:
 
     >>> expand (log(x/y))
-    Log(x)-Log(y)
+    log(x)-log(y)
 
     >>> expand (log(a*b*x*y))
-    Log(a*b)+Log(x)+Log(y)
+    log(a*b)+log(x)+log(y)
 
     >>> expand (log((w*x)**a) + log(y**b * z))
-    Log(z)+(Log(w)+Log(x))*a+Log(y)*b
+    a*(log(w)+log(x))+b*log(y)+log(z)
 -}
 expand :: Expr -> Expr
 expand (mapStructure expand -> v) = case v of
@@ -69,10 +69,10 @@ expand (mapStructure expand -> v) = case v of
     Ejemplos:
 
     >>> contract (log(x)+log(y)+log(z))
-    Log(x*y*z)
+    log(x*y*z)
 
     >>> contract (2*log(a)*log(x))
-    Log(x^Log(a^2))
+    log(x^log(a^2))
 -}
 contract :: Expr -> Expr
 contract (mapStructure contract -> v)

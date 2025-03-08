@@ -1,5 +1,9 @@
 {-# LANGUAGE ViewPatterns #-}
 
+{-|
+    Module      : Simplification.Rationalize
+    Description : Módulo que racionaliza y simplifica expresiones racionales.
+-}
 module Simplification.Rationalize (
     rationalize,
     rationalSimplify,

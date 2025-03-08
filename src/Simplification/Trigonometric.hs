@@ -1,6 +1,10 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
+{-|
+    Module      : Simplification.Trigonometric
+    Description : Funciones para simplificar expresiones trigonométricas.
+-}
 module Simplification.Trigonometric (
   trigExpand,
   contractTrig,
@@ -46,13 +50,13 @@ import Data.Function (on)
 --    === Ejemplos :
 --    
 --    >>> trigExpand (cos (2*x))
---    2*Cos(x)^2-1
+--    2*cos(x)^2-1
 --
 --    >>> trigExpand (sin (3*y))
---    -4*Sin(y)^3+3*Sin(y)
+--    -4*sin(y)^3+3*sin(y)
 --
 --    >>> trigExpand (sin (x+y))
---    Cos(y)*Sin(x)+Cos(x)*Sin(y)
+--    cos(x)*sin(y)+cos(y)*sin(x)
 --
 --    >>> trigExpand (3/4*sin(x)+3/4*cos(x+pi/6)-3/4*sin(x+pi/3))
 --    0
@@ -159,9 +163,9 @@ cheby2 x n = Algebraic.expand $ Matrix.getElem 1 1 $ (Matrix.fromLists [[2 * x, 
 
   === Ejemplos:
   >>> contractTrig (sin(x)**2 * cos(x)**2)
-  -Cos(4*x)/8+1/8
+  -cos(4*x)/8+1/8
   >>> contractTrig (cos(x)**4)
-  Cos(2*x)/2+Cos(4*x)/8+3/8
+  cos(2*x)/2+cos(4*x)/8+3/8
   >>> contractTrig (sin(x)**2+cos(x)**2)
   1
   >>> contractTrig ((cos(x) + sin(x))**4 + (cos(x) - sin(x))**4 + cos(4*x) - 3)
@@ -281,11 +285,11 @@ rationalMap f x = f x
   >>> simplifyTrig (sin(x)**2 + cos(x)**2)
   1
 
-  >> simplifyTrig (sin(x)**4 - 2*cos(x)**2*sin(x)**2 + cos(x)**4)
-  Cos(4*x)/2+1/2
+  >>> simplifyTrig (sin(x)**4 - 2*cos(x)**2*sin(x)**2 + cos(x)**4)
+  cos(4*x)/2+1/2
   
   >>> simplifyTrig (sin(x)*tan(x)/sec(x))
-  Sin(x)^2
+  sin(x)^2
 
   >>> simplifyTrig ((sin(x) + sin(3*x) + sin(5*x) + sin(7*x))/(cos(x) + cos(3*x) + cos(5*x) + cos(7*x)) - sin(4*x)/cos(4*x))
   0

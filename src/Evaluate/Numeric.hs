@@ -29,7 +29,7 @@ type Context = [(Expr, Number)]
 --    >>> evalFloatingOp sin 2  -- evalua sin(2)
 --    0.9092974268256817
 --    >>> evalFloatingOp sin x  -- evalua sin(x), como x no es un valor numeico, no se evalua.
---    Sin(x)
+--    sin(x)
 evalFloatingOp :: (forall a. (Floating a) => a -> a) -> Expr -> Expr
 evalFloatingOp f (Number n) = fromNumber $ f n
 evalFloatingOp f x = f x

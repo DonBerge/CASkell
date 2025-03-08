@@ -188,52 +188,50 @@ instance Assumptions PExpr where
     
     isOdd = not3 . isEven
 
-
-
 pattern Symbol :: String -> PExpr
 pattern Symbol x <- SymbolWithAssumptions x _
 
 pattern Exp :: PExpr -> PExpr
-pattern Exp x = Fun "Exp" [x]
+pattern Exp x = Fun "exp" [x]
 
 pattern Log :: PExpr -> PExpr
-pattern Log x = Fun "Log" [x]
+pattern Log x = Fun "log" [x]
 
 pattern Sin :: PExpr -> PExpr
-pattern Sin x = Fun "Sin" [x]
+pattern Sin x = Fun "sin" [x]
 
 pattern Cos :: PExpr -> PExpr
-pattern Cos x = Fun "Cos" [x]
+pattern Cos x = Fun "cos" [x]
 
 pattern Asin :: PExpr -> PExpr
-pattern Asin x = Fun "Asin" [x]
+pattern Asin x = Fun "asin" [x]
 
 pattern Acos :: PExpr -> PExpr
-pattern Acos x = Fun "Acos" [x]
+pattern Acos x = Fun "acos" [x]
 
 pattern Atan :: PExpr -> PExpr
-pattern Atan x = Fun "Atan" [x]
+pattern Atan x = Fun "atan" [x]
 
 pattern Sinh :: PExpr -> PExpr
-pattern Sinh x = Fun "Sinh" [x]
+pattern Sinh x = Fun "sinh" [x]
 
 pattern Cosh :: PExpr -> PExpr
-pattern Cosh x = Fun "Cosh" [x]
+pattern Cosh x = Fun "cosh" [x]
 
 pattern Tanh :: PExpr -> PExpr
-pattern Tanh x = Fun "Tanh" [x]
+pattern Tanh x = Fun "tanh" [x]
 
 pattern Asinh :: PExpr -> PExpr
-pattern Asinh x = Fun "Asinh" [x]
+pattern Asinh x = Fun "asinh" [x]
 
 pattern Acosh :: PExpr -> PExpr
-pattern Acosh x = Fun "Acosh" [x]
+pattern Acosh x = Fun "acosh" [x]
 
 pattern Atanh :: PExpr -> PExpr
-pattern Atanh x = Fun "Atanh" [x]
+pattern Atanh x = Fun "atanh" [x]
 
 pattern Pi :: PExpr
-pattern Pi = SymbolWithAssumptions "Pi" (AssumptionsEnviroment {
+pattern Pi = SymbolWithAssumptions "pi" (AssumptionsEnviroment {
     askPositive = T,
     askNegative = F,
     askZero = F,

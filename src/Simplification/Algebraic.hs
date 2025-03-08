@@ -43,7 +43,7 @@ import Assumptions (true, Assumptions (isInteger))
     >>> expand (((x+2)**2 + 3)**2)
     x^4+8*x^3+30*x^2+56*x+49
     >>> expand (sin(a*(b+c)))
-    Sin(a*b+a*c)
+    sin(a*b+a*c)
     >>> expand (a/(b*(c+d)))
     a/(b*c+b*d)
 

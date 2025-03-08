@@ -109,7 +109,7 @@ mkSymbol name = symbol name
 mkFun :: String -> [Expr] -> Expr
 mkFun name args 
   | lname `elem` ["sin", "cos", "tan", "exp", "log", "pi", "cot", "sec", 
-      "csc", "asin", "acos", "atan", "sinh", "cosh", "tanh"] = function (capitalize lname) args
+      "csc", "asin", "acos", "atan", "sinh", "cosh", "tanh"] = function lname args
   | lname == "sqrt" = case args of
                         [x] -> sqrt x
                         _ -> undefinedExpr "La funcion raiz cuadrada solo toma un argumento"

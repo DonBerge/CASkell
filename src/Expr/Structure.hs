@@ -124,28 +124,28 @@ pattern Undefined :: String -> Expr
 pattern Undefined e <- (runEvalResult -> Left e)
 
 pattern Pi :: Expr
-pattern Pi <- Symbol "Pi"
+pattern Pi <- Symbol "pi"
 
 pattern Exp :: Expr -> Expr
-pattern Exp x <- Fun "Exp" (x :| [])
+pattern Exp x <- Fun "exp" (x :| [])
 
 pattern Log :: Expr -> Expr
-pattern Log x <- (matchUnaryFun "Log" -> Just x)
+pattern Log x <- (matchUnaryFun "log" -> Just x)
 
 pattern Sin :: Expr -> Expr
-pattern Sin x <- (matchUnaryFun "Sin" -> Just x)
+pattern Sin x <- (matchUnaryFun "sin" -> Just x)
 
 pattern Cos :: Expr -> Expr
-pattern Cos x <- (matchUnaryFun "Cos" -> Just x)
+pattern Cos x <- (matchUnaryFun "cos" -> Just x)
 
 pattern Asin :: Expr -> Expr
-pattern Asin x <- (matchUnaryFun "Asin" -> Just x)
+pattern Asin x <- (matchUnaryFun "asin" -> Just x)
 
 pattern Acos :: Expr -> Expr
-pattern Acos x <- (matchUnaryFun "Acos" -> Just x)
+pattern Acos x <- (matchUnaryFun "acos" -> Just x)
 
 pattern Atan :: Expr -> Expr
-pattern Atan x <- (matchUnaryFun "Atan" -> Just x)
+pattern Atan x <- (matchUnaryFun "atan" -> Just x)
 
 pattern Derivative :: Expr -> Expr -> Expr
 pattern Derivative u x <- (matchAnyarityFun "Derivate" -> Just (u :| [x]))

@@ -17,6 +17,8 @@ import Expr.Structure
 import qualified Simplification.Algebraic as Algebraic
 
 import Data.List
+import Expr.Simplify (EvalResult(runEvalResult))
+import Data.Either (fromRight)
 
 -- $setup
 -- >>> import Expr.PrettyPrint
@@ -29,6 +31,7 @@ import Data.List
 -- >>> n = assume (symbol "n") ["integer"] 
 
 -- * Funciones auxiliares
+
 
 {-|
     La estructura de un polinomio depende de las expresiones que se eligan como variables. 
@@ -43,24 +46,27 @@ import Data.List
     [x+1,x,y,z^n]
 
     >>> variables (a*sin(x)**2 + 2*b*sin(x) + 3*c)
-    [Sin(x),a,b,c]
+    [a,b,c,sin(x)]
 
     >>> variables (1/2)
     []
 
     'variables' puede seleccionar expresiones que son matematicamente constantes
     >>> variables (sqrt(2)*x**2+sqrt(3)*x+sqrt(5))
-    [√5,√3,x,√2]
+    [√2,√3,√5,x]
 -}
 variables :: Expr -> [Expr]
-variables (Number _) = []
-variables (MonomialTerm v _) = variables v
-variables (Add us) = foldl union [] $ fmap variables us
-variables (Mul us) = foldl union [] $ fmap varMuls us
+variables = map return . sort . fromRight [] . runEvalResult . sequence . variables'
     where
-        varMuls u@(Add _) = [u] -- Si u es una suma, considerarla como una variable
-        varMuls u = variables u
-variables u = [u]
+    variables' :: Expr -> [Expr]
+    variables' (Number _) = []
+    variables' (MonomialTerm v _) = variables' v
+    variables' (Add us) = foldl union [] $ fmap variables' us
+    variables' (Mul us) = foldl union [] $ fmap varMuls us
+    variables' u = [u]
+
+    varMuls u@(Add _) = [u] -- Si u es una suma, considerarla como una variable
+    varMuls u = variables' u
 
 -- * Manipulación de polinomios
 
@@ -335,11 +341,11 @@ mbRemainder p q l = snd $ mbPolyDivide p q l
     === Ejemplos :
     >>> i = symbol "i"
     >>> mbPolyExpand (a*i**3 + b*i**2 + c*i) (i**2) [i] (-1)
-    -b-a*i+c*i
+    -a*i-b+c*i
 
     >>> u = sin(x)**4 + sin(x)**3 + 2*sin(x)**2 * cos(x)**2 + cos(x)**4
     >>> mbPolyExpand u (sin(x)**2 + cos(x)**2) [cos(x), sin(x)] 1
-    Sin(x)^3+1
+    sin(x)^3+1
 -}
 mbPolyExpand :: Expr -> Expr -> [Expr] -> Expr -> Expr
 mbPolyExpand 0 _ _ _ = 0
