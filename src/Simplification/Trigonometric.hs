@@ -164,12 +164,16 @@ cheby2 x n = Algebraic.expand $ Matrix.getElem 1 1 $ (Matrix.fromLists [[2 * x, 
   === Ejemplos:
   >>> contractTrig (sin(x)**2 * cos(x)**2)
   -cos(4*x)/8+1/8
+
   >>> contractTrig (cos(x)**4)
   cos(2*x)/2+cos(4*x)/8+3/8
+  
   >>> contractTrig (sin(x)**2+cos(x)**2)
   1
+  
   >>> contractTrig ((cos(x) + sin(x))**4 + (cos(x) - sin(x))**4 + cos(4*x) - 3)
   0
+  
   >>> contractTrig (sin(x) + sin(y) - 2*sin(x/2 + y/2)*cos(x/2 - y/2))
   0
 -}

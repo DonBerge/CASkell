@@ -52,6 +52,7 @@ import Data.Either (fromRight)
     []
 
     'variables' puede seleccionar expresiones que son matematicamente constantes
+
     >>> variables (sqrt(2)*x**2+sqrt(3)*x+sqrt(5))
     [√2,√3,√5,x]
 -}
@@ -128,16 +129,29 @@ multidegree :: [Expr] -> Expr -> [Integer]
 multidegree vars u = map (degree u) vars
 
 {-|
-    Devuelve el coeficiente del monomio \(x^j) de una expresion algebraica (\u\), siempre y cuando \(u\) sea un polinomio
-    sobre \(x\). Si \(u\) no es un polinomio sobre \(x\) entonces devuelve un error.
+    Devuelve el coeficiente del monomio \(x^j\) de una expresion algebraica \(u\), siempre y cuando \(u\) sea un polinomio
+    sobre \(x\). Si \(u\) no es un polinomio sobre \(x\) entonces se lo toma como una expresión constante, por ende @coefficient u x 0 = u@
+    y @coefficient u x j = 0@ para @j/=0@
 
     Ejemplos:
 
-    > coefficient 0 x 21 = 0 
-    > coefficient (x^2 + 2*x + 1) x 2 = 1
-    > coefficient (y*x**2 + 2*y*x) x 1 = 2*y
-    > coefficient (y*x**2 + 2*y*x) y 1 = x**2 + 2*x
-    > coefficient (e^x) x 2 = Undefined: e^x no es un monomio sobre x
+    >>> coefficient 0 x 21
+    0 
+    
+    >>> coefficient (x**2 + 2*x + 1) x 2
+    1
+    
+    >>> coefficient (y*x**2 + 2*y*x) x 1
+    2*y
+    
+    >>> coefficient (y*x**2 + 2*y*x) y 1
+    x^2+2*x
+    
+    >>> coefficient (exp(x)) x 2
+    0
+
+    >>> coefficient (exp(x)) x 0
+    e^x
 -}
 coefficient :: Expr -> Expr -> Integer -> Expr
 coefficient u@(Add us) x j
