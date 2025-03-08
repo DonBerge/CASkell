@@ -34,25 +34,10 @@ module Expr.Structure
     -- *** Trigonometricas
     pattern Sin,
     pattern Cos,
-    pattern Tan,
-    pattern Sec,
-    pattern Csc,
-    pattern Cot,
     -- *** Trigonometricas inversas
     pattern Asin,
     pattern Acos,
     pattern Atan,
-    -- *** Hiperbolicas
-    pattern Sinh,
-    pattern Cosh,
-    pattern Tanh,
-    pattern Sech,
-    pattern Csch,
-    pattern Coth,
-    -- *** Hiperbolicas inversas
-    pattern Asinh,
-    pattern Acosh,
-    pattern Atanh,
     -- *** Derivadas e integrales
     pattern Derivative,
     pattern Integral,
@@ -153,18 +138,6 @@ pattern Sin x <- (matchUnaryFun "Sin" -> Just x)
 pattern Cos :: Expr -> Expr
 pattern Cos x <- (matchUnaryFun "Cos" -> Just x)
 
-pattern Tan :: Expr -> Expr
-pattern Tan x <- (matchUnaryFun "Tan" -> Just x)
-
-pattern Cot :: Expr -> Expr
-pattern Cot x <- (matchUnaryFun "Cot" -> Just x)
-
-pattern Sec :: Expr -> Expr
-pattern Sec x <- (matchUnaryFun "Sec" -> Just x)
-
-pattern Csc :: Expr -> Expr
-pattern Csc x <- (matchUnaryFun "Csc" -> Just x)
-
 pattern Asin :: Expr -> Expr
 pattern Asin x <- (matchUnaryFun "Asin" -> Just x)
 
@@ -173,33 +146,6 @@ pattern Acos x <- (matchUnaryFun "Acos" -> Just x)
 
 pattern Atan :: Expr -> Expr
 pattern Atan x <- (matchUnaryFun "Atan" -> Just x)
-
-pattern Asinh :: Expr -> Expr
-pattern Asinh x <- (matchUnaryFun "Asinh" -> Just x)
-
-pattern Acosh :: Expr -> Expr
-pattern Acosh x <- (matchUnaryFun "Acosh" -> Just x)
-
-pattern Atanh :: Expr -> Expr
-pattern Atanh x <- (matchUnaryFun "Atanh" -> Just x)
-
-pattern Sinh :: Expr -> Expr
-pattern Sinh x <- (matchUnaryFun "Sinh" -> Just x)
-
-pattern Cosh :: Expr -> Expr
-pattern Cosh x <- (matchUnaryFun "Cosh" -> Just x)
-
-pattern Tanh :: Expr -> Expr
-pattern Tanh x <- (matchUnaryFun "Tanh" -> Just x)
-
-pattern Coth :: Expr -> Expr
-pattern Coth x <- Fun "Coth" (x :| [])
-
-pattern Sech :: Expr -> Expr
-pattern Sech x <- Fun "Sech" (x :| [])
-
-pattern Csch :: Expr -> Expr
-pattern Csch x <- Fun "Csch" (x :| [])
 
 pattern Derivative :: Expr -> Expr -> Expr
 pattern Derivative u x <- (matchAnyarityFun "Derivate" -> Just (u :| [x]))

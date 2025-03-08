@@ -88,10 +88,6 @@ integralTable f@(Fun _ (a:|[])) x
         integrateFun (Log x) = x * log x - x
         integrateFun (Sin x) = - cos x
         integrateFun (Cos x) = sin x
-        integrateFun (Tan x) = -log(cos x)
-        integrateFun (Sec x) = log(tan x + sec x)
-        integrateFun (Csc x) = -log(cot x + csc x)
-        integrateFun (Cot x) = log(sin x)
         integrateFun _ = undefinedExpr "Integral no aparece en la tabla de integrales"
 integralTable _ _ = undefinedExpr "Integral no aparece en la tabla de integrales"
 

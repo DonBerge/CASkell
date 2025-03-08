@@ -27,10 +27,6 @@ module PExpr (
     pattern Log,
     pattern Sin,
     pattern Cos,
-    pattern Tan,
-    pattern Cot,
-    pattern Sec,
-    pattern Csc,
     pattern Asin,
     pattern Acos,
     pattern Atan,
@@ -208,18 +204,6 @@ pattern Sin x = Fun "Sin" [x]
 
 pattern Cos :: PExpr -> PExpr
 pattern Cos x = Fun "Cos" [x]
-
-pattern Tan :: PExpr -> PExpr
-pattern Tan x = Fun "Tan" [x]
-
-pattern Cot :: PExpr -> PExpr
-pattern Cot x = Fun "Cot" [x]
-
-pattern Sec :: PExpr -> PExpr
-pattern Sec x = Fun "Sec" [x]
-
-pattern Csc :: PExpr -> PExpr
-pattern Csc x = Fun "Csc" [x]
 
 pattern Asin :: PExpr -> PExpr
 pattern Asin x = Fun "Asin" [x]

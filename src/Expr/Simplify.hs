@@ -373,21 +373,6 @@ simplifyFun (Cos x) = handlePeriod cases simplifyNegate x <|> return (Cos x)
       (_, Number 0) | r == 1 / 3 -> return $ Number $ 1 / 2
       (_, Number 0) | r == 1 / 2 -> return $ Number 0
       (_, _) -> Cos <$> (simplifyProduct [Number r, Pi] >>= simplifySum . (: [b]))
-simplifyFun (Tan x)
-  | mulByNeg x = simplifyNegate x >>= simplifyFun . Tan >>= simplifyNegate
-simplifyFun (Tan x) = handlePeriod cases return x <|> return (Tan x)
-  where
-    cases r b = case (r, b) of
-      (0, Number 0) -> return $ Number 0
-      (0, _) ->
-        if mulByNeg b
-          then simplifyNegate b >>= simplifyNegate . Tan
-          else return $ Tan b
-      (_, Number 0) | r == 1 / 6 -> return $ Number $ 1 / 3
-      (_, Number 0) | r == 1 / 4 -> return $ Number 1
-      (_, Number 0) | r == 1 / 3 -> simplifySqrt $ Number 3
-      (_, Number 0) | r == 1 / 2 -> fail "Tangente de pi/2"
-      (_, _) -> Tan <$> (simplifyProduct [Number r, Pi] >>= simplifySum . (: [b]))
 
 -- exponenciales
 simplifyFun (Exp (Log x)) =
@@ -404,10 +389,36 @@ simplifyFun (Exp x) = do
 
 -- logaritmos
 simplifyFun (Log (Number 1)) = return $ Number 0
--- simplifyFun (Log (Exp x)) = return x
 simplifyFun (Log x)
   | true $ isNegative x = fail $ "Logaritmo de un número negativo"
   | otherwise = return $ Log x
+
+-- funciones conocidas
+simplifyFun (Fun "Tan" [x]) = do
+  s <- simplifyFun $ Sin x
+  c <- simplifyFun $ Cos x
+  simplifyDiv s c
+simplifyFun (Fun "Csc" [x]) = simplifyFun (Fun "Sin" [x]) >>= simplifyDiv (Number 1)
+simplifyFun (Fun "Sec" [x]) = simplifyFun (Fun "Cos" [x]) >>= simplifyDiv (Number 1)
+simplifyFun (Fun "Cot" [x]) = simplifyFun (Fun "Tan" [x]) >>= simplifyDiv (Number 1)
+simplifyFun (Fun "Sinh" [x]) = do
+  e <- simplifyFun $ Exp x
+  e' <- simplifyNegate x >>= simplifyFun . Exp 
+  simplifySum [e, e'] >>= simplifyDiv (Number 2)
+simplifyFun (Fun "Cosh" [x]) = do
+  e <- simplifyFun $ Exp x
+  e' <- simplifyNegate x >>= simplifyFun . Exp 
+  simplifySum [e, e'] >>= simplifyDiv (Number 2)
+simplifyFun (Fun "Tanh" [x]) = do
+  s <- simplifyFun $ Sinh x
+  c <- simplifyFun $ Cosh x
+  simplifyDiv s c
+simplifyFun (Fun "Csch" [x]) = simplifyFun (Fun "Sinh" [x]) >>= simplifyDiv (Number 1)
+simplifyFun (Fun "Sech" [x]) = simplifyFun (Fun "Cosh" [x]) >>= simplifyDiv (Number 1)
+simplifyFun (Fun "Coth" [x]) = simplifyFun (Fun "Tanh" [x]) >>= simplifyDiv (Number 1)
+
+
+
 simplifyFun x = return x
 
 ------------------

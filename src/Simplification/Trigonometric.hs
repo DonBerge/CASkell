@@ -23,16 +23,6 @@ import Data.Function (on)
 -- >>> let y = symbol "y"
 -- >>> let z = symbol "z"
 
--- * Sustitucion de expresiones trigonometricas
-tanSubstitute :: Expr -> Expr
-tanSubstitute (Tan x) = let x' = tanSubstitute x in sin x' / cos x'
-tanSubstitute x = mapStructure tanSubstitute x
-
-unTanSubstitute :: Expr -> Expr
-unTanSubstitute (Div (Sin x) (Cos y))
-  | x==y = tan $ unTanSubstitute x
-unTanSubstitute x = mapStructure unTanSubstitute x
-
 -- * Expansion de expresiones trigonometricas
 
 -- |
@@ -302,8 +292,8 @@ rationalMap f x = f x
 -}
 simplifyTrig:: Expr -> Expr
 simplifyTrig x = let
-                  x1 = rationalize (tanSubstitute x)
+                  x1 = rationalize x
                   x2 = rationalMap trigExpand x1
                   x3 = rationalMap contractTrig x2
                  in
-                  unTanSubstitute (minimumBy (compare `on` trigMeasure) [x, x1, x2, x3])
+                  minimumBy (compare `on` trigMeasure) [x, x1, x2, x3]

@@ -105,19 +105,9 @@ derivate u x = makeUnevaluatedDerivative u x
 derivateTable :: Expr -> Expr
 derivateTable (Sin v) = cos v
 derivateTable (Cos v) = negate $ sin v
-derivateTable (Tan v) = 1 / (cos v ** 2)
-derivateTable (Cot v) = negate $ 1 + cot v ** 2
-derivateTable (Sec v) = tan v * sec v
-derivateTable (Csc v) = negate $ cot v * csc v
 derivateTable (Asin v) = 1 / sqrt (1 - v ** 2)
 derivateTable (Acos v) = negate $ 1 / sqrt (1 - v ** 2)
 derivateTable (Atan v) = 1 / (1 + v ** 2)
-derivateTable (Asinh v) = 1 / sqrt (1 + v ** 2)
-derivateTable (Acosh v) = 1 / sqrt (v ** 2 - 1)
-derivateTable (Atanh v) = 1 / (1 - v ** 2)
-derivateTable (Sinh v) = cosh v
-derivateTable (Cosh v) = sinh v
-derivateTable (Tanh v) = 1 / (cosh v ** 2)
 derivateTable (Exp v) = exp v
 derivateTable (Log v) = 1 / v
 -- Derivada desconocida, devolver un operador sin evaluar

@@ -82,7 +82,7 @@ instance Floating Expr where
     log = makeFun Log
     sin = makeFun Sin
     cos = makeFun Cos
-    tan = makeFun Tan
+    tan x = sin x / cos x
     asin = makeFun Asin
     acos = makeFun Acos
     atan = makeFun Atan
