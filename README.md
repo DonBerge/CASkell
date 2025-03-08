@@ -21,13 +21,21 @@ entero_dos = fromNumber 2
 entero_tres = (3 :: Expr)
 fraccion = fromNumber (21/19) -- fromNumber tiene mayor precedencia que '/' o cualquier operador matematico
 ```
-
 Tambien hay soporte para numeros reales, pero seran tratados como fracciones si la misma no es muy grande. Los numeros reales tienen una presición fija y son sensibles a problemas de precisión
 ```haskell
 (0.33 :: Expr) -- 33/10, fracción pequeña
 (0.3333333 :: Expr) -- la fracción 3333333/10000000 es muy grande
 (0.11111222223333344444 :: Expr) -- 0.11111222223333345, numero redondeado
 ```
+
+El casting es necesario debido a que Haskell convierte los numeros a `Integer` o `Double` de manera predeterminada en vez de al tipo `Expr`. Aunque a veces no es necesario si ya se esta operando con `Expr`:
+
+```haskell
+x = symbol "x" -- x:: Expr
+u = x+2 -- El casting no es necesario
+```
+
+En general, si la expresión a utiliza solo numeros o funciones de numeros, entonces es necesario hacer un casting.
 
 #### Simbolos
 
@@ -206,7 +214,7 @@ Los modulos para simplificación se encuentran en la carpeta "Simplification", e
 - Expresiones con logaritmos
 
 A su vez, todos los modulos(salvo los de expresiones algebraicas) contienen 3 funciones para realizar la simplificaciones, el funcionamiento exacto varia de modulo en modulo pero por lo general operan de la siguiente forma:
-- Función expansión: Intenta hacer las expresiones mas grandes, puede llegar a formar expresiones mas pequeñas gracias a trabaja junto a la autosimplificación:
+- Función expansión: Intenta hacer las expresiones mas grandes, puede llegar a formar expresiones mas pequeñas gracias a la autosimplificación:
     ```haskell
     -- Expansión algebraica
     expand((x + 1)*(x - 2) - (x - 1)*x) 
@@ -225,20 +233,22 @@ A su vez, todos los modulos(salvo los de expresiones algebraicas) contienen 3 fu
 
 - Función de simplificación: Racionaliza la expresión, intenta contraer el numerador y el denominador y cancela terminos usando la autosimplificación:
     ```haskell
-    *ejemplo de simplificación*
+    rationaliSimplify ((x+y)*(x-y)/(x**3-x*y**2)) = 1/x
     ```
 
-En general, la expansión no es la inversa ni de la contración ni de la simplificación, debido al proceso de autosimplificación
+En general, la expansión no es la inversa ni de la contración ni de la simplificación, debido al proceso de autosimplificación:
 ```haskell
-expExpand (expContract (exp(x)**2)) = exp(x)**2 -- La expansión anulo la contración
+expExpand (expContract (exp(x)**2)) = exp(x)**2 
+-- La expansión anuló la contración
+
 expExpand (expContract (exp(x)**2- exp(2*x)))
 =>(contrae a)
-exp(2*x) - exp(2*x)
+expExpand (exp(2*x) - exp(2*x))
 =>(autosimplifica a)
-0
+expExpand 0
 =>(expande a)
 0
--- La expansión no anulo la contración
+-- La expansión no anuló la contración
 ```
 
 
@@ -258,8 +268,8 @@ Es realizada por los modulos `Simplification.Trigonometric`:
 #### Simplificación de exponenciales
 Es realizada por el modulo `Simplification.Exponential` aplicando las siguientes propiedades:
 
-1. `exp(x+y) = exp(x)*exp(y)`
-2. `exp(x*y)= exp(x)^y`
+1. $exp(x+y) = exp(x)*exp(y)$
+2. $exp(xy)= exp(x)^y, \quad y \in \mathbb{Z}$
 
 - Expansión: Realizada por `expExpand`, aplicando las propiedades 1 y 2 de izquierda a derecha.
 - Contración: Realizada por `expContract` aplicando las propiedades 1 y 2 de derecha a izquierda.
@@ -268,8 +278,8 @@ Es realizada por el modulo `Simplification.Exponential` aplicando las siguientes
 #### Simplificación de logaritmos
 Es realizada por el modulo `Simplification.Logarithm` aplicando las siguientes propiedades:
 
-1. `log(x*y) = log(x) + log(y)`
-2. `log(x^y) = y*log(x)`
+1. $\log(xy) = \log(x) + \log(y), \quad x,y \in \mathbb{R^+}$
+2. $\log(x^n) = n*log(x), \quad x \in \mathbb{R^+}$
 
 - Expansión: Realizada por `logExpand`, aplicando las propiedades 1 y 2 de izquierda a derecha.
 - Contración: Realizada por `logContract` aplicando las propiedades 1 y 2 de derecha a izquierda.
@@ -461,5 +471,36 @@ Mas información sobre logica ternaria: <https://en.wikipedia.org/wiki/Three-val
 
 
 ## 6. Testing y documentación
+
+Las funciones dentro del código cuentan con comentarios explicando la funcionalidad y el propósito. Junto con los comentarios se encuentran ejemplos de como se comporta la función.
+
+```haskell
+{-|
+      Utiliza las reglas de derivación para calcular la derivada de una expresión con respecto a una variable dada.
+
+      Las reglas de derivación utilizadas son:
+  
+      * Derivada de una constante: \(\dfrac{d}{dx}c = 0\)
+      * Regla de la suma: \(\dfrac{d}{dx}\sum u_i = \sum \dfrac{du_i}{dx}\)
+
+      ...
+
+      === Ejemplos:
+      >>> derivate (x**2 + 2*x + 1) x
+      2*x+2
+      >>> derivate (sin x) x
+      Cos(x)
+
+      ...
+-}
+derivate u x = ...
+```
+
+Estos comentarios pueden usarse para generar documentación del proyecto con `haddock`. Usando `make make-docs` se puede generar la documentación del codigo sin abrirla y usando `make open-docs` se puede generar la documentación y abrirla en el navegador web.
+
+*ejemplo de pagina de documentacion*
+
+Además, los ejemplos en la documentación se pueden usar para testear el funcionamiento correcto del proyecto. El comando `make test` lee los ejemplos de la documentación y los ejecuta para ver si obtienen el resultado esperado.
+
 
 ## 7. Bibilografia, librerías externas y referencias

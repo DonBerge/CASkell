@@ -44,7 +44,7 @@ makeUnevaluatedDerivative u x = function "Derivate" [u,x]
 --    * Regla de la potencia: \(\dfrac{d}{dx} v^w = w v^{w-1} \dfrac{dv}{dx} + \dfrac{dw}{dx}  v^w  \log v\)
 --    * Regla de la cadena: \(\dfrac{d}{dx} f(g(x)) = f'(g(x)) \cdot g'(x)\)
 --
---  Ademas se utliza la funciñon 'derivateTable' para calcular la derivada de funciones matemáticas comunes.
+--  Ademas se utliza la funcion 'derivateTable' para calcular la derivada de funciones matemáticas comunes.
 --
 --  Si al aplicar las reglas de derivación no se puede calcular la derivada, se devuelve una derivada sin evaluar.
 --
