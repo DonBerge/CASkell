@@ -58,8 +58,21 @@ trigSubstitute = bottomUp trigSubstitute'
 --        1. No es una suma;
 --
 --        2. No es un producto con un operando que es un entero.
+--
+--    === Ejemplos :
+--    
+--    >>> trigExpand (cos (2*x))
+--    2*Cos(x)**2-1
+--
+--    >>> trigExpand (sin (3*y))
+--    -4*sin(y)^3+3*sin(y)
+--
+--    >>> trigExpand (sin (x+y))
+--    Cos(y)*Sin(x)+Cos(x)*Sin(y)
+--
+--
 trigExpand :: Expr -> Expr
-trigExpand = trigExpand' . mapStructure trigExpand
+trigExpand = Algebraic.expand . trigExpand' . mapStructure trigExpand
   where
     trigExpand' (Sin x) = fst $ expandTrigRules x
     trigExpand' (Cos x) = snd $ expandTrigRules x
@@ -102,8 +115,7 @@ multipleAngleCos n x
   | n < 0 = multipleAngleCos (-n) x
   | otherwise =
       let x' = symbol "_"
-          f = cheby1 x' n
-       in substitute f x' (cos x)
+       in substitute (cheby1 x' n) x' (cos x)
 
 -- |
 --  Expansión de \(\sin(n \cdot x)\), utilizando los polinomios de Chebyshev de segunda clase.
@@ -115,8 +127,10 @@ multipleAngleSin n x
   | n < 0 = -(multipleAngleSin (-n) x)
   | otherwise =
       let x' = symbol "_"
-          f = cheby2 x' (n - 1)
-       in Algebraic.expand $ (substitute f x' (cos x)) * sin x
+          f = substitute (cheby2 x' (n - 1)) x' (cos x)
+          poly = mbPolyExpand f (1-cos x **2{-cos x ** 2-}) [cos x] (sin x ** 2) -- Sustituye (cos^2 x) por (1 - sin^2 x)
+
+       in Algebraic.expandMainOp $ poly * sin x
 
 -- |
 --    Generación de polinomios de Chebyshev de primera clase.

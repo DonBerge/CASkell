@@ -324,6 +324,29 @@ mbRemainder :: Expr -> Expr -> [Expr] -> Expr
 mbRemainder p q l = snd $ mbPolyDivide p q l
 
 
+{-|
+    Dados los polinomios multivariables \(u\) y \(v\), la lista de variables \(l\) y la expresión \(t\),
+    la función 'mbPolyExpand' calcula un polinomio \(p\) en función de \(v'\).
+
+    \[p = d_k v^k + d_{k-1} v^{k-1} + \dots + d_0\]
+
+    El polinomio \(p\) cumple la propiedad de ser igual a \(u\), luego de este calculo sustituye \(v\) en \(p\) por \(t\).
+
+    === Ejemplos :
+    >>> i = symbol "i"
+    >>> mbPolyExpand (a*i**3 + b*i**2 + c*i) (i**2) [i] (-1)
+    -b-a*i+c*i
+
+    >>> u = sin(x)**4 + sin(x)**3 + 2*sin(x)**2 * cos(x)**2 + cos(x)**4
+    >>> mbPolyExpand u (sin(x)**2 + cos(x)**2) [cos(x), sin(x)] 1
+    Sin(x)^3+1
+-}
+mbPolyExpand :: Expr -> Expr -> [Expr] -> Expr -> Expr
+mbPolyExpand 0 _ _ _ = 0
+mbPolyExpand u v l t = Algebraic.expand (t*(mbPolyExpand q v l t) + r)
+    where
+        (q,r) = mbPolyDivide u v l
+
 -- ** Pseudodivisión
 
 {-|

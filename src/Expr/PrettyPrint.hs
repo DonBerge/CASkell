@@ -72,7 +72,7 @@ import Classes.EvalResult (EvalResult(runEvalResult))
 prettyExpression :: Expr -> Doc ann
 prettyExpression (Undefined e) = pretty "Undefined:" <+> pretty e
 prettyExpression u@(Add us) =
-  let vars = variables u
+  let vars =  variables u
       (v :|| vs) = reverse $ sortBy (compare `on` (multidegree vars)) us -- ordenar los monomios segun el multigrado
    in cat $ prettyTerm v : map addSigns (toList vs)
   where
