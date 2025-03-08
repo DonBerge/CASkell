@@ -24,6 +24,7 @@ module Expr.Structure
     pattern Neg,
     pattern MonomialTerm,
     pattern Sqrt,
+    pattern Div,
     -- ** Simbolos y funciones conocidas
     -- *** Constantes
     pattern Pi,
@@ -217,6 +218,9 @@ pattern Neg x <- (matchMulByNegative -> Just x)
 
 pattern Sqrt :: Expr -> Expr
 pattern Sqrt x <- Pow x (Number 0.5)
+
+pattern Div :: Expr -> Expr -> Expr
+pattern Div n d <- ((\x -> (numerator x, denominator x)) -> (n, d))
 
 -- * Manipulación de la estructura de las expresiones
 
