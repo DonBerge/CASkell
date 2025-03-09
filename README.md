@@ -137,10 +137,10 @@ True -- Todas las expresiones indefinidas, son iguales entre si
 
 Las operaciones basicas ejecutan el proceso de **autosimplificación**, el cual realiza ciertas simplificaciones de manera automatica
 ```haskell
-x+x = 2*x
-x*x = x**2
-(x**2)**3 = x**6
-x + sin(pi/2) = 1 -- sin(pi/2) = 1
+x+x ==> 2*x
+x*x ==> x**2
+(x**2)**3 ==> x**6
+x + sin(pi/2) ==> x+1 -- sin(pi/2) = 1
 ```
 
 La autosimplificación tambien se encarga de manejar expresiones que contengan terminos indefinidos:
@@ -149,10 +149,10 @@ u = (1/0)::Expr -- Undefined: division por 0
 v = symbol "v"
 w = undefinedExpr "Undefined explicito"
 
-sin(w)+1 -- Undefined: Undefined explicito
-u**u -- Undefined: división por cero
-u+v+w -- Undefined: división por cero
-w+v+u -- Undefined: Undefined explicito, los indefinidos de mas a la izquierda tienen prioridad
+sin(w)+1 ==> Undefined: Undefined explicito
+u**u ==> Undefined: división por cero
+u+v+w ==> Undefined: división por cero
+w+v+u ==> Undefined: Undefined explicito -- Los indefinidos de mas a la izquierda tienen prioridad
 ```
 
 Las funciones encargadas de realizar el procedimiento de autosimplificación se encuentran en el modulo `Expr.Simplify`, aunque nunca se usan en la practica, ya que son ejecutadas automaticamente por los operadores matematicos.
@@ -161,15 +161,14 @@ Las funciones encargadas de realizar el procedimiento de autosimplificación se 
 
 La autosimplificación permite detectar ciertas expresiones prohibidas, por ejemplo, aquellas que incluyen una división por 0
 ```haskell
-1/(x-x) = Undefined: division por cero
-1/(log(x/x)) = Undefined: division por cero
+1/(x-x) ==> Undefined: division por cero
+1/(log(x/x)) ==> Undefined: division por cero
 ```
 
-La autosimplificación no siempre puede detectar casos como este, ya que el problema de determinar si una expresión matematica es igual a 0 es indecidible(la siguiente sección ilustra un caso donde la autosimplificación no detecta una división por 0). Aun asi, muchos de estos casos si son detectados por el proceso de autosimplificación.
 
 #### Limites de la autosimplificación
 
-La **autosimplifiación** no realiza todas las simplificaciones posibles, primero porque la lista de reglas de simplificación puede ser muy larga y segundo porque una autosimplificación con muchas reglas podria interferir con el funcionamiento de otras funciones(ejemplo, si la autosimplificación aplicara la propiedad distributiva siempre que pueda, seria imposible crear una función para factorizar polinomios):
+La **autosimplifiación** no realiza todas las simplificaciones posibles, primero porque la lista de reglas de simplificación puede ser muy larga y segundo porque una autosimplificación con muchas reglas podria interferir con el funcionamiento de otras funciones(ejemplo, si la autosimplificación aplicara la propiedad distributiva siempre que pudiera, seria imposible crear una función para factorizar polinomios):
 
 Esto hace que algunas expresiones queden sin simplificar:
 ```haskell
@@ -181,12 +180,70 @@ sin(x)**2 + cos(x)**2 -- la expresión no cambia
 Aun asi, muchas de estas simplificaciones pueden ser aplicadas usando los modulos especializados para simplificación.
 
 ```haskell
-trigExpand (sin(x)**2 + cos(x)**2) -- 1
-expExpand (1/(exp(2*x) - exp(x)**2)) -- Undefined: division por 0
-rationalSimplify ((x+1)**3 / (2*x**2+4*x+2)) -- x/2 + 1/2
+simplifyTrig (sin(x)**2 + cos(x)**2) ==> 1
+expExpand (1/(exp(2*x) - exp(x)**2)) ==> Undefined: division por 0
+rationalSimplify ((x+1)**3 / (2*x**2+4*x+2)) ==> x/2 + 1/2
 ```
 
 ### 2.3 Pattern Matching sobre Expr
+
+El tipo `Expr` soporta *Pattern Matching*, esto permite analizar una expresión en base a su estructura y modificarla de la manera que sea necesaria:
+
+```haskell
+-- Extrae el primer operando de una expresión
+primerOperando :: Expr -> Expr
+primerOperando (Add (x :|| _)) = x
+primerOperando (Mul (x :|| _)) = x
+primerOperando (Pow x _) = x
+primerOperando (Fun (x :| _)) = x
+primerOperando x = x
+```
+
+#### Tipos TwoList y NonEmpty
+Las expresiones en funciones se devuelven como un `NonEmpty Expr`, `NonEmpty a` representa una lista de elementos de tipo `a` que garantiza la existencia de al menos un elemento.
+```haskell
+data NonEmpty a = a :| [a]
+```
+
+Las expresiones en sumas y productos se devuelven en una `TwoList`, una `TwoList` es analoga a una `NonEmpty` pero garantiza la existencia de al menos 2 elementos.
+```haskell
+data TwoList a = a :|| NonEmpty a
+```
+
+Para el tipo `NonEmpty`: [consultar la documentación en Hackage](https://hackage.haskell.org/package/base/docs/Data-List-NonEmpty.html)
+
+### Patrones derivados
+Los patrones basicos son `Number`, `Symbol`, `Add`, `Mul`, `Pow`, `Fun` y `Undefined`. Existen patrones adicionales que se derivan a partir de los basicos.
+
+Para una implementación de los patrones, ver el archivo `Expr/Structure.hs`.
+
+#### Listado de patrones implementados
+| Patrón       | Descripción                                                                 |
+|--------------|-----------------------------------------------------------------------------|
+| `Number x`     | Matchea cualquier número `x`.                                                |
+| `Symbol s`     | Matchea cualquier símbolo de nombre `s`.                                                  |
+| `Add (x :\|\| y :\| xs )`        | Matchea una suma de dos o más expresiones. `x` es el primer elemento, `y` el segundo y `xs` es una lista con el resto de los argumentos.                                  |
+| `Mul (x :\|\| y :\| xs )`        | Matchea un producto de dos o más expresiones. `x` es el primer elemento, `y` el segundo y `xs` es una lista con el resto de los argumentos.                                |
+| `Pow x y`        | Matchea una potencia de base `x` y un exponente `y`.                            |
+| `Fun f (x :\| xs)`        | Matchea una función aplicada a una lista de uno o más argumentos. `x` es el primer argumento y `xs` una lista con los argumentos restantes |
+| `Undefined e`  | Matchea cualquier expresión indefinida, donde `e` es el error correspondiente  |
+| `Pi`         | Matchea el simbolo pi |
+| `Neg x`        | Matchea una expresión `x` multiplicada por un número negativo.|
+| `MonomialTerm u n` | Matchea expresiones de la forma `u**n`, donde `u` es una expresión cualquiera y `n` es un numero natural mayo a 1|
+| `Sqrt u`       | Matchea una expresión `u` elevada a `1/2` |
+`Div n d` | Matchea una división de numerador `n` y denominador `d`.
+| `Exp x`  | Matchea una expresión exponencial con base `e` y exponente `x`. |
+| `Log x`  | Matchea una expresión logarítmica con base `e` y argumento `x`. |
+| `Sin x`  | Matchea la función seno aplicada a `x`. |
+| `Cos x`  | Matchea la función coseno aplicada a `x`. |
+| `Tan x`  | Matchea la función tangente aplicada a `x`. |
+| `Asin x` | Matchea la función arco seno aplicada a `x`. |
+| `Acos x` | Matchea la función arco coseno aplicada a `x`. |
+| `Atan x` | Matchea la función arco tangente aplicada a `x`. |
+| `Derivative u x` | Matchea la derivada sin evaluar de `u` con respecto a `x`. |
+| `Integral u x` | Matchea la integral indefinida sin evaluar de `u` con respecto a `x`. |
+| `DefiniteIntegral u x a b` | Matchea la integral definida sin evaluar de `u` con respecto a `x` en el intervalo `[a, b]`. |
+
 
 ## 3. Modulos especiales
 Los modulos especiales se construyen a partir del tipo `Expr` y permiten realizar las siguientes 4 funcionalidades:

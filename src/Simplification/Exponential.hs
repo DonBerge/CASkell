@@ -15,7 +15,11 @@
 --
 -- La operacion que aplica las propiedades de izquierda a derecha se llama /expansión exponencial/ y la operación que las aplica de derecha a izquierda
 -- se llama /contracción exponencial/. Este modulo contiene definiciones tanto para la expansión como para la contracción de exponenciales.
-module Simplification.Exponential where
+module Simplification.Exponential (
+  expExpand,
+  contract,
+  simplify
+) where
 
 import Assumptions
 import Expr
@@ -84,24 +88,24 @@ separateIntegerTerms u
 --
 --    Ejemplos:
 --
---        >>> expand (exp (2*w*x + 3*y*z))
+--        >>> expExpand (exp (2*w*x + 3*y*z))
 --        (e^(w*x))^2*(e^(y*z))^3
 --
---        >>> expand (exp(x+y) ** 2)
+--        >>> expExpand (exp(x+y) ** 2)
 --        (e^x)^2*(e^y)^2
 --
---        >>> expand (1 / (exp(2*x) - exp(x)**2))
+--        >>> expExpand (1 / (exp(2*x) - exp(x)**2))
 --        Undefined: Division por cero
 -- 
---        >>> expand (exp((x+y)*(x-y)))
+--        >>> expExpand (exp((x+y)*(x-y)))
 --        e^(x^2)/e^(y^2)
 --
---        >>> expand (exp((x+y)**2))
+--        >>> expExpand (exp((x+y)**2))
 --        e^(x^2)*(e^(x*y))^2*e^(y^2)
 
 -- Primero se expanden las subexpresiones algebraicas
-expand :: Expr -> Expr
-expand (Algebraic.expandMainOp . mapStructure expand -> v) = case v of
+expExpand :: Expr -> Expr
+expExpand (Algebraic.expandMainOp . mapStructure expExpand -> v) = case v of
   Exp w -> expandRules w -- Si la expresión raiz es una exponencial, aplicar las propiedades de expansión
   _ -> v
   where

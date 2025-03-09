@@ -367,6 +367,9 @@ mbPolyExpand u v l t = Algebraic.expand (t*(mbPolyExpand q v l t) + r)
     where
         (q,r) = mbPolyDivide u v l
 
+-- polyExpand :: Expr -> Expr -> Expr -> Expr
+-- polyExpand u v t = mbPolyExpand u v (variables u `union` variables v) t
+
 -- ** Pseudodivisión
 
 {-|

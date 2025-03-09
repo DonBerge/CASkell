@@ -34,6 +34,7 @@ module Expr.Structure
     -- *** Trigonometricas
     pattern Sin,
     pattern Cos,
+    pattern Tan,
     -- *** Trigonometricas inversas
     pattern Asin,
     pattern Acos,
@@ -103,6 +104,16 @@ matchFun e = case runEvalResult e of
   Right (P.Fun s (x : xs)) -> Just (s, fmap return (x :| xs))
   _ -> Nothing
 
+matchDivision :: Expr -> Maybe (Expr, Expr)
+matchDivision e = case (numerator e, denominator e) of
+  (_, 1) -> Nothing
+  (n, d) -> Just (n, d) 
+
+matchTan :: Expr -> Maybe Expr
+matchTan (Fun "tan" (x :| [])) = Just x
+matchTan (Div (Sin x) (Cos y)) | x == y = Just x
+matchTan _ = Nothing
+
 pattern Number :: Number -> Expr
 pattern Number n <- (runEvalResult -> Right (P.Number n))
 
@@ -139,6 +150,9 @@ pattern Sin x <- (matchUnaryFun "sin" -> Just x)
 pattern Cos :: Expr -> Expr
 pattern Cos x <- (matchUnaryFun "cos" -> Just x)
 
+pattern Tan :: Expr -> Expr
+pattern Tan x <- (matchTan -> Just x)
+
 pattern Asin :: Expr -> Expr
 pattern Asin x <- (matchUnaryFun "asin" -> Just x)
 
@@ -167,7 +181,7 @@ pattern Sqrt :: Expr -> Expr
 pattern Sqrt x <- Pow x (Number 0.5)
 
 pattern Div :: Expr -> Expr -> Expr
-pattern Div n d <- ((\x -> (numerator x, denominator x)) -> (n, d))
+pattern Div n d <- (matchDivision -> Just (n, d))
 
 -- * Manipulación de la estructura de las expresiones
 
