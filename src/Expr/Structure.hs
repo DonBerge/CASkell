@@ -47,6 +47,7 @@ module Expr.Structure
     freeOf,
     operands,
     mapStructure,
+    bottomUp
   )
 where
 
@@ -190,3 +191,6 @@ mapStructure f (Mul xs) = mapM f xs >>= simplifyProduct . TL.toList
 mapStructure f (Pow b e) = (f b) ** (f e)
 mapStructure f (Fun s xs) = mapM f xs >>= simplifyFun . P.Fun s . NE.toList
 mapStructure _ x = x
+
+bottomUp :: (Expr -> Expr) -> Expr -> Expr
+bottomUp f = f . mapStructure (bottomUp f)

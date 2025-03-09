@@ -496,11 +496,38 @@ Las funciones dentro del código cuentan con comentarios explicando la funcional
 derivate u x = ...
 ```
 
-Estos comentarios pueden usarse para generar documentación del proyecto con `haddock`. Usando `make make-docs` se puede generar la documentación del codigo sin abrirla y usando `make open-docs` se puede generar la documentación y abrirla en el navegador web.
+Estos comentarios pueden usarse para generar documentación del proyecto con `haddock`. Usando `make docs` se puede generar la documentación del codigo sin abrirla y usando `make open-docs` se puede generar la documentación y abrirla en el navegador web.
 
-*ejemplo de pagina de documentacion*
+![*ejemplo de pagina de documentacion*](<imgs/ejemplo doc.png>)
+*La pagina de documentacion para el ejemplo anterior*
 
 Además, los ejemplos en la documentación se pueden usar para testear el funcionamiento correcto del proyecto. El comando `make test` lee los ejemplos de la documentación y los ejecuta para ver si obtienen el resultado esperado.
 
 
 ## 7. Bibilografia, librerías externas y referencias
+
+### Bibliografia
+- *Cohen, J. (2003). *Computer Algebra and Symbolic Computation: Elementary Algorithms*. A K Peters/CRC Press.*
+- *Cohen, J. (2003). Computer Algebra and Symbolic Computation: Mathematical Methods. A K Peters/CRC Press.S. R., & Labahn, G. (1992).*
+- *Meurer A, Smith CP, Paprocki M, Čertík O, Kirpichev SB, Rocklin M, Kumar A,
+Ivanov S, Moore JK, Singh S, Rathnayake T, Vig S, Granger BE, Muller RP,
+Bonazzi F, Gupta H, Vats S, Johansson F, Pedregosa F, Curry MJ, Terrel AR,
+Roučka Š, Saboo A, Fernando I, Kulal S, Cimrman R, Scopatz A. (2017) SymPy:
+symbolic computing in Python. *PeerJ Computer Science* 3:e103
+https://doi.org/10.7717/peerj-cs.103*
+
+
+### Librerías externas
+- `base`: Provee las funcionalidades básicas del lenguaje Haskell.
+- `pretty`: Provee herramientas para pretty-printing.
+- `exact-combinatorics`: Provee funciones para hacer calculos combinatorios.
+- `matrix`: Provee herramientas para trabajar con matrices.
+- `happy`: Provee un generador de analizadores sintácticos para Haskell, utilizado para construir el parser de expresiones.
+
+
+### Referencias
+- Happy User Guide: <https://www.haskell.org/happy/doc/html/>
+- Documentacion de PrettyPrinter: <https://hackage.haskell.org/package/pretty>
+- Wikipedia, Three-valued logic: <https://en.wikipedia.org/wiki/Three-valued_logic>
+- Sympy, un CAS implementado en Python. Usado como inspiración para el sistema de suposiciones ademas de una referencia de como deberian comportarse las funciones:
+<https://www.sympy.org/en/index.html>

@@ -93,6 +93,7 @@ library
                       matrix,
                       prettyprinter,
                       array,
+                      doctest,
                       exact-combinatorics
 
     -- Directories containing source files.
