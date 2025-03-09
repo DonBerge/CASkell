@@ -51,7 +51,6 @@
 --  Esta ultima gramatica es la que se utiliza en el PrettyPrint de las expresiones.
 module Expr.PrettyPrint
   ( pretty,
-    showTree
   )
 where
 
@@ -65,7 +64,6 @@ import Expr.Structure
 import Prettyprinter
 import Expr.PolyTools
 import Prelude hiding (reverse)
-import Classes.EvalResult (EvalResult(runEvalResult))
 
 -- * Pretty printing de los simbolos no terminales
 
@@ -116,9 +114,3 @@ instance Pretty Expr where
 
 instance Show Expr where
   show = show . pretty
-
-
-showTree :: Expr -> String
-showTree t = case runEvalResult t of
-                Left e -> "Undefined: " ++ e
-                Right e -> show e

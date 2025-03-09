@@ -86,7 +86,9 @@ coefficientMonomial u@(Mul us) x = foldl combine (u,0) $ fmap (`coefficientMonom
     where
         combine (c,m) (_,0) = (c,m)
         combine (_,_) (_,m) = (u / (x ** (fromInteger m)),m)
-coefficientMonomial u _ = (u,0) -- TODO: NO ESTOY SEGURO DE ESTO
+coefficientMonomial u x
+    | freeOf u x = (u,0)
+    | otherwise = (fail "la expresion no es un polinomio en la variable dada",0)
 
 {-|
     Devuelve el grado de una expresion algebraica \(u\) respecto a la variable \(x\).
@@ -101,12 +103,12 @@ coefficientMonomial u _ = (u,0) -- TODO: NO ESTOY SEGURO DE ESTO
     2
     >>> degree (x**2 + 2*y*x) y
     1
-    >>> degree (exp(x)) x
-    0
 -}
 degree :: Expr -> Expr -> Integer
 degree (Add us) x = maximum $ fmap (`degree` x) us
-degree u x = snd $ coefficientMonomial u x
+degree u x = case coefficientMonomial u x of
+                (Undefined e, _) -> error ("Undefined: " ++ e)
+                (_,m) -> m
 
 {-|
     Devuelve el multigrado de una expresion algebraica \(u\) respecto a una lista de variables \(l\).
@@ -126,7 +128,10 @@ degree u x = snd $ coefficientMonomial u x
     [0,0]
 -}
 multidegree :: [Expr] -> Expr -> [Integer]
-multidegree vars u = map (degree u) vars
+multidegree vars u = map (safeDegree u) vars
+    where
+        safeDegree (Add us) x = maximum $ fmap (`safeDegree` x) us
+        safeDegree u x = snd $ coefficientMonomial u x
 
 {-|
     Devuelve el coeficiente del monomio \(x^j\) de una expresion algebraica \(u\), siempre y cuando \(u\) sea un polinomio
@@ -151,7 +156,7 @@ multidegree vars u = map (degree u) vars
     0
 
     >>> coefficient (exp(x)) x 0
-    e^x
+    Undefined: la expresion no es un polinomio en la variable dada
 -}
 coefficient :: Expr -> Expr -> Integer -> Expr
 coefficient u@(Add us) x j

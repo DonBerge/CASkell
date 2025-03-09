@@ -29,7 +29,9 @@ module Expr.ExprType (
     lte,
     lt,
     gt,
-    gte
+    gte,
+    -- ** Muestreo de Expr
+    showTree
 ) where
 
 import Prelude hiding (const, exponent)
@@ -206,3 +208,8 @@ denominator = (=<<) denominator'
         --denominator' (Exp x)
         --    | mulByNeg x = simplifyNegate x >>= simplifyFun . Exp
         denominator' _ = return (Number 1)
+
+showTree :: Expr -> String
+showTree t = case runEvalResult t of
+                Left e -> "Undefined: " ++ e
+                Right e -> show e
