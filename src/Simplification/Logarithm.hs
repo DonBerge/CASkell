@@ -34,18 +34,18 @@ import Data.TwoList (partition)
 {-|
     Una expresión algebraica \(u\) esta en forma logaritmica expandida si el argumento de cada función logaritmica en \(u\):
     
-        1. No es un producto.
-        2. No es un exponente.
+        1. No es un producto de expresiones positivas.
+        2. No es un exponente con base positiva.
 
     Ejemplos:
 
-    >>> expand (log(x/y))
+    >>> logExpand (log(x/y))
     log(x)-log(y)
 
-    >>> expand (log(a*b*x*y))
+    >>> logExpand (log(a*b*x*y))
     log(a*b)+log(x)+log(y)
 
-    >>> expand (log((w*x)**a) + log(y**b * z))
+    >>> logExpand (log((w*x)**a) + log(y**b * z))
     a*(log(w)+log(x))+b*log(y)+log(z)
 -}
 logExpand :: Expr -> Expr
@@ -68,10 +68,10 @@ logExpand (mapStructure logExpand -> v) = case v of
 
     Ejemplos:
 
-    >>> contract (log(x)+log(y)+log(z))
+    >>> logContract (log(x)+log(y)+log(z))
     log(x*y*z)
 
-    >>> contract (2*log(a)*log(x))
+    >>> logContract (2*log(a)*log(x))
     log(x^log(a^2))
 -}
 logContract :: Expr -> Expr

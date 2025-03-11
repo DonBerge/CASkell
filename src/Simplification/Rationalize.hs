@@ -6,7 +6,7 @@
 -}
 module Simplification.Rationalize (
     rationalize,
-    rationalSimplify,
+    cancel,
 ) where
 
 import Expr
@@ -59,7 +59,7 @@ rationalizeSum u v = let
                             else (rationalizeSum (m*s) (n*r)) / (r*s)
 
 {-|
-  'rationalSimplify' comvierte una expresión en su forma racional simplificada
+  'cancel' comvierte una expresión en su forma racional simplificada
 
   Una expresión \(u\) esta en forma racional simplificada si:
 
@@ -74,17 +74,17 @@ rationalizeSum u v = let
 
   === Ejemplos:
 
-  >>> rationalSimplify $ (-4*a**2 + 4*b**2) / (8*a**2 - 16*a*b + 8*b**2)
+  >>> cancel $ (-4*a**2 + 4*b**2) / (8*a**2 - 16*a*b + 8*b**2)
   (a+b)/(-2*a+2*b)
 
-  >>> rationalSimplify $ (1/(1/a + c/(a*b))) + ((a*b*c+a*c**2)/((b+c)**2))
+  >>> cancel $ (1/(1/a + c/(a*b))) + ((a*b*c+a*c**2)/((b+c)**2))
   a
 
-  >>> rationalSimplify $ (2*a**3 + 22*a*b + 6*a**2 + 7*a + 6*a**2*b + 12*b**2 + 21*b) / (7*a**2 - 2*a**2*b - 5*a - 5*a*b**2 + 21*a*b - 15*b + 3*b**3)
+  >>> cancel $ (2*a**3 + 22*a*b + 6*a**2 + 7*a + 6*a**2*b + 12*b**2 + 21*b) / (7*a**2 - 2*a**2*b - 5*a - 5*a*b**2 + 21*a*b - 15*b + 3*b**3)
   (-2*a^2-6*a-4*b-7)/(2*a*b-7*a-b^2+5)
 -}
-rationalSimplify :: Expr -> Expr
-rationalSimplify u = let
+cancel :: Expr -> Expr
+cancel u = let
                         u' = rationalize u
                         n = Algebraic.expand $ numerator u'
                         d = Algebraic.expand $ denominator u'
