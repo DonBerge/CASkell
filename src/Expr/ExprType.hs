@@ -165,6 +165,7 @@ symbols = map symbol . words
 assume :: Expr -> [String] -> Expr
 assume u a = foldl (\x y -> x >>= assume' y) u a
     where
+        assume' "zero" (SymbolWithAssumptions _ _) = return $ Number 0
         assume' b (SymbolWithAssumptions y env) = return $ SymbolWithAssumptions y (setAssumption b env)
         assume' _ x = return x
 
