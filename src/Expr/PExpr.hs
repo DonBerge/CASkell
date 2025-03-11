@@ -95,42 +95,48 @@ instance Eq PExpr where
     (Fun a b) == (Fun c d) = a == c && b == d
     _ == _ = False
 
+-- | Orden de las expresiones
 instance Ord PExpr where
-    -- Simbolos
-    SymbolWithAssumptions a _ < x = Fun a [] < x
-    x < SymbolWithAssumptions a _ = x < Fun a []
-
     -- Constantes
+    -- Los numeros se ordenan de menor a mayor y aparecen antes que cualquier otra expresion
     Number a < Number b = a < b
     Number _ < _ = True
 
+    -- Simbolos
+    -- Los simbolos se comparan igual que las funciones, solo que son tratados como funciones sin argumentos
+    SymbolWithAssumptions a _ < x = Fun a [] < x
+    x < SymbolWithAssumptions a _ = x < Fun a []
+
     -- Productos
+    -- Los productos se comparan por el orden lexicografico inverso de sus factores
+    -- Para comparar una expresion que no es un producto con otra que si lo es, se la toma como un producto de un solo factor
     Mul _ < Number _ = False
     Mul a < Mul b = reverse a < reverse b
     u@(Mul _) < v = u < Mul [v]
 
 
     -- Potencias
-    Pow _ _ < Number _ = False
-    u@(Pow _ _) < v@(Mul _) = v>=u
-    Pow a b < Pow c d = if a/=c
+    Pow _ _ < Number _ = False      
+    u@(Pow _ _) < v@(Mul _) = v>=u -- Usar las reglas de comparacion de productos
+    Pow a b < Pow c d = if a/=c    -- Si las bases son distintas, se comparan las bases, sino los exponentes
                             then a < c
                             else b < d
-    u@(Pow _ _) < v = u < Pow v (Number 1)
+    u@(Pow _ _) < v = u < Pow v (Number 1) -- Al comparar con expresiones v que no son potencias, se toma v como v^1 y se compara usando
+                                           -- las reglas de potencias
 
     -- Sumas
     Add _ < Number _ = False
-    u@(Add _) < v@(Mul _) = v>=u
-    u@(Add _) < v@(Pow _ _) = v>=u
-    Add u < Add v = reverse u < reverse v
-    u@(Add _) < v = u < Add [v]
+    u@(Add _) < v@(Mul _) = v>=u           -- Usar las comparaciones de productos
+    u@(Add _) < v@(Pow _ _) = v>=u         -- Usar las comparaciones de potencias
+    Add u < Add v = reverse u < reverse v  -- Sino comparar por el orden lexicografico inverso
+    u@(Add _) < v = u < Add [v]            -- Tratar v como una suma unaria
 
     -- Funciones
-    Fun f xs < Fun g ys
-        | f /= g = f < g
+    Fun f xs < Fun g ys                    -- Comparar por orden lexicografico de los nombres o por orden
+        | f /= g = f < g                   -- lexicografico de los argumentos si los nombres son iguales
         | otherwise = xs < ys
 
-    u@(Fun _ _) < v = v>=u
+    u@(Fun _ _) < v = v>=u                 -- Usar las reglas de comparacion anteriores
 
     v >= u = not (v < u)
 
