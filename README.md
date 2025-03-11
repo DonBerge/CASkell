@@ -76,14 +76,50 @@ y = assume (symbol "y") ["negative"] -- y ahora es negativo
 v = u -- v = 0
 ```
 
-##### Preguntar por suposiciones
-*completar*
+Tambien es posible consultar si una expresión cumple una cierta supocisión usando las funciones del tipo `is{suposición}`. Estas devolveran 3 posibles valores `T`(Verdadero), `F`(Falso) o `U`(Desconocido).
+
+```haskell
+isPositive ((99::Expr)) ==> T
+isEven ((pi::Expr)) ==> F
+isNegative ((symbol "x")) ==> U -- Todos los simbolos se crean con suposiciones desconocidas
+```
+
+T,F y U son valores de verdad. Pero los operadores booleanos de Haskell no pueden usarse con estos valores. Por lo que es necesario usar los operadores especiales definidos.
+```haskell
+-- And logico
+T &&& T = T
+F &&& T = F
+T &&& U = U
+
+-- Or logico
+F ||| U = U
+T ||| U = T  -- U puede ser True o False, para cualquier valor posible el or devuelve True
+U ||| U = U
+
+-- Not logico
+not3 T = F
+not3 F = T
+not3 U = U
+```
+
+La siguiente tabla contiene un listado de suposiciones soportadas:
+
+| Suposicion | Asumir sobre un simbolo | Preguntar suposicion |
+|-----------|-----------|-----------|
+| positive  | `assume _ ["positive"]` | isPositive    |
+| negative  | `assume _ ["negative"]` | isNegative    |
+| zero      | `assume _ ["zero"]`     | isZero        |
+| even      | `assume _ ["even"]`     | isEven        |
+| integer   | `assume _ ["integer"]`  | isInteger     |
+| odd       | `assume _ ["odd"]`      | isOdd         |
+
+Por defecto los simbolos creados con `symbol` se supone que son numeros reales, de los cuales no se sabe el signo, 
 
 ##### El simbolo pi
 
 `pi` es un simbolo predefinido, por lo que es tenido en cuenta para ciertas simplificaciones:
 ```haskell
-0**pi = 0 -- pi es positivo
+0**pi = 0 -- pi es positivo, no es entero por lo que no es ni par ni impar
 sin(pi) = 0
 ```
 
@@ -165,7 +201,6 @@ La autosimplificación permite detectar ciertas expresiones prohibidas, por ejem
 1/(log(x/x)) ==> Undefined: division por cero
 ```
 
-
 #### Limites de la autosimplificación
 
 La **autosimplifiación** no realiza todas las simplificaciones posibles, primero porque la lista de reglas de simplificación puede ser muy larga y segundo porque una autosimplificación con muchas reglas podria interferir con el funcionamiento de otras funciones(ejemplo, si la autosimplificación aplicara la propiedad distributiva siempre que pudiera, seria imposible crear una función para factorizar polinomios):
@@ -182,7 +217,7 @@ Aun asi, muchas de estas simplificaciones pueden ser aplicadas usando los modulo
 ```haskell
 simplifyTrig (sin(x)**2 + cos(x)**2) ==> 1
 expExpand (1/(exp(2*x) - exp(x)**2)) ==> Undefined: division por 0
-rationalSimplify ((x+1)**3 / (2*x**2+4*x+2)) ==> x/2 + 1/2
+cancel ((x+1)**3 / (2*x**2+4*x+2)) ==> x/2 + 1/2
 ```
 
 ### 2.3 Pattern Matching sobre Expr
@@ -244,6 +279,25 @@ Para una implementación de los patrones, ver el archivo `Expr/Structure.hs`.
 | `Integral u x` | Matchea la integral indefinida sin evaluar de `u` con respecto a `x`. |
 | `DefiniteIntegral u x a b` | Matchea la integral definida sin evaluar de `u` con respecto a `x` en el intervalo `[a, b]`. |
 
+#### Orden de las expresiones en los patrones
+En patrones que representan operaciones conmutativas como `Add` y `Mul` las expresiones se colocan en un orden especifico. Esto facilita cosas como la comparación de expresiones, ya que `x+1` y `1+x` internamente siempre tendran el mismo orden. Sin embargo esto puede resultar una complicación a la hora de hacer pattern matching.
+```haskell
+match1 (Add ((Pow (Symbol x) 2) :|| 1 :| [])) = True
+match1 _ = False
+
+match2 (Add (1 :|| (Pow (Symbol x) 2) :| [])) = True
+match2 _ = False
+
+match1 (x**2+1) = False
+match1 (1+x**2) = False
+
+match2 (x**2+1) = True
+match2 (1+x**2) = True
+
+-- nota: match1 y match2 podrian reemplazarse por la funcion (==((symbol "x")**2+1)), si es que 'x' no requiere suposiciones
+```
+
+El orden de las expresiones es determinado por la instancia de `Ord` del tipo `PExpr`, ubicado en `Expr/PExpr.hs`.
 
 ## 3. Modulos especiales
 Los modulos especiales se construyen a partir del tipo `Expr` y permiten realizar las siguientes 4 funcionalidades:
@@ -270,7 +324,7 @@ Los modulos para simplificación permiten realizar algunas simplificaciones que 
 - Expresiones con exponenciales
 - Expresiones con logaritmos
 
-A su vez, todos los modulos(salvo los de expresiones algebraicas) contienen 3 funciones para realizar la simplificaciones, el funcionamiento exacto varia de modulo en modulo pero por lo general operan de la siguiente forma:
+A su vez, todos los modulos(salvo los de expresiones algebraicas) contienen 3 funciones para realizar simplificaciones, una función de expansión, una de contración y una de simplificación. El funcionamiento exacto varia de modulo en modulo pero por lo general operan de la siguiente forma:
 - Función de expansión: Intenta hacer las expresiones mas grandes, puede llegar a formar expresiones mas pequeñas gracias a la autosimplificación:
     ```haskell
     -- Expansión algebraica
@@ -285,12 +339,13 @@ A su vez, todos los modulos(salvo los de expresiones algebraicas) contienen 3 fu
 
 - Función de contración: Intenta hacer las expresiones mas pequeñas:
     ```haskell
+    contractTrig (2*sin(x)*cos(x)) = sin(2*x) -- Contración trigonometrica
     expContract (exp(2) * exp(5)) = exp(5) -- Contración de exponenciales
     ```
 
 - Función de simplificación: Racionaliza la expresión, intenta contraer el numerador y el denominador y cancela terminos usando la autosimplificación:
     ```haskell
-    rationaliSimplify ((x+y)*(x-y)/(x**3-x*y**2)) = 1/x
+    cancel ((x+y)*(x-y)/(x**3-x*y**2)) = 1/x -- Simplificacion algebraica
     ```
 
 En general, la expansión no es la inversa ni de la contración ni de la simplificación, debido al proceso de autosimplificación:
@@ -311,7 +366,7 @@ expExpand 0
 
 | Área de simplificación | Función de expansión |Función de contración | Función de simplificación | Modulo/s |
 |------------------------|----------------------|----------------------|------------------------|------------------------|
-| Algebraica             | `expand`             | No existe            | `rationalSimplify`     | `Simplification.Algebraic` y `Simplification.Rationalize` |
+| Algebraica             | `expand`             | No existe            | `cancel`               | `Simplification.Algebraic` y `Simplification.Rationalize` |
 | Trigonométrica         | `trigExpand`         | `contractTrig`       | `simplifyTrig`         | `Simplification.Trigonometric` |
 | Exponencial            | `expExpand`          | `expContract`        | `expSimplify`          | `Simplification.Exponential` |
 | Logarítmica            | `logExpand`          | `logContract`        | `logSimplify`          | `Simplification.Logarithm` |
@@ -355,7 +410,7 @@ integrate (f[x]) x = Integral(f(x), x) -- Integral desconocida
 ```
 
 ### 3.5 Parseo de expresiones
-El modulo `Expr` viene incluida con la función `parseExpr` para parsear convertir una cadena de texto en una expresión
+El modulo `Expr` viene incluida con la función `parseExpr` que convierte una cadena de texto en una expresión
 
 ```haskell
 parseExpr "x" -- Devuelve el simbolo x
@@ -391,31 +446,31 @@ La estructura del proyecto es la siguiente:
 |   |-- Calculus
 |   |   |-- Derivate.hs -- Derivación de expresiones
 |   |   |-- Integrate.hs -- Integración de expresiones
-|   |   |-- Utils.hs
+|   |   |-- Utils.hs     -- Funciones de utlidad usada por los modulos en la carpeta Calculus
 |   |-- Classes
 |   |   |-- Assumptions.hs -- Funciones para suposiciones
 |   |   |-- EvalResult.hs  -- Monada EvalResult
 |   |-- Data
-|   |   |-- Number.hs
+|   |   |-- Number.hs  -- Tipo 'Number', utilizado por las expresiones cuando operan con numeros puros
 |   |   |-- TriBool.hs -- Manejo de logica ternaria
-|   |   |-- TwoList.hs
+|   |   |-- TwoList.hs -- Tipo 'TwoList', que representa listas con 2 o mas elementos
 |   |-- Evaluate
-|   |   |-- Numeric.hs
+|   |   |-- Numeric.hs -- Evaluación numerica
 |   |-- Expr
-|   |   |-- Expr.hs
+|   |   |-- Expr.hs     -- Junta todos los modulos y los exporta como uno
 |   |   |-- ExprType.hs -- Definición del tipo Expr
 |   |   |-- Parser.y    -- Parser de expresiones
-|   |   |-- PExpr.hs    
-|   |   |-- PolyTools.hs -- Manejo de polinomios multivariables
+|   |   |-- PExpr.hs    -- Tipo 'PExpr', para manejar arboles de expansiones
+|   |   |-- PolyTools.hs -- Funciones para trabajar con expresiones polinomicas
 |   |   |-- PrettyPrint.hs -- Prettyprinting de expresiones
 |   |   |-- Simplify.hs -- Autosimplificación
 |   |   |-- Structure.hs -- Pattern matching de expresiones
 |   |-- Simplification
-|   |   |-- Algebraic.hs
-|   |   |-- Exponential.hs
-|   |   |-- Logarithm.hs
-|   |   |-- Rationalize.hs
-|   |   |-- Trigonometric.hs
+|   |   |-- Algebraic.hs      -- Expansion algebraica
+|   |   |-- Exponential.hs    -- Simplificacion de exponenciales
+|   |   |-- Logarithm.hs      -- Simplificacion de logaritmos
+|   |   |-- Rationalize.hs    -- Simplificacion algebraica
+|   |   |-- Trigonometric.hs  -- Simplificacion de funciones trigonometricas
 |-- CASkell.cabal
 |-- README.md
 ```
@@ -457,9 +512,9 @@ a/b+c-d = Add [
     ]
 ```
 
-Las funciones de autosimplificación operan con tipos `PExpr` y evaluan a una `Expr`, por ejemplo la función `simplifyPow` que realiza la simplificación de potencias.
+Las funciones de autosimplificación operan con tipos `PExpr` y evaluan a una `Expr`:
 ```haskell
-simplifyPow :: PExpr -> PExpr -> Expr
+simplifyPow :: PExpr -> PExpr -> Expr -- Autosimplificacion de potencias
 ```
 
 ### 5.3 Manejo de errores con monadas
@@ -475,16 +530,31 @@ El tipo `Expr` es simplemente una `PExpr` encapsulada en una monada `EvalResult`
 type Expr = EvalResult PExpr
 ```
 
-Los operadores matematicos se construyen utilizando la notación `do` y las funciones de autosimplificación, por ejemplo, la potenciación de expresiones:
+Los operadores matematicos se construyen utilizando la notación `do` y las funciones de autosimplificación:
 ```haskell
-(**): Expr -> Expr -> Expr
+(**): Expr -> Expr -> Expr -- Potencia de expresiones
 a ** b = do
-            a' <- a -- a' y b' son PExpr
-            b' <- b
+            a' <- a -- PExpr
+            b' <- b -- PExpr
             simplifyPow a b 
 ```
 
-Esto permite a los operadores matematicos detectar cuando trabajan con operadores indefinidos y actuar de manera acorde.
+Esto permite a los operadores matematicos detectar cuando trabajan con operadores indefinidos y propagar el error hacia futuros calculos.
+
+`EvalResult` tambien soporta la operación de choice(`<|>`), lo cual es util para cambiar el resultado de una operación con respuesta indefinida.
+```haskell
+integrate :: Expr -> Expr -> Expr
+integrate f x = integralTable f x
+                    <|> -- si integralTable devuelve undefined, evaluar la siguiente funcion
+                linearProperties f x
+                    <|> -- si linearProperties devuelve undefined, evaluar la siguiente funcion
+                substitutionMethod f x
+                    <|> -- y asi...
+                let g = Algebraic.expand f
+                in if f /= g
+                    then integrate g x 
+                    else makeUnevaluatedIntegral f x
+```
 
 ### 5.4 Suposiciones con logica ternaria
 La autosimplificación necesita poder realizar suposiciones sobre las expresiones para hacer o no hacer simplificaciones. Estas suposiciones pueden ser verdaderas o falsas, pero no siempre se puede asignar alguno de estos dos valores.
