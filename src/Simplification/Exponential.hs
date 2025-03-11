@@ -17,8 +17,8 @@
 -- se llama /contracción exponencial/. Este modulo contiene definiciones tanto para la expansión como para la contracción de exponenciales.
 module Simplification.Exponential (
   expExpand,
-  contract,
-  simplify
+  expContract,
+  expSimplify
 ) where
 
 import Assumptions
@@ -125,15 +125,15 @@ expExpand (Algebraic.expandMainOp . mapStructure expExpand -> v) = case v of
     
     Ejemplos:
 
-      >>> contract (exp(x) * (exp(x)+exp(y)))
+      >>> expContract(exp(x) * (exp(x)+exp(y)))
       e^(2*x)+e^(x+y)
 
-      >>> contract (exp(exp(x)) ** exp(y))
+      >>> expContract(exp(exp(x)) ** exp(y))
       e^(e^(x+y))
 
 -}
-contract :: Expr -> Expr
-contract (mapStructure contract -> v)
+expContract:: Expr -> Expr
+expContract(mapStructure expContract-> v)
   | mulOrPow v = contractRules v -- contraer exponenciales en productos o potencias
   | otherwise = v
     where
@@ -164,10 +164,10 @@ contract (mapStructure contract -> v)
 {-|
     Simplifica expresiones con exponenciales primero racionalizando la expresión y luego contrayendo el numerador y el denominador.
 -}
-simplify :: Expr -> Expr
-simplify u = let
+expSimplify :: Expr -> Expr
+expSimplify u = let
                 u' = rationalize u
-                n = contract $ numerator u'
-                d = contract $ denominator u'
+                n = expContract$ numerator u'
+                d = expContract$ denominator u'
              in
                 n / d

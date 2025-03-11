@@ -263,15 +263,15 @@ eval [] (2*sin(pi/4)) = 1.4142135623730951 -- sqrt 2
 eval [(x,2.2)] (7.8+x) = 10-- Puedes reemplazar los simbolos por valores numericos
 ```
 ### 3.2 Simplificación avanzada
-Los modulos para simplificación se encuentran en la carpeta "Simplification", estos permiten realizar la simplificación en 4 áreas:
+Los modulos para simplificación permiten realizar algunas simplificaciones que la autosimplificación por si sola no puede realizar. Estos modulos pueden operar con:
 
-- Expresiones algebraicas
+- Expresiones algebraicas(polinomios y expresiones racionales)
 - Expresiones trigonometricas
 - Expresiones con exponenciales
 - Expresiones con logaritmos
 
 A su vez, todos los modulos(salvo los de expresiones algebraicas) contienen 3 funciones para realizar la simplificaciones, el funcionamiento exacto varia de modulo en modulo pero por lo general operan de la siguiente forma:
-- Función expansión: Intenta hacer las expresiones mas grandes, puede llegar a formar expresiones mas pequeñas gracias a la autosimplificación:
+- Función de expansión: Intenta hacer las expresiones mas grandes, puede llegar a formar expresiones mas pequeñas gracias a la autosimplificación:
     ```haskell
     -- Expansión algebraica
     expand((x + 1)*(x - 2) - (x - 1)*x) 
@@ -307,40 +307,15 @@ expExpand 0
 0
 -- La expansión no anuló la contración
 ```
+#### Tabla de funciones de simplificación avanzada
 
+| Área de simplificación | Función de expansión |Función de contración | Función de simplificación | Modulo/s |
+|------------------------|----------------------|----------------------|------------------------|------------------------|
+| Algebraica             | `expand`             | No existe            | `rationalSimplify`     | `Simplification.Algebraic` y `Simplification.Rationalize` |
+| Trigonométrica         | `trigExpand`         | `contractTrig`       | `simplifyTrig`         | `Simplification.Trigonometric` |
+| Exponencial            | `expExpand`          | `expContract`        | `expSimplify`          | `Simplification.Exponential` |
+| Logarítmica            | `logExpand`          | `logContract`        | `logSimplify`          | `Simplification.Logarithm` |
 
-Los modulos que trabajan en cada área se destacan como sigue:
-#### Simplificación algebraica
-Es realizada por los modulos `Simplification.Algebraic` y `Simplification.Rationalize`
-- Expansión: Realizada por la función `expand`, expande expresiones aplicando la propiedad distributiva y el binomio de Newton.
-- Contracción: El equivalente a la contración algebraica es la factorización de polinomios, esta operación no esta soportada, sin embargo no es necesaria para la simplificación algebraica.
-- Simplificación: Realizada por `rationalSimplify`, la simplificación se realizar usando el maximo común divisor entre polinomios.
-
-#### Simplificación trigonometrica
-Es realizada por los modulos `Simplification.Trigonometric`:
-- Expansión: Realizada por la función `trigExpand`, expande los argumentos de los senos/cosenos aplicando la formula de la suma de angulos y la formula del angulo multiple.
-- Contración: Realizada por la función `trigContract`, contrae los productos entre senos y cosenos y elimina potencias enteras de senos/cosenos.
-- Simplificación: Realizada por `trigSimplify`, ver la documentación de la función para mas detalles de su funcionamiento.
-
-#### Simplificación de exponenciales
-Es realizada por el modulo `Simplification.Exponential` aplicando las siguientes propiedades:
-
-1. $exp(x+y) = exp(x)*exp(y)$
-2. $exp(xy)= exp(x)^y, \quad y \in \mathbb{Z}$
-
-- Expansión: Realizada por `expExpand`, aplicando las propiedades 1 y 2 de izquierda a derecha.
-- Contración: Realizada por `expContract` aplicando las propiedades 1 y 2 de derecha a izquierda.
-- Simplificación: Realizada por `expSimplifiy`, contrayendo numerador y denominador de una expresión racionalizada.
-
-#### Simplificación de logaritmos
-Es realizada por el modulo `Simplification.Logarithm` aplicando las siguientes propiedades:
-
-1. $\log(xy) = \log(x) + \log(y), \quad x,y \in \mathbb{R^+}$
-2. $\log(x^n) = n*log(x), \quad x \in \mathbb{R^+}$
-
-- Expansión: Realizada por `logExpand`, aplicando las propiedades 1 y 2 de izquierda a derecha.
-- Contración: Realizada por `logContract` aplicando las propiedades 1 y 2 de derecha a izquierda.
-- Simplificación: Realizada por `logSimplifiy`, contrayendo numerador y denominador de una expresión racionalizada.
 
 ### 3.3 Derivación
 Para derivar expresiones, importar el modulo `Calculus.Derivate`:

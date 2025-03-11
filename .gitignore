@@ -53,3 +53,4 @@ cabal.project.local
 cabal.project.local~
 
 .stack-work/
+examples/*

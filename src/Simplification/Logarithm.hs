@@ -48,8 +48,8 @@ import Data.TwoList (partition)
     >>> expand (log((w*x)**a) + log(y**b * z))
     a*(log(w)+log(x))+b*log(y)+log(z)
 -}
-expand :: Expr -> Expr
-expand (mapStructure expand -> v) = case v of
+logExpand :: Expr -> Expr
+logExpand (mapStructure logExpand -> v) = case v of
     Log w -> expandRules w
     _ -> v
     where
@@ -74,8 +74,8 @@ expand (mapStructure expand -> v) = case v of
     >>> contract (2*log(a)*log(x))
     log(x^log(a^2))
 -}
-contract :: Expr -> Expr
-contract (mapStructure contract -> v)
+logContract :: Expr -> Expr
+logContract (mapStructure logContract -> v)
     | sumOrMul v = contractRules v
     | otherwise = v
     where
@@ -101,3 +101,6 @@ contract (mapStructure contract -> v)
         -- Obtiene el producto de los argumentos de los logaritmos y la suma de los terminos que no tienen logaritmos
         combineSum (a,b) (Log x) = (a*x,b)
         combineSum (a,b) x = (a,b+x)
+
+logSimplify :: Expr -> Expr
+logSimplify = undefined
