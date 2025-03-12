@@ -2,11 +2,16 @@
 {-# OPTIONS_GHC -Wno-noncanonical-monad-instances #-}
 {-# OPTIONS_GHC -Wall #-}
 
+{-|
+    Module      : Expr.PExpr
+    Description : Definición de arboles de expresiones matemáticas puras.
+-}
 module PExpr (
     PExpr(..),
 
     
     -- * Entorno de suposiciones
+    module Assumptions,
     AssumptionsEnviroment(..),
     emptyAssumptions,
     -- ** Setters
@@ -16,8 +21,6 @@ module PExpr (
     setEven,
     setOdd,
     setInteger,
-
-    module Assumptions,
     -- * Patrones
     -- ** Simbolos
     pattern Pi,
@@ -29,21 +32,13 @@ module PExpr (
     pattern Cos,
     pattern Asin,
     pattern Acos,
-    pattern Atan,
-    pattern Sinh,
-    pattern Cosh,
-    pattern Tanh,
-    pattern Asinh,
-    pattern Acosh,
-    pattern Atanh
+    pattern Atan
 ) where
 
 import Data.Number
 
 
 import Assumptions
-
--- = Entorno de suposiciones
 
 -- | Entorno de suposiciones, contiene las suposiciones que se han hecho sobre un cierto tipo de datos
 data AssumptionsEnviroment = AssumptionsEnviroment {
@@ -77,7 +72,7 @@ setOdd o env = env { askOdd = o }
 setInteger :: TriBool -> AssumptionsEnviroment -> AssumptionsEnviroment
 setInteger i env = env { askInteger = i }
 
--- Las PExpre construyen a partir de un conjunto de simbolos y constantes numericas
+-- | Las PExpre construyen a partir de un conjunto de simbolos y constantes numericas
 data PExpr = Number Number 
                 | SymbolWithAssumptions String AssumptionsEnviroment
                 | Mul [PExpr] 
@@ -194,48 +189,39 @@ instance Assumptions PExpr where
     
     isOdd = not3 . isEven
 
+-- | Patron para simbolos que ignora las suposiciones
 pattern Symbol :: String -> PExpr
 pattern Symbol x <- SymbolWithAssumptions x _
 
+-- | Patron para la funcion exponencial
 pattern Exp :: PExpr -> PExpr
 pattern Exp x = Fun "exp" [x]
 
+-- | Patron para la funcion logaritmo
 pattern Log :: PExpr -> PExpr
 pattern Log x = Fun "log" [x]
 
+-- | Patron para la funcion seno
 pattern Sin :: PExpr -> PExpr
 pattern Sin x = Fun "sin" [x]
 
+-- | Patron para la funcion coseno
 pattern Cos :: PExpr -> PExpr
 pattern Cos x = Fun "cos" [x]
 
+-- | Patron para la funcion arcoseno
 pattern Asin :: PExpr -> PExpr
 pattern Asin x = Fun "asin" [x]
 
+-- | Patron para la funcion arcocoseno
 pattern Acos :: PExpr -> PExpr
 pattern Acos x = Fun "acos" [x]
 
+-- | Patron para la funcion arcotangente
 pattern Atan :: PExpr -> PExpr
 pattern Atan x = Fun "atan" [x]
 
-pattern Sinh :: PExpr -> PExpr
-pattern Sinh x = Fun "sinh" [x]
-
-pattern Cosh :: PExpr -> PExpr
-pattern Cosh x = Fun "cosh" [x]
-
-pattern Tanh :: PExpr -> PExpr
-pattern Tanh x = Fun "tanh" [x]
-
-pattern Asinh :: PExpr -> PExpr
-pattern Asinh x = Fun "asinh" [x]
-
-pattern Acosh :: PExpr -> PExpr
-pattern Acosh x = Fun "acosh" [x]
-
-pattern Atanh :: PExpr -> PExpr
-pattern Atanh x = Fun "atanh" [x]
-
+-- | Patron para el simbolo pi con suposiciones incluidas
 pattern Pi :: PExpr
 pattern Pi = SymbolWithAssumptions "pi" (AssumptionsEnviroment {
     askPositive = T,

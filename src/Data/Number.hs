@@ -35,8 +35,9 @@ maxDigits = 7
 toDouble :: Number -> Double
 toDouble (Number x) = fromRational x
 
+-- | Verifica si un 'Number' se imprime como fracción.
 printAsFraction :: Number -> Bool
-printAsFraction x = dn <= maxDigits && dd <= maxDigits && d/=1
+printAsFraction x = d/=1 && dn <= maxDigits && dd <= maxDigits
     where
         n = R.numerator $ fromNumber x
         d = R.denominator $ fromNumber x

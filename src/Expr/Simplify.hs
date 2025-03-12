@@ -411,8 +411,8 @@ simplifyFun (Fun "cosh" [x]) = do
   e' <- simplifyNegate x >>= simplifyFun . Exp 
   simplifySum [e, e'] >>= simplifyDiv (Number 2)
 simplifyFun (Fun "tanh" [x]) = do
-  s <- simplifyFun $ Sinh x
-  c <- simplifyFun $ Cosh x
+  s <- simplifyFun $ Fun "sinh" [x]
+  c <- simplifyFun $ Fun "cosh" [x]
   simplifyDiv s c
 simplifyFun (Fun "csch" [x]) = simplifyFun (Fun "sinh" [x]) >>= simplifyDiv (Number 1)
 simplifyFun (Fun "sech" [x]) = simplifyFun (Fun "cosh" [x]) >>= simplifyDiv (Number 1)
