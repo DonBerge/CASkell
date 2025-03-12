@@ -6,7 +6,7 @@
 -}
 module Simplification.Rationalize (
     rationalize,
-    cancel,
+    cancel
 ) where
 
 import Expr
@@ -65,17 +65,16 @@ rationalizeSum u v = let
 
     1. \(u\) es un polinomio multivariable con coeficientes enteros
     2. Sea \(n\) y \(d\) el numerador y el denominador de \(u\) entonces:
-
       2.1 \(n\) y \(d\) son polinomios multivariables con coeficientes enteros.
       2.2 \(d \neq 0\) y \(d \neq 1\).
-      2.3 \(n\) y \(d\) no tienen factores comunes.
+      2.3 \(n\) y \(d\) son coprimos.
       2.4 \(n\) y \(d\) estan normalizados.
     3. \(u=(-1)v\) donde \(v\) cumple la condición 2.
 
   === Ejemplos:
 
   >>> cancel $ (-4*a**2 + 4*b**2) / (8*a**2 - 16*a*b + 8*b**2)
-  (a+b)/(-2*a+2*b)
+  (-a-b)/(2*a-2*b)
 
   >>> cancel $ (1/(1/a + c/(a*b))) + ((a*b*c+a*c**2)/((b+c)**2))
   a
@@ -85,44 +84,62 @@ rationalizeSum u v = let
 -}
 cancel :: Expr -> Expr
 cancel u = let
-                        u' = rationalize u
-                        n = Algebraic.expand $ numerator u'
-                        d = Algebraic.expand $ denominator u'
-                        v = variables n `union` variables d
-                        ggcd = polyGCD n d v
-                        n' = recQuotient n ggcd v
-                        d' = recQuotient d ggcd v
-                    in
-                        simplifyNumberAndSign n' d' v
-    where
-        -- Obtener los coeficientes que sean numeros
-        numberCoefficientList (Number p) = [p]
-        numberCoefficientList (Mul ((Number p) :|| _)) = [p]
-        numberCoefficientList (Add us) = concatMap numberCoefficientList us
-        numberCoefficientList _ = [1]
+            u' = rationalize u
+            n = Algebraic.expand $ numerator u'
+            d = Algebraic.expand $ denominator u'
+            -- Variables en la expresion expresion
+            v = variables n `union` variables d
+            ggcd = polyGCD n d v
+            -- Dividir el numerador y el denominador por el gcd de ambos
+            n' = recQuotient n ggcd v
+            d' = recQuotient d ggcd v
+           in
+               cancelNumberAndSign n' d' v
 
-        -- signNormalized = normalized
+numberCoefficient :: Expr -> Number.Number
+numberCoefficient (Number p) = p
+numberCoefficient (Mul ((Number p) :|| _)) = p
+numberCoefficient _ = 1
 
-        simplifyNumbers _ 0 = (undefinedExpr "Division by zero", undefinedExpr "Division by zero")
-        simplifyNumbers 0 _ = (0,1)
-        simplifyNumbers n d = let
-                                c = numberCoefficientList n ++ numberCoefficientList d
-                                -- Obtener el lcm de los denominadores y el gcd de los numeradores
-                                (n',d') = foldr (\x -> bimap (gcd (Number.numerator x)) (lcm (Number.denominator x))) (0,1) c  -- n' is lcm of the denominators and d' is the gcd of the numerators
-                                c' = fromInteger n' / fromInteger d'
-                             in 
-                                (n / c', d / c')
-        
-        simplifySign n d v = let
-                                normn = normalized n v
-                                normd = normalized d v
-                                n' = if normn then n else negate n
-                                d' = if normd then d else negate d
-                             in
-                                if normn == normd -- if both n and d had the same sign, do nothing otherwise negate the quotient
-                                    then n' / d'
-                                    else negate (n' / d')
-        simplifyNumberAndSign n d v = let
-                                        (n',d') = simplifyNumbers n d
-                                      in
-                                        simplifySign n' d' v
+-- Obtener los coeficientes que sean numeros
+numberCoefficientList :: Expr -> [Number.Number]
+numberCoefficientList (Number p) = [p]
+numberCoefficientList (Mul ((Number p) :|| _)) = [p]
+numberCoefficientList (Add us) = concatMap numberCoefficientList us
+numberCoefficientList _ = [1]
+
+-- | Elimina los coeficientes fraccionarios del numerador y del denominador
+-- Esto se consigue dividiendo el numerador y el denominador por la constante c
+-- c es el cociente entre el gcd de los numeradores de los coeficientes numericos y 
+-- el lcm de los denominadores de los coeficientes numericos de la expresion
+-- El resultado son un nuevo numerador y denominador, con coeficientes numericos enteros
+-- y coprimos entre si
+
+-- Este proceso de simplificacion obtiene el mismo resultado que obtendria 'rationalize'
+-- sin embargo cuando se trata de coeficientes numericos, el resultado de 'rationalize'
+-- es anulado por la autosimplificación.
+cancelNumbers :: Expr -> Expr -> (Expr, Expr)
+cancelNumbers _ 0 = (undefinedExpr "Division by zero", undefinedExpr "Division by zero")
+cancelNumbers 0 _ = (0,1)
+cancelNumbers n d = let
+                        c = numberCoefficientList n ++ numberCoefficientList d
+                        -- Obtener el el gcd de los numeradores y el lcm de los denominadores
+                        (n',d') = foldr (\x -> bimap (gcd (Number.numerator x)) (lcm (Number.denominator x))) (0,1) c
+                        c' = fromInteger n' / fromInteger d'
+                     in 
+                        (n / c', d / c')
+
+-- | Cancela signos de manera que el numerador y el denominador tengan signo positivo
+-- | o bien el numerador tiene signo negativo y el denominador positivo
+cancelSign :: Expr -> Expr -> [Expr] -> Expr
+cancelSign n d v = let
+                        mlcm = numberCoefficient $ mostLeadingCoefficient d v  -- obtener el coeficiente numerico principal del denominador
+                        negd = signum mlcm == -1
+                     in if negd
+                            then (-n) / (-d)
+                            else n / d 
+cancelNumberAndSign :: Expr -> Expr -> [Expr] -> Expr
+cancelNumberAndSign n d v = let
+                                (n',d') = cancelNumbers n d
+                              in
+                                cancelSign n' d' v
