@@ -16,8 +16,6 @@ import Expr.ExprType
 import Expr.Structure
 
 import Math.Combinatorics.Exact.Binomial (choose)
-import Assumptions (true, Assumptions (isInteger))
-
 -- $setup
 -- >>> import Expr.PrettyPrint
 -- >>> x = symbol "x"
@@ -58,54 +56,35 @@ import Assumptions (true, Assumptions (isInteger))
 expand :: Expr -> Expr
 expand (Add xs) = expandFraction $ sum $ fmap expand xs
 expand (Mul xs) = foldr1 expandProduct $ fmap expand xs
-expand (Pow b e)
-    | Number f <- e = let
-                                    b' = expand b
-                                    (fl, m) = properFraction f
-                                 in 
-                                    expandProduct (expandPower b' fl) (b' ** (fromNumber m))
-    | otherwise = let
-                    b' = expand b
-                    e' = expand e
-                  in
-                    expandFraction $ b' ** e'
-expand u@(Fun _ _) = mapStructure expand u --construct $ Fun f $ fmap expand xs
-expand u = u
+expand (Pow b (Number f)) = let
+                              b' = expand b
+                              (fl, m) = properFraction f
+                            in 
+                               expandProduct (expandPower b' fl) (b' ** (fromNumber m))
+expand u@(Fun _ _) = mapStructure expand u
+expand u = expandFraction u
 
-{-|
-    Expansion utilizando la propiedad distributiva
-    \[
-        a(\sum b_i) = \sum a\cdot b_i
-    \]
--}
+-- | Expansion utilizando la propiedad distributiva
 expandProduct :: Expr -> Expr -> Expr
 expandProduct (Add rs) s = expand (sum $ fmap (`expandProduct` s) rs) -- auto simplificacion puede generar terminos no expandidos, hay que expandir de nuevo
 expandProduct r s@(Add _) = expandProduct s r
 expandProduct r s = expandFraction $ r * s 
 
-{-|
-    Expansion utilizando el binomio de Newton
-    \[
-        (a + b)^n = \sum_{k=0}^{n} \binom{n}{k} a^{n-k} b^k
-    \]
--}
-
+-- | Expansion utilizando el binomio de newton
 expandPower :: Expr -> Integer -> Expr
 expandPower u n
     | n < 0 = 1 / expandPower u (-n)
 expandPower _ 0 = 1
 expandPower u 1 = u
 expandPower (Add (f :|| rs)) n = let
-                                                rs' = sum rs
-                                              in
-                                                sum [expandProduct (cf k) (expandPower rs' (n-k)) | k <- [0..n]]
+                                    rs' = sum rs
+                                 in
+                                    sum [expandProduct (cf k) (expandPower rs' (n-k)) | k <- [0..n]]
     where
         cf k = (fromInteger $ choose n k) * f ** (fromInteger k)
 expandPower u n = u ** (fromInteger n)
 
-{-|
-    Expande el denominador de una expresion
--}
+-- | Expande el denominador de una expresion
 expandFraction :: Expr -> Expr
 expandFraction x = let
                     n = numerator x
@@ -130,6 +109,8 @@ expandMainOp (Mul xs) = foldr1 expandProduct' xs
         expandProduct' u (Add us) = sum $ fmap (u*) us
         expandProduct' u@(Add _) v = expandProduct' v u
         expandProduct' u v = u * v
-expandMainOp (Pow b e)
-    | Number f <- e, true (isInteger f) = expandPower b (toInteger f)
-expandMainOp u = u
+expandMainOp (Pow b (Number f)) = let
+                                    (fl, m) = properFraction f
+                                  in 
+                                    (expandPower b fl) * (b ** (fromNumber m))
+expandMainOp u = expandFraction u
