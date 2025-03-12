@@ -8,6 +8,10 @@ docs:
 open-docs:
 	cabal haddock --haddock-internal --open
 
+setup:
+	stack setup
+	stack install
+
 test:
 	cabal repl --with-compiler=doctest
 

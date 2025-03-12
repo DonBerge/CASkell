@@ -2,6 +2,15 @@
 
 ## 1. Instalación del proyecto
 
+Para correr el proyecto, es necesario tener instalado Stack.
+
+Una vez instalado, el comando:
+```bash
+make setup
+```
+
+Ejecutara todos los comandos para compilar el proyecto.
+
 ## 2. Manejo basico de expresiones
 
 Todo uso del EDSL necesita del tipo `Expr`, el cual se importa con la libreria homonima
@@ -34,6 +43,13 @@ El casting es necesario debido a que Haskell convierte los numeros a `Integer` o
 x = symbol "x" -- x:: Expr
 u = x+2 -- El casting no es necesario
 ```
+
+Una solución es mediante el uso de `default`:
+```haskell
+default (Expr,Expr) -- Todos las expresiones numericas seran casteadas automaticamente a Expr
+```
+
+Pero esto hara que cualquier expresión dentro del contexto de ejecución/modulo de trabajo sea casteada automaticamente a Expr.
 
 En general, si la expresión a utiliza solo numeros o funciones de numeros, entonces es necesario hacer un casting.
 
