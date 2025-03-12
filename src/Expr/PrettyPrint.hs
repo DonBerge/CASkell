@@ -64,6 +64,7 @@ import Expr.Structure
 import Prettyprinter
 import Expr.PolyTools
 import Prelude hiding (reverse)
+import Data.Number (printAsFraction)
 
 -- * Pretty printing de los simbolos no terminales
 
@@ -100,7 +101,9 @@ prettyFactor (Exp x) = pretty "e" <> pretty "^" <> prettyBase x
 prettyFactor u = prettyBase u
 
 prettyBase :: Expr -> Doc ann
-prettyBase (Number n) = viaShow n
+prettyBase (Number n)
+  | printAsFraction n = parens $ viaShow n
+  | otherwise = viaShow n
 prettyBase Pi = pretty "π"
 prettyBase (Symbol s) = pretty s
 prettyBase u@(Exp _) = parens $ prettyFactor u -- Tratar e^x como un factor

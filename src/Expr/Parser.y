@@ -74,7 +74,7 @@ Expression :   Expression '+' Expression  { $1 + $3 }
            |   Number                     { fromNumber $1 }
            |   Symbol                     { mkSymbol $1 } -- Si se trata de un simbolo, dejar el nombre como esta
            |   Symbol '(' Arguments ')'   { mkFun $1 $3 }
-           |   error                      { undefinedExpr "Error de parseo" }
+           |   error                      { undefinedExpr "Error de parseo" } -- Si hay un error de parseo, devolver una expresion Undefined
 
 Arguments :    error                      { [undefinedExpr "Error de parseo"] }  -- Si hay un error al parsear los argumentos, se le pasa un argumento Undefined a la función. Autosimplificación se encarga de propagar el error.
           |    Expression                 { $1 : [] } 

@@ -1,6 +1,6 @@
 STACK = stack
 
-main: build test docs
+all: build test docs
 
 docs:
 	cabal haddock --haddock-internal

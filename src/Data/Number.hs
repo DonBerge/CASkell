@@ -36,7 +36,7 @@ toDouble :: Number -> Double
 toDouble (Number x) = fromRational x
 
 printAsFraction :: Number -> Bool
-printAsFraction x = dn <= maxDigits && dd <= maxDigits
+printAsFraction x = dn <= maxDigits && dd <= maxDigits && d/=1
     where
         n = R.numerator $ fromNumber x
         d = R.denominator $ fromNumber x
@@ -46,9 +46,8 @@ printAsFraction x = dn <= maxDigits && dd <= maxDigits
 instance Show Number where
 -- Mostrar un numero racional como fraccion si tiene pocos digitos, sino mostrarlo como un double
   show x
-    | printAsFraction x = if d == 1 
-                            then show n 
-                            else show n ++ "/" ++ show d
+    | true (isInteger x) = show n
+    | printAsFraction x = show n ++ "/" ++ show d
     | otherwise = show $ toDouble x
     where
         n = R.numerator $ fromNumber x
