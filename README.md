@@ -2,9 +2,9 @@
 
 ## 1. Instalación del proyecto
 
-Para correr el proyecto, es necesario tener instalado Stack.
+Para correr el proyecto, es necesario tener instalado Stack y Make.
 
-Una vez instalado, el comando:
+Una vez instalados, el comando:
 ```bash
 make setup
 ```
