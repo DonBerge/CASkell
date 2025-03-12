@@ -20,19 +20,25 @@
 module Expr.Simplify
   ( module Classes.EvalResult,
     module PExpr,
+    -- * Función de autosimplificación
     automaticSymplify,
-    simplifyProduct,
-    simplifySum,
-    simplifyDiv,
-    simplifySub,
+    -- * Autosimplificación de potencias
     simplifyPow,
     simplifyIntPow,
+    -- * Autosimplificación de productos
     simplifyNegate,
+    simplifyProduct,
+    simplifyDiv,
+    -- * Autosimplificación de sumas
+    simplifySum,
+    simplifySub,
+    -- * Autosimplificación de funciones
+    simplifyFun,
+    -- * Pattern matching y manipulación de la estructura
     operands,
     mulByNeg,
     freeOf,
     linearForm,
-    simplifyFun,
   )
 where
 
@@ -46,6 +52,9 @@ import Prelude hiding (const, exponent)
 -- $setup
 -- >>> let x = Number 0
 
+-- * Función de autosimplificación
+
+-- | Autosimplificación de arboles de expresiones
 automaticSymplify :: PExpr -> EvalResult PExpr
 automaticSymplify (Mul xs) = mapM automaticSymplify xs >>= simplifyProduct
 automaticSymplify (Add xs) = mapM automaticSymplify xs >>= simplifySum
@@ -89,20 +98,17 @@ term u
 -- | Extrae la base de una potencia
 base :: PExpr -> PExpr
 base (Number _) = error "Base of a number is not defined"
--- base (Exp _) = Exp 1
 base (Pow x _) = x
 base u = u
 
 -- | Extrae el exponente de una potencia
 exponent :: PExpr -> PExpr
 exponent (Number _) = error "Exponent of a number is not defined"
--- exponent (Exp x) = x
 exponent (Pow _ x) = x
 exponent _ = Number 1
 
 ---------------------------------------------------------------------------------------
 
--- SPOW-2
 
 -- * Autosimplificación de potencias
 
@@ -137,7 +143,7 @@ simplifyPow v w
   | otherwise = return (Pow v w) -- SPOW.5
 
 -- |
---    Simplificación de potencias con exponentes enteros
+--    Autosimplificación de potencias con exponentes enteros
 --
 --    Sea la expresión @v^n@ con @v/=0@ y @n@ entero, 'simplifyIntPow' se define con las siguientes reglas:
 --
@@ -167,6 +173,18 @@ simplifyIntPow (Pow r s) n = do
 simplifyIntPow (Mul rs) n = mapM (`simplifyIntPow` n) rs >>= simplifyProduct -- SINTPOW-5
 simplifyIntPow x n = return $ Pow x n -- SINTPOW-6
 
+{-|
+    La autosimplificación de productos se basa en las siguientes transformaciones:
+
+    1. Propiedad asociativa: \(a(bc) = (ab)c = abc\)
+    2. Propiedad conmutativa: \(ab = ba\)
+    3. Multiplicación de potencias de igual base: \(a^n a^m = a^{n+m}\)
+    4. Propiedad cancelativa: \(0\cdot a = 0\)
+    5. Existencia del neutro: \(1 \cdot a = a\)
+    6. Multiplicación de números: @(Number a) * (Number b) = Number (a*b)@
+    7. Productos con undefined son undefined: @a * undefined = undefined@
+    8. Distribución de constantes en sumas: \(a(b+c) = ab + ac\)
+-}
 simplifyProduct :: [PExpr] -> EvalResult PExpr
 simplifyProduct [] = return (Number 1)
 simplifyProduct [x] = return x -- SPRD.3
@@ -180,7 +198,7 @@ simplifyProduct xs
         [u, Add vs] | isConstant u -> Add . sort <$> mapM (simplifyProduct . reverse . (: [u])) vs
         _ -> return $ Mul $ sort xs'
 
--- simplifyProductRec = undefined
+
 -- SPRDREC-2
 simplifyProductRec :: [PExpr] -> EvalResult [PExpr]
 simplifyProductRec [] = return []
@@ -207,11 +225,26 @@ simplifyProductRec [u, v]
 simplifyProductRec ((Mul us) : vs) = simplifyProductRec vs >>= mergeProducts us
 simplifyProductRec (u : vs) = simplifyProductRec vs >>= mergeProducts [u]
 
+{-|
+    Autosimplificación de divisiones
+
+    Basada en esta propiedad: \( \dfrac{a}{b} = a \cdot b^{(-1)} \)
+-}
 simplifyDiv :: PExpr -> PExpr -> EvalResult PExpr
 simplifyDiv x y = do
   y' <- simplifyPow y (Number (-1))
   simplifyProduct [x, y']
 
+{-|
+    La autosimplificación de productos se basa en las siguientes transformaciones:
+
+    1. Suma de terminos semejantes: \(ax + bx = (a+b)x\)
+    2. Propiedad asociativa: \(a+(b+c) = (a+b)+c = a+b+c\)
+    3. Existencia del neutro: \(a+0 = a\)
+    4. Propiedad conmutativa: \(a+b = b+a\)
+    5. Suma de números: @Number a + Number b = Number (a+b)@
+    6. Sumas con undefined son undefined: @a + undefined = undefined@
+-}
 simplifySum :: [PExpr] -> EvalResult PExpr
 simplifySum [] = return (Number 0)
 simplifySum [x] = return x
@@ -251,6 +284,11 @@ simplifySumRec [u, v]
 simplifySumRec ((Add us) : vs) = simplifySumRec vs >>= mergeSums us
 simplifySumRec (u : vs) = simplifySumRec vs >>= mergeSums [u]
 
+{-|
+    Autosimplificación de restas
+
+    Basada en esta propiedad: \( a - b = a + (-1)\cdot b \)
+-}
 simplifySub :: PExpr -> PExpr -> EvalResult PExpr
 simplifySub x y = do
   y' <- simplifyProduct [y, Number (-1)]
@@ -276,6 +314,11 @@ mergeProducts = mergeOps simplifyProductRec
 mergeSums :: [PExpr] -> [PExpr] -> EvalResult [PExpr]
 mergeSums = mergeOps simplifySumRec
 
+{-|
+    Autosimplificacion de negaciones
+
+    Basada en esta propiedad: \( -a = -1 \cdot a \)
+-}
 simplifyNegate :: PExpr -> EvalResult PExpr
 simplifyNegate a = simplifyProduct [a, Number (-1)]
 
