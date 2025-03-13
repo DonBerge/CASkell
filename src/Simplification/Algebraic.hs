@@ -76,8 +76,8 @@ expandMainOp u = u
 
 -- | Expansion utilizando la propiedad distributiva
 expandProduct :: Expr -> Expr -> Expr
-expandProduct u@(Add _) s = mapStructure (expandProduct s) u
-expandProduct r s@(Add _) = expandProduct s r
+expandProduct r s@(Add _) = mapStructure (expandProduct r) s
+expandProduct r@(Add _) s = expandProduct s r
 expandProduct r s = r * s 
 
 -- | Expansion utilizando el binomio de newton

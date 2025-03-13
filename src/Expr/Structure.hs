@@ -171,15 +171,19 @@ pattern Integral u x <- (matchAnyarityFun "Integral" -> Just (u :| [x]))
 pattern DefiniteIntegral :: Expr -> Expr -> Expr -> Expr -> Expr
 pattern DefiniteIntegral u x a b <- (matchAnyarityFun "Definite_Integral" -> Just (u :| [x, a, b]))
 
+-- | Matchea expresiones de la forma \(x^n\), donde \(n\) es un entero mayor a 1
 pattern MonomialTerm :: Expr -> Integer -> Expr
 pattern MonomialTerm x n <- (matchMonomialTerm -> Just (x, n))
 
+-- | Matchea expresiones de la forma \(-x\)
 pattern Neg :: Expr -> Expr
 pattern Neg x <- (matchMulByNegative -> Just x)
 
+-- | Matchea expresiones de la forma \(x ** 0.5\)
 pattern Sqrt :: Expr -> Expr
 pattern Sqrt x <- Pow x (Number 0.5)
 
+-- | Matchea expresiones de la forma \(n/d\), donde \(d \neq 1\)
 pattern Div :: Expr -> Expr -> Expr
 pattern Div n d <- (matchDivision -> Just (n, d))
 
