@@ -7,7 +7,7 @@
 --    Module      : Expr.Structure
 --    Description : Manipulacion de la estructura de datos de las expresiones
 module Expr.Structure
-  ( 
+  (
     TwoList (..),
     NonEmpty (..),
 
@@ -107,7 +107,7 @@ matchFun e = case runEvalResult e of
 matchDivision :: Expr -> Maybe (Expr, Expr)
 matchDivision e = case (numerator e, denominator e) of
   (_, 1) -> Nothing
-  (n, d) -> Just (n, d) 
+  (n, d) -> Just (n, d)
 
 matchTan :: Expr -> Maybe Expr
 matchTan (Fun "tan" (x :| [])) = Just x
@@ -208,7 +208,7 @@ operands _ = []
 mapStructure :: (Expr -> Expr) -> Expr -> Expr
 mapStructure f (Add xs) = mapM f xs >>= simplifySum . TL.toList
 mapStructure f (Mul xs) = mapM f xs >>= simplifyProduct . TL.toList
-mapStructure f (Pow b e) = (f b) ** (f e)
+mapStructure f (Pow b e) = f b ** f e
 mapStructure f (Fun s xs) = mapM f xs >>= simplifyFun . P.Fun s . NE.toList
 mapStructure _ x = x
 

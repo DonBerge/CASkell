@@ -1,4 +1,3 @@
-{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 {-|
@@ -63,7 +62,7 @@ variables = map return . sort . fromRight [] . runEvalResult . sequence . variab
     where
     variables' :: Expr -> [Expr]
     variables' (Number _) = []
-    variables' (MonomialTerm v _) = variables' v
+    variables' (MonomialTerm v _) = [v]
     variables' (Add us) = foldl union [] $ fmap variables' us
     variables' (Mul us) = foldl union [] $ fmap varMuls us
     variables' u = [u]
@@ -87,7 +86,7 @@ coefficientMonomial (MonomialTerm base exponent) x
 coefficientMonomial u@(Mul us) x = foldl combine (u,0) $ fmap (`coefficientMonomial` x) us
     where
         combine (c,m) (_,0) = (c,m)
-        combine (_,_) (_,m) = (u / (x ** (fromInteger m)),m)
+        combine (_,_) (_,m) = (u / (x ** fromInteger m),m)
 coefficientMonomial u x
     | freeOf u x = (u,0)
     | otherwise = (fail "la expresion no es un polinomio en la variable dada",0)
@@ -227,7 +226,7 @@ leadingMonomial u [] = u
 leadingMonomial u (x:l) = let
                             m = degree u x
                             c = coefficient u x m
-                            xm = x ** (fromInteger m)
+                            xm = x ** fromInteger m
                             lm = leadingMonomial c l
                           in
                               lm * xm
@@ -277,7 +276,7 @@ recPolyDivide u v (x:tl) = let
                             then recPolyDivideLoopReturn q r
                             else let
                                     c = fst d
-                                    xmn = x ** (fromInteger $ m-n)
+                                    xmn = x ** fromInteger (m-n)
                                     q' = q + c*xmn
                                     r' = Algebraic.expand $ r - c*v*xmn
                                     m' = degree r' x
@@ -370,7 +369,7 @@ mbRemainder p q l = snd $ mbPolyDivide p q l
 -}
 mbPolyExpand :: Expr -> Expr -> [Expr] -> Expr -> Expr
 mbPolyExpand 0 _ _ _ = 0
-mbPolyExpand u v l t = Algebraic.expand (t*(mbPolyExpand q v l t) + r)
+mbPolyExpand u v l t = Algebraic.expand (t*mbPolyExpand q v l t + r)
     where
         (q,r) = mbPolyDivide u v l
 
@@ -427,21 +426,21 @@ pseudoDivision u v x = let
                         delta = max (m-n+1) 0
                         lcv = coefficient v x n -- Equivalente a lcv = leadingCoefficient v x, pero mas eficiente porque el grado ya esta computado
                         sigma = 0
-                       in 
+                       in
                         pseudoDivision' p s m n delta lcv sigma
     where
         pseudoDivision' p s m n delta lcv sigma
             | m >= n = let
                         lcs = coefficient s x m -- Equivalente a lcs = leadingCoefficient s x, pero mas eficiente porque el grado ya esta computado
-                        x' = x ** (fromInteger (m-n))
-                        p' = lcv * p + lcs * x' 
+                        x' = x ** fromInteger (m-n)
+                        p' = lcv * p + lcs * x'
                         s' = Algebraic.expand $ lcv * s - lcs * v * x'
                         sigma' = sigma+1
                         m' = degree s' x
                         in
                             pseudoDivision' p' s' m' n delta lcv sigma'
             | otherwise = let
-                            lcv' = lcv ** (fromInteger (delta-sigma))-- simplifyPow lcv (fromInteger $ delta-sigma)
+                            lcv' = lcv ** fromInteger (delta-sigma)-- simplifyPow lcv (fromInteger $ delta-sigma)
                             q = Algebraic.expand $ lcv'*p
                             r = Algebraic.expand $ lcv'*s
                           in
@@ -469,7 +468,7 @@ mostLeadingCoefficient = foldl leadingCoefficient
 normalize :: Foldable t => Expr -> t Expr -> Expr
 normalize 0 _ = 0
 -- Dividir por el coeficiente lider entre todos los coeficientes y expandir
-normalize u l = Algebraic.expand $ u / (mostLeadingCoefficient u l)
+normalize u l = Algebraic.expand $ u / mostLeadingCoefficient u l
 
 {-|
     Verifica si un polinomio multivariable esta normalizado
@@ -499,7 +498,7 @@ normalized u l = let
 -}
 polyContent :: Expr -> Expr -> [Expr] -> Expr
 polyContent u x r = let
-                      cfl = coefficientList u x 
+                      cfl = coefficientList u x
                     in
                         gcdList cfl r
 
@@ -540,9 +539,9 @@ polyGCD u v l = normalize (polyGCDRec u v l) l
         polyGCDRec u v l@(x:rest) = let
                                     contU = polyContent u x rest
                                     contV = polyContent v x rest
-                                    
+
                                     d = polyGCDRec contU contV rest
-                                    
+
                                     ppU = recQuotient u contU l -- primitive part of u
                                     ppV = recQuotient v contV l -- primitive part of v
 
@@ -550,14 +549,14 @@ polyGCD u v l = normalize (polyGCDRec u v l) l
 
                                     in
                                         Algebraic.expand $ d*rp
-        
+
         -- Computar los restos primitivos y obtener el penultimo resto
         gcdLoop _ _ ppU 0 = ppU
         gcdLoop x rest ppU ppV = let
                                     r = pseudoRem ppU ppV x
                                     ppR = polyPrimitivePart r x rest
                                  in
-                                    gcdLoop x rest ppV ppR 
+                                    gcdLoop x rest ppV ppR
 
 {-|
     Computa la secuencia de restos primitivos, la cual se utiliza para computar el maximo común divisor entre polinomios
@@ -582,9 +581,9 @@ remainderSequence u v (x:rest) = let
         remainderSequence' ppU 0 = [ppU, 0]
         remainderSequence' ppU ppV = let
                                         r = pseudoRem ppU ppV x
-                                        ppR = polyPrimitivePart r x rest 
+                                        ppR = polyPrimitivePart r x rest
                                      in
-                                        ppU : (remainderSequence' ppV ppR)
+                                        ppU : remainderSequence' ppV ppR
 
 {-|
     Calcula el maximo común divisor entre una lista de polinomios multivariables en \(\mathbb{Q}[x_1,x_2,\dots,x_n]\).
@@ -592,7 +591,7 @@ remainderSequence u v (x:rest) = let
 -}
 gcdList :: [Expr] -> [Expr] -> Expr
 gcdList [] _ = 0
-gcdList [p] l = normalize p l 
+gcdList [p] l = normalize p l
 gcdList (p:ps) r = let
                     ps' = gcdList ps r
                    in
@@ -614,7 +613,7 @@ lcmList us = let
                 n = Algebraic.expand $ product us
                 v = variables n
                 d = removeEachElement us
-                d' = (fmap (Algebraic.expand . product) d) `gcdList` v
+                d' = fmap (Algebraic.expand . product) d `gcdList` v
              in
                 recQuotient n d' v
             where

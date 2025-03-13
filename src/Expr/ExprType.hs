@@ -1,6 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 {-|
@@ -58,20 +56,20 @@ instance Num Expr where
               simplifyProduct [p',q']
 
     negate p = p >>= simplifyProduct . (:[Number (-1)])
-    
+
     abs x = do
               x' <- x
               case x' of
                 Number a -> return $ Number $ abs a
                 _ -> sqrt (x ** 2)
-    
+
     signum 0 = 0
     signum x = x / abs x
-        
+
 instance Fractional Expr where
     fromRational = return . Number . fromRational
 
-    recip p = p >>= (`simplifyPow` (Number (-1)))
+    recip p = p >>= (`simplifyPow` Number (-1))
 
 makeFun :: (PExpr -> PExpr) -> Expr -> Expr
 makeFun f = (=<<) (simplifyFun . f)
@@ -163,7 +161,7 @@ symbols :: String -> [Expr]
 symbols = map symbol . words
 
 assume :: Expr -> [String] -> Expr
-assume u a = foldl (\x y -> x >>= assume' y) u a
+assume = foldl (\x y -> x >>= assume' y)
     where
         assume' "zero" (SymbolWithAssumptions _ _) = return $ Number 0
         assume' b (SymbolWithAssumptions y env) = return $ SymbolWithAssumptions y (setAssumption b env)
@@ -187,7 +185,7 @@ numerator :: Expr -> Expr
 numerator = (=<<) numerator'
     where
         -- Multiplicación rapida de PExpr, ya que no es necesaria simplificación
-        numerator' (Number n) 
+        numerator' (Number n)
             | Number.printAsFraction n = fromInteger $ Number.numerator n
             | otherwise = return (Number n)
         numerator' (Mul xs) = mapM numerator' xs >>= simplifyProduct

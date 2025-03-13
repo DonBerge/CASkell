@@ -1,6 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
@@ -56,7 +54,7 @@ where
 
 import Data.Foldable (toList)
 import Data.Function
-import Data.TwoList (reverse, sortBy)
+import Data.TwoList (sortBy)
 
 import Expr.ExprType
 import Expr.Structure
@@ -72,7 +70,7 @@ prettyExpression :: Expr -> Doc ann
 prettyExpression (Undefined e) = pretty "Undefined:" <+> pretty e
 prettyExpression u@(Add us) =
   let vars =  variables u
-      (v :|| vs) = reverse $ sortBy (compare `on` (multidegree vars)) us -- ordenar los monomios segun el multigrado
+      (v :|| vs) = sortBy (flip compare `on` multidegree vars) us -- ordenar los monomios segun el multigrado
    in cat $ prettyTerm v : map addSigns (toList vs)
   where
     -- Agrega un operador + o - dependiendo del elemento
@@ -90,7 +88,7 @@ prettyTerm u
   where
     prettyMul (Mul us) = concatWith (surround (pretty "*")) $ fmap prettyFactor us
     prettyMul u = prettyFactor u
-    
+
     n = numerator u
     d = denominator u
 

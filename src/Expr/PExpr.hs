@@ -9,7 +9,7 @@
 module PExpr (
     PExpr(..),
 
-    
+
     -- * Entorno de suposiciones
     module Assumptions,
     AssumptionsEnviroment(..),
@@ -73,10 +73,10 @@ setInteger :: TriBool -> AssumptionsEnviroment -> AssumptionsEnviroment
 setInteger i env = env { askInteger = i }
 
 -- | Las PExpre construyen a partir de un conjunto de simbolos y constantes numericas
-data PExpr = Number Number 
+data PExpr = Number Number
                 | SymbolWithAssumptions String AssumptionsEnviroment
-                | Mul [PExpr] 
-                | Add [PExpr] 
+                | Mul [PExpr]
+                | Add [PExpr]
                 | Pow PExpr PExpr
                 | Fun String [PExpr]
              deriving Show
@@ -111,7 +111,7 @@ instance Ord PExpr where
 
 
     -- Potencias
-    Pow _ _ < Number _ = False      
+    Pow _ _ < Number _ = False
     u@(Pow _ _) < v@(Mul _) = v>=u -- Usar las reglas de comparacion de productos
     Pow a b < Pow c d = if a/=c    -- Si las bases son distintas, se comparan las bases, sino los exponentes
                             then a < c
@@ -139,7 +139,7 @@ instance Ord PExpr where
 
 instance Assumptions PExpr where
     isZero (SymbolWithAssumptions _ a) = askZero a
-    isZero u = liftBool $ u==(Number 0)
+    isZero u = liftBool $ u == Number 0
 
     isNegative (Number x) = isNegative x
     isNegative (SymbolWithAssumptions _ a) = askNegative a
@@ -169,7 +169,7 @@ instance Assumptions PExpr where
     isEven (Pow x y) = isEven x &&& isInteger y
     isEven Pi = F
     isEven _ = U
-    
+
     isOdd = not3 . isEven
 
 -- | Patron para simbolos que ignora las suposiciones
@@ -206,11 +206,11 @@ pattern Atan x = Fun "atan" [x]
 
 -- | Patron para el simbolo pi con suposiciones incluidas
 pattern Pi :: PExpr
-pattern Pi = SymbolWithAssumptions "pi" (AssumptionsEnviroment {
+pattern Pi = SymbolWithAssumptions "pi" AssumptionsEnviroment {
     askPositive = T,
     askNegative = F,
     askZero = F,
     askEven = F,
     askOdd = F,
     askInteger = F
-})
+}

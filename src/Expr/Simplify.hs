@@ -133,7 +133,7 @@ simplifyPow :: PExpr -> PExpr -> EvalResult PExpr
 -- SPOW-1 es manejada automaticamente por la monada EvalResult
 simplifyPow (Number 0) w -- SPOW-2
   | true $ isPositive w = return (Number 0) -- SPOW-2.1
-  | true $ (isNegative w ||| isZero w) = fail "Division por cero" -- SPOW-2.2
+  | true (isNegative w ||| isZero w) = fail "Division por cero" -- SPOW-2.2
 simplifyPow (Number 1) _ = return (Number 1) -- SPOW-3
 simplifyPow v w
   | true $ isInteger w = simplifyIntPow v w -- SPOW.4
@@ -159,7 +159,7 @@ simplifyPow v w
 --
 --    [@SINTPOW-6@]: Si ninguna regla aplica, entonces @'simplifyIntPow' v n = Pow v n@
 simplifyIntPow :: PExpr -> PExpr -> EvalResult PExpr
-simplifyIntPow (Number x) (Number n) = return $ Number $ x ^^ (toInteger n) -- SINTPOW-1
+simplifyIntPow (Number x) (Number n) = return $ Number $ x ^^ toInteger n -- SINTPOW-1
 simplifyIntPow _ (Number 0) = return (Number 1) -- SINTPOW-2
 simplifyIntPow x (Number 1) = return x -- SINTPOW-3
 simplifyIntPow (Pow r s) n = do
@@ -186,7 +186,7 @@ simplifyProduct :: [PExpr] -> EvalResult PExpr
 simplifyProduct [] = return (Number 1)
 simplifyProduct [x] = return x -- SPRD.3
 simplifyProduct xs
-  | (Number 0) `elem` xs = return (Number 0) -- SPRD.2
+  | Number 0 `elem` xs = return (Number 0) -- SPRD.2
   | otherwise = do
       xs' <- simplifyProductRec xs
       case xs' of -- SPRD.4
@@ -394,8 +394,8 @@ simplifyFun (Sin x) = handlePeriod cases simplifyNegate x <|> return (Sin x)
           then simplifyNegate b >>= simplifyNegate . Sin
           else return $ Sin b
       (_, Number 0) | r == 1 / 6 -> return $ Number $ 1 / 2
-      (_, Number 0) | r == 1 / 4 -> simplifySqrt (Number 2) >>= (`simplifyDiv` (Number 2))
-      (_, Number 0) | r == 1 / 3 -> simplifySqrt (Number 3) >>= (`simplifyDiv` (Number 2))
+      (_, Number 0) | r == 1 / 4 -> simplifySqrt (Number 2) >>= (`simplifyDiv` Number 2)
+      (_, Number 0) | r == 1 / 3 -> simplifySqrt (Number 3) >>= (`simplifyDiv` Number 2)
       (_, Number 0) | r == 1 / 2 -> return $ Number 1
       (_, _) -> Sin <$> (simplifyProduct [Number r, Pi] >>= simplifySum . (: [b]))
 simplifyFun (Cos x)
@@ -430,7 +430,7 @@ simplifyFun (Exp x) = do
 -- logaritmos
 simplifyFun (Log (Number 1)) = return $ Number 0
 simplifyFun (Log x)
-  | true $ isNegative x = fail $ "Logaritmo de un número negativo"
+  | true $ isNegative x = fail "Logaritmo de un número negativo"
   | otherwise = return $ Log x
 
 -- funciones conocidas
@@ -444,11 +444,11 @@ simplifyFun (Fun "sec" [x]) = simplifyFun (Fun "cos" [x]) >>= simplifyDiv (Numbe
 simplifyFun (Fun "cot" [x]) = simplifyFun (Fun "tan" [x]) >>= simplifyDiv (Number 1)
 simplifyFun (Fun "sinh" [x]) = do
   e <- simplifyFun $ Exp x
-  e' <- simplifyNegate x >>= simplifyFun . Exp 
+  e' <- simplifyNegate x >>= simplifyFun . Exp
   simplifySum [e, e'] >>= simplifyDiv (Number 2)
 simplifyFun (Fun "cosh" [x]) = do
   e <- simplifyFun $ Exp x
-  e' <- simplifyNegate x >>= simplifyFun . Exp 
+  e' <- simplifyNegate x >>= simplifyFun . Exp
   simplifySum [e, e'] >>= simplifyDiv (Number 2)
 simplifyFun (Fun "tanh" [x]) = do
   s <- simplifyFun $ Fun "sinh" [x]
