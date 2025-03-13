@@ -57,6 +57,7 @@ import Data.Char
   '^^'   { TokenPow }
   Number { TokenNumber $$ }
   Symbol { TokenSymbol $$ }
+  Undefined { TokenUndefined $$ }
 
 %left '+' '-'
 %left '*' '/'
@@ -75,6 +76,7 @@ Expression :   Expression '+' Expression  { $1 + $3 }
            |   Symbol                     { mkSymbol $1 } -- Si se trata de un simbolo, dejar el nombre como esta
            |   Symbol '(' Arguments ')'   { mkFun $1 $3 }
            |   error                      { undefinedExpr "Error de parseo" } -- Si hay un error de parseo, devolver una expresion Undefined
+           |   Undefined                  { undefinedExpr $1 } -- Si se trata de un error del lexer, devolver una expresion Undefined
 
 Arguments :    error                      { [undefinedExpr "Error de parseo"] }  -- Si hay un error al parsear los argumentos, se le pasa un argumento Undefined a la función. Autosimplificación se encarga de propagar el error.
           |    Expression                 { $1 : [] } 
@@ -94,6 +96,7 @@ data Token
   | TokenComma
   | TokenNumber Number
   | TokenSymbol String
+  | TokenUndefined String
   deriving (Show)
 
 capitalize :: String -> String
@@ -137,6 +140,7 @@ lexer ('*':cs) = TokenTimes : lexer cs
 lexer ('/':cs) = TokenDiv : lexer cs
 lexer ('(':cs) = TokenLParen : lexer cs
 lexer (')':cs) = TokenRParen : lexer cs
+lexer _ = [TokenUndefined "Error de parseo"] -- Si no se reconoce el token, devolver un token Undefined
 
 lexSymbolOrFunction cs = let
                            (s, cs') = span isAlpha cs

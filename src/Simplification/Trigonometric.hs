@@ -8,7 +8,7 @@
 module Simplification.Trigonometric (
   trigExpand,
   contractTrig,
-  simplifyTrig
+  trigSimplify
 ) where
 
 import Calculus.Utils
@@ -286,20 +286,20 @@ rationalMap f x = f x
   Simplificacion de funciones trigonometricas
 
   === Ejemplos:
-  >>> simplifyTrig (sin(x)**2 + cos(x)**2)
+  >>> trigSimplify (sin(x)**2 + cos(x)**2)
   1
 
-  >>> simplifyTrig (sin(x)**4 - 2*cos(x)**2*sin(x)**2 + cos(x)**4)
+  >>> trigSimplify (sin(x)**4 - 2*cos(x)**2*sin(x)**2 + cos(x)**4)
   cos(4*x)/2+1/2
   
-  >>> simplifyTrig (sin(x)*tan(x)/sec(x))
+  >>> trigSimplify (sin(x)*tan(x)/sec(x))
   sin(x)^2
 
-  >>> simplifyTrig ((sin(x) + sin(3*x) + sin(5*x) + sin(7*x))/(cos(x) + cos(3*x) + cos(5*x) + cos(7*x)) - sin(4*x)/cos(4*x))
+  >>> trigSimplify ((sin(x) + sin(3*x) + sin(5*x) + sin(7*x))/(cos(x) + cos(3*x) + cos(5*x) + cos(7*x)) - sin(4*x)/cos(4*x))
   0
 -}
-simplifyTrig:: Expr -> Expr
-simplifyTrig x = let
+trigSimplify:: Expr -> Expr
+trigSimplify x = let
                   x1 = rationalize x
                   x2 = rationalMap trigExpand x1
                   x3 = rationalMap contractTrig x2
