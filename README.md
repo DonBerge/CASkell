@@ -641,7 +641,8 @@ https://doi.org/10.7717/peerj-cs.103*
 - `exact-combinatorics`: Provee funciones para hacer calculos combinatorios.
 - `matrix`: Provee herramientas para trabajar con matrices.
 - `happy`: Provee un generador de analizadores sintácticos para Haskell, utilizado para construir el parser de expresiones.
-
+- `haddock`: Generación de la documentación del proyecto.
+- `doctest`: Realiza el testeo de las funciones a partir de los casos de prueba de la documentación.
 
 ### Referencias
 - Happy User Guide: <https://www.haskell.org/happy/doc/html/>
