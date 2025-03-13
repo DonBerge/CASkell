@@ -23,7 +23,7 @@ import qualified Simplification.Algebraic as Algebraic
 -- >>> c = symbol "c"
 
 {-|
-  'rationalize' combina los numeradores y denominadores de los operadores en una expresión
+  'rationalize' convierte una expresión en su forma racional
 
   >>> u = 1 + 1/(1+1/x)
   >>> rationalize u
@@ -38,15 +38,12 @@ import qualified Simplification.Algebraic as Algebraic
 -}
 rationalize :: Expr -> Expr
 rationalize (Pow x y) = (rationalize x) ** y
-rationalize (Mul xs) = product $ fmap rationalize xs
-rationalize u@(Add (f :|| _)) = let
-                                                g = rationalize f
-                                                h = rationalize (u - f)
-                                             in
-                                                rationalizeSum g h
+rationalize u@(Mul _) = mapStructure rationalize u
+rationalize (Add xs) = foldr (rationalizeSum . rationalize) 0 xs
 rationalize u = u
 
 -- Combina los denominadores de dos expresiones sumadas
+-- usando la propiedad: a/b + c/d = (ad + bc) / bd
 rationalizeSum :: Expr -> Expr -> Expr
 rationalizeSum u v = let
                         m = numerator u
@@ -59,20 +56,10 @@ rationalizeSum u v = let
                             else (rationalizeSum (m*s) (n*r)) / (r*s)
 
 {-|
-  'cancel' comvierte una expresión en su forma racional simplificada
-
-  Una expresión \(u\) esta en forma racional simplificada si:
-
-    1. \(u\) es un polinomio multivariable con coeficientes enteros
-    2. Sea \(n\) y \(d\) el numerador y el denominador de \(u\) entonces:
-      2.1 \(n\) y \(d\) son polinomios multivariables con coeficientes enteros.
-      2.2 \(d \neq 0\) y \(d \neq 1\).
-      2.3 \(n\) y \(d\) son coprimos.
-      2.4 \(n\) y \(d\) estan normalizados.
-    3. \(u=(-1)v\) donde \(v\) cumple la condición 2.
+  'cancel' comvierte una expresión en su forma racional canonica \(\frac{p}{q}\) donde 
+  \(p\) y \(q\) son polinomios coprimos.
 
   === Ejemplos:
-
   >>> cancel $ (-4*a**2 + 4*b**2) / (8*a**2 - 16*a*b + 8*b**2)
   (-a-b)/(2*a-2*b)
 
