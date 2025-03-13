@@ -1,6 +1,6 @@
 # CASkell: EDSL para el manejo simbolico de expresiones matematicas
 
-## 1. Instalación del proyecto
+## 1. Instalación y uso del proyecto
 
 Para correr el proyecto, es necesario tener instalado Stack y Make.
 
@@ -9,7 +9,31 @@ Una vez instalados, el comando:
 make setup
 ```
 
-Ejecutara todos los comandos para compilar el proyecto.
+Ejecutara todos los comandos para instalar las librerías necesarias.
+
+El comando:
+```
+make all
+```
+
+Compila el proyecto, crea la documentación y corre todos los tests incluidos en la misma.
+
+El comando:
+```
+stack exec -- ghci
+```
+
+Ejecuta `ghci` con todos los módulos del proyecto cargados. Los mismos se pueden importar usando la sentencia 'import'.
+
+Para cargar un archivo que use las librerías del proyecto, usar:
+```bash
+stack exec -- ghci <dirección del archivo>
+```
+
+Para abrir la documentación del proyecto, usar:
+```bash
+make open-docs
+```
 
 ## 2. Manejo basico de expresiones
 
