@@ -187,7 +187,7 @@ La siguiente tabla contiene un listado de suposiciones soportadas:
 
 ### 2.2 Combinando expresiones
 
-`Expr` es una instancia de las clases `Num`, `Fractional` y `Floating`, por lo que soporta las expresiones matematicas basicas y la aplicación de funciones.
+`Expr` es una instancia de las clases `Num`, `Fractional` y `Floating`, por lo que soporta las expresiones matematicas basicas y la aplicación de ciertas funciones.
 
 ```haskell
 x = symbol "x"
@@ -231,6 +231,8 @@ Undefined: division por cero == Undefined: logaritmo de un numero negativo
 True -- Todas las expresiones indefinidas, son iguales entre si
 ```
 
+*lista de funciones aceptadas*
+
 #### Autosimplificación
 
 Las operaciones basicas ejecutan el proceso de **autosimplificación**, el cual realiza ciertas simplificaciones de manera automatica
@@ -253,7 +255,7 @@ u+v+w ==> Undefined: división por cero
 w+v+u ==> Undefined: Undefined explicito -- Los indefinidos de mas a la izquierda tienen prioridad
 ```
 
-Las funciones encargadas de realizar el procedimiento de autosimplificación se encuentran en el modulo `Expr.Simplify`, aunque nunca se usan en la practica, ya que son ejecutadas automaticamente por los operadores matematicos.
+Las funciones encargadas de realizar el procedimiento de autosimplificación se encuentran en el archivo `src/Expr/Simplify.hs`. Estás funciones son utilizadas por los operadores matemáticos y no se usan con el tipo `Expr`.
 
 #### Detección de expresiones indefinidas
 
@@ -307,6 +309,8 @@ Las expresiones en sumas y productos se devuelven en una `TwoList`, una `TwoList
 data TwoList a = a :|| NonEmpty a
 ```
 
+El tipo `TwoList` se define en el archivo `src/Data/TwoList.hs`.
+
 Para el tipo `NonEmpty`: [consultar la documentación en Hackage](https://hackage.haskell.org/package/base/docs/Data-List-NonEmpty.html)
 
 ### Patrones derivados
@@ -359,14 +363,16 @@ match2 (1+x**2) = True
 -- nota: match1 y match2 podrian reemplazarse por la funcion (==((symbol "x")**2+1)), si es que 'x' no requiere suposiciones
 ```
 
-El orden de las expresiones es determinado por la instancia de `Ord` del tipo `PExpr`, ubicado en `Expr/PExpr.hs`.
+El orden de las expresiones es determinado por la instancia de `Ord` del tipo `PExpr`, ubicado en `src/Expr/PExpr.hs`.
 
 ## 3. Modulos especiales
-Los modulos especiales se construyen a partir del tipo `Expr` y permiten realizar las siguientes 4 funcionalidades:
+Los modulos especiales se construyen a partir del tipo `Expr` y permiten realizar las siguientes 6 funcionalidades:
 - Evaluación numerica
 - Simplificación avanzada
 - Derivación
 - Integración
+- Parseo de expresiones
+- PrettyPrinting de expresiones
 
 ### 3.1 Evaluación númerica
 Para evaluar númericamente una expresión, hay que importar el modulo `Evaluate.Numeric`
@@ -376,7 +382,7 @@ import Evaluate.Numeric
 Las expresiones podran evaluarse usando la función `eval`:
 ```haskell
 eval [] (2*sin(pi/4)) = 1.4142135623730951 -- sqrt 2
-eval [(x,2.2)] (7.8+x) = 10-- Puedes reemplazar los simbolos por valores numericos
+eval [(x,2.2)] (7.8+x) = 10-- Podes reemplazar los simbolos por valores numericos
 ```
 ### 3.2 Simplificación avanzada
 Los modulos para simplificación permiten realizar algunas simplificaciones que la autosimplificación por si sola no puede realizar. Estos modulos pueden operar con:
