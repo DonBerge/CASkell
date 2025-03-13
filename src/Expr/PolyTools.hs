@@ -7,6 +7,8 @@
 
     Este modulo contiene funciones para manipular polinomios en varias variables. Se incluyen funciones para
     calcular el maximo común divisor entre polinomios, el minimo común multiplo, la division de polinomios, entre otras.
+
+    Todas las funciones fueron extraidas del libro "Computer Algebra and Symbolic Computation: Mathematical Methods" de Joel S. Cohen.
 -}
 module Expr.PolyTools where
 import Prelude hiding (exponent)
