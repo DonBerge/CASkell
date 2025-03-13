@@ -48,7 +48,7 @@ data TriBool =
     | T -- ^ Verdadero
   deriving (
   Eq, 
-  Ord, -- ^ F <= U <= T 
+  Ord, 
   Show)
 
 -- = Eliminadores
