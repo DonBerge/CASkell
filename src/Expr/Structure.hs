@@ -185,13 +185,13 @@ pattern Div n d <- (matchDivision -> Just (n, d))
 
 -- * Manipulación de la estructura de las expresiones
 
+-- | Determina si una expresion es libre de otra
 freeOf :: Expr -> Expr -> Bool
 freeOf u t
   | u == t = False
-freeOf (Symbol _) _ = True
-freeOf (Number _) _ = True
 freeOf u t = all (`freeOf` t) $ operands u
 
+-- | Obtiene los operandos de una expresion
 operands :: Expr -> [Expr]
 operands (Add (x :|| y :| xs)) = x : y : xs
 operands (Mul (x :|| y :| xs)) = x : y : xs
@@ -199,6 +199,8 @@ operands (Pow b e) = [b, e]
 operands (Fun _ xs) = NE.toList xs
 operands _ = []
 
+-- | Aplica una operacion a los operandos de una expresion
+-- | en terminos de arboles, aplica una funcion a los hijos del nodo raiz
 mapStructure :: (Expr -> Expr) -> Expr -> Expr
 mapStructure f (Add xs) = mapM f xs >>= simplifySum . TL.toList
 mapStructure f (Mul xs) = mapM f xs >>= simplifyProduct . TL.toList
@@ -206,5 +208,6 @@ mapStructure f (Pow b e) = (f b) ** (f e)
 mapStructure f (Fun s xs) = mapM f xs >>= simplifyFun . P.Fun s . NE.toList
 mapStructure _ x = x
 
+-- | Aplica una operacion en todo el arbol de expresiones, de abajo hacia arriba
 bottomUp :: (Expr -> Expr) -> Expr -> Expr
 bottomUp f = f . mapStructure (bottomUp f)
