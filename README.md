@@ -54,12 +54,8 @@ entero_dos = fromNumber 2
 entero_tres = (3 :: Expr)
 fraccion = fromNumber (21/19) -- fromNumber tiene mayor precedencia que '/' o cualquier operador matematico
 ```
-Tambien hay soporte para numeros reales, pero seran tratados como fracciones si la misma no es muy grande. Los numeros reales tienen una presición fija y son sensibles a problemas de precisión
-```haskell
-(0.33 :: Expr) -- 33/10, fracción pequeña
-(0.3333333 :: Expr) -- la fracción 3333333/10000000 es muy grande
-(0.11111222223333344444 :: Expr) -- 0.11111222223333345, numero redondeado
-```
+
+##### ¿Porque es necesario el casting?
 
 El casting es necesario debido a que Haskell convierte los numeros a `Integer` o `Double` de manera predeterminada en vez de al tipo `Expr`. Aunque a veces no es necesario si ya se esta operando con `Expr`:
 
@@ -73,9 +69,18 @@ Una solución es mediante el uso de `default`:
 default (Expr,Expr) -- Todos las expresiones numericas seran casteadas automaticamente a Expr
 ```
 
-Pero esto hara que cualquier expresión dentro del contexto de ejecución/modulo de trabajo sea casteada automaticamente a Expr.
+Pero esto hara que cualquier expresión dentro del contexto de ejecución/modulo de trabajo sea casteada automaticamente a Expr, lo cual puede ser no deseable.
 
 En general, si la expresión a utiliza solo numeros o funciones de numeros, entonces es necesario hacer un casting.
+
+##### Numeros reales
+
+Tambien hay soporte para numeros reales, pero seran tratados como fracciones si la misma no es muy grande. Los numeros reales tienen una presición fija y son sensibles a problemas de precisión
+```haskell
+(0.33 :: Expr) ==> 33/10 -- fracción pequeña
+(0.3333333 :: Expr) ==> 0.3333333 -- la fracción 3333333/10000000 es muy grande
+(0.11111222223333344444 :: Expr) ==> 0.11111222223333345 -- numero redondeado
+```
 
 #### Simbolos
 
@@ -88,9 +93,17 @@ x = symbol "x"
 y = symbol "y"
 x+x+y -- 2*x+y
 ```
+
+Los símbolos se identifican por el string pasado a symbol, **NO** por el identificador asignado:
+
+```haskell
+x = symbol "qk"
+y = symbol "qk"
+x*y ==> qk^2 -- indentificadores distintos, mismo simbolo
+```
 ##### Suposiciones
 
-Se pueden realizar suposiciones sobre los simbolos(ejemplo, es positivo o es entero) usando la función `assume`
+Por defecto, se desconoce la naturaleza de los símbolos creados mediante 'symbol', solo se sabe que son números reales. Se pueden realizar suposiciones sobre los simbolos(ejemplo, es positivo o es entero) usando la función `assume`.
 
 ```haskell
 x = assume (symbol "x") ["even"]
@@ -100,12 +113,12 @@ n = assume (symbol "n") ["negative", "integer"]
 
 Ciertas suposiciones pueden hacer que se ejecuten o no se ejecuten ciertas simplificaciones:
 ```haskell
-(2*x)**n = 2**n * x**n -- Distribución de potencias con exponentes enteros
-(2*x)**y = (2*x)**y -- No hay distribución ya que 'y' no es entero
+(2*x)**n ==> 2**n * x**n -- Distribución de potencias con exponentes enteros
+(2*x)**y ==> (2*x)**y -- No hay distribución ya que 'y' no es entero
 
-0 ** y = 0 -- 0^x = 0 para y > 0
-0 ** n = Undefined: division por cero -- n < 0 
-0 ** x = 0^x -- No se sabe el signo de x, no se modifica la expresión
+0 ** y ==> 0 -- 0^x = 0 para y > 0
+0 ** n ==> Undefined: division por cero -- n < 0 
+0 ** x ==> 0^x -- No se sabe el signo de x, no se modifica la expresión
 ```
 
 Las suposiciones no son retroactivas:
@@ -116,6 +129,15 @@ y = assume (symbol "y") ["negative"] -- y ahora es negativo
 v = u -- v = 0
 ```
 
+Las suposiciones afectan a todas las expresiones, no solo a los símbolos. Las operaciones involucradas y las suposiciones sobre los operadores involucrados afectan a la suposicion de la expresión final:
+
+```haskell
+-- x positivo, y negativo
+x+2 -- positivo, x y 2 son positivos
+x-y -- positivo, x y (-y) positivos
+x+y -- se desconoce el signo, ya que x es positivo e y negativo
+```
+
 Tambien es posible consultar si una expresión cumple una cierta supocisión usando las funciones del tipo `is{suposición}`. Estas devolveran 3 posibles valores `T`(Verdadero), `F`(Falso) o `U`(Desconocido).
 
 ```haskell
@@ -124,7 +146,8 @@ isEven ((pi::Expr)) ==> F
 isNegative ((symbol "x")) ==> U -- Todos los simbolos se crean con suposiciones desconocidas
 ```
 
-T,F y U son valores de verdad. Pero los operadores booleanos de Haskell no pueden usarse con estos valores. Por lo que es necesario usar los operadores especiales definidos.
+T,F y U son valores de verdad de lógica ternaria, por lo que los operadores booleanos definidos en Haskell no pueden usarse. El proyecto incluye operadores especiales para trabajar con estos valores:
+
 ```haskell
 -- And logico
 T &&& T = T
@@ -135,6 +158,7 @@ T &&& U = U
 F ||| U = U
 T ||| U = T  -- U puede ser True o False, para cualquier valor posible el or devuelve True
 U ||| U = U
+U ||| True = T -- Pueden combinarse con los booleanos de Haskell, pero el resultado siempre será un valor de lógica ternaria.
 
 -- Not logico
 not3 T = F
@@ -153,14 +177,12 @@ La siguiente tabla contiene un listado de suposiciones soportadas:
 | integer   | `assume _ ["integer"]`  | isInteger     |
 | odd       | `assume _ ["odd"]`      | isOdd         |
 
-Por defecto los simbolos creados con `symbol` se supone que son numeros reales, de los cuales no se sabe el signo, 
-
 ##### El simbolo pi
 
-`pi` es un simbolo predefinido, por lo que es tenido en cuenta para ciertas simplificaciones:
+`pi` es un simbolo con suposiciones predefinidas. Haskell por defecto intentara convertir 'pi' en un Double, por lo que puede ser necesario realizar un cartel. Al ser un símbolo, es tenido en cuenta para ciertas simplificaciones.
 ```haskell
-0**pi = 0 -- pi es positivo, no es entero por lo que no es ni par ni impar
-sin(pi) = 0
+(0**pi :: Expr) = 0 -- pi es positivo, no es entero por lo que no es ni par ni impar
+(sin(pi) :: Expr) = 0
 ```
 
 ### 2.2 Combinando expresiones
