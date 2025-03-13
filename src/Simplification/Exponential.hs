@@ -163,11 +163,14 @@ expContract(mapStructure expContract-> v)
 
 {-|
     Simplifica expresiones con exponenciales primero racionalizando la expresión y luego contrayendo el numerador y el denominador.
+
+    >>> expSimplify (1/(exp(x)*(exp(y)+exp(-x))) - (exp(x+y)-1)/(exp(x+y)**2-1))
+    0
 -}
 expSimplify :: Expr -> Expr
 expSimplify u = let
                 u' = rationalize u
-                n = expContract$ numerator u'
-                d = expContract$ denominator u'
+                n = expContract $ numerator u'
+                d = expContract $ denominator u'
              in
                 n / d

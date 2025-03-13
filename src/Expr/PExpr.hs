@@ -141,35 +141,18 @@ instance Assumptions PExpr where
     isZero (SymbolWithAssumptions _ a) = askZero a
     isZero u = liftBool $ u==(Number 0)
 
-
     isNegative (Number x) = isNegative x
     isNegative (SymbolWithAssumptions _ a) = askNegative a
-    isNegative (Mul xs) = foldl1 xor $ map isNegative xs
-        where
-            xor U _ = U
-            xor _ U = U
-            xor p q = liftBool $ p /= q
-    isNegative (Add xs) = foldTri uand T isNegative xs
-        where
-            -- la diferencia con (&&&) es que _ &&& F = F
-            uand U _ = U
-            uand _ U = U
-            uand p q = p &&& q
+    isNegative (Mul xs) = xor3 isNegative xs
+    isNegative (Add xs)
+        | all (true . isNegative) xs = T
+        | all (false . isNegative) xs = F
+        | otherwise = U
     isNegative (Pow x y) = isNegative x &&& isOdd y
     isNegative (Exp _) = F
     isNegative (Log (Number a)) = liftBool $ a < 1
     isNegative Pi = F
     isNegative (Fun _ _) = U
-
-    -- isZero (Number x) = isZero x
-    -- isZero (SymbolWithAssumptions _ a) = askZero a
-    -- isZero (Mul xs) = or3 isZero xs
-    -- isZero (Add xs) = and3 isZero xs
-    -- isZero (Pow x y) = isZero x &&& isPositive y
-    -- isZero (Exp _) = F
-    -- isZero (Log (Number a)) = liftBool $ a == 1
-    -- isZero Pi = F
-    -- isZero (Fun _ _) = U
 
     isInteger (Number x) = isInteger x
     isInteger (SymbolWithAssumptions _ a) = askInteger a

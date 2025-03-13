@@ -156,11 +156,7 @@ instance BAlgebra TriBool Bool where
 
 -- | Aplica un predicado a una lista de valores y retorna el XOR ternario de todos
 xor3 :: (a -> TriBool) -> [a] -> TriBool
-xor3 _ [] = F
-xor3 f (x:xs)
-    | unknown (f x) = U
-    | false (f x) = xor3 f xs
-    | otherwise = not3 $ xor3 f xs
+xor3 f = foldl1 (/||) . map f
 
 -- | Aplica un predicado a una lista de valores y retorna el AND ternario de todos
 and3 :: (a -> TriBool) -> [a] -> TriBool

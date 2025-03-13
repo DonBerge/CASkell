@@ -21,6 +21,7 @@ module Simplification.Logarithm where
 import Expr
 import Assumptions
 import Data.TwoList (partition)
+import Simplification.Rationalize (rationalize)
 
 -- $setup
 -- >>> let x = assume (symbol "x") ["positive"]
@@ -102,5 +103,13 @@ logContract (mapStructure logContract -> v)
         combineSum (a,b) (Log x) = (a*x,b)
         combineSum (a,b) x = (a,b+x)
 
+{-|
+    Simplifica expresiones con logaritmos primero racionalizando la expresión y luego contrayendo el numerador y el denominador.
+-}
 logSimplify :: Expr -> Expr
-logSimplify = undefined
+logSimplify u = let
+                    u' = rationalize u
+                    n = logContract $ numerator u'
+                    d = logContract $ denominator u'
+                in 
+                    n/d
