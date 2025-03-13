@@ -2,7 +2,7 @@
 
 ## 1. Instalación y uso del proyecto
 
-Para correr el proyecto, es necesario tener instalado Stack y Make.
+Para correr el proyecto, es necesario tener instalado Stack, Make y ghc-8.10.7.
 
 Una vez instalados, el comando:
 ```bash

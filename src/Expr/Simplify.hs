@@ -49,9 +49,6 @@ import Data.Number (Number)
 import PExpr
 import Prelude hiding (const, exponent)
 
--- $setup
--- >>> let x = Number 0
-
 -- * Función de autosimplificación
 
 -- | Autosimplificación de arboles de expresiones

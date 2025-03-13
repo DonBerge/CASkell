@@ -45,7 +45,7 @@ import Data.Either (fromRight)
     [x,y]
 
     >>> variables (3*x*(x+1)*y**2*z**n)
-    [x+1,x,y,z^n]
+    [x,x+1,y,z^n]
 
     >>> variables (a*sin(x)**2 + 2*b*sin(x) + 3*c)
     [a,b,c,sin(x)]
