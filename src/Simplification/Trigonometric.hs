@@ -7,7 +7,7 @@
 -}
 module Simplification.Trigonometric (
   trigExpand,
-  contractTrig,
+  trigContract,
   trigSimplify
 ) where
 
@@ -162,27 +162,27 @@ cheby2 x n = Algebraic.expand $ Matrix.getElem 1 1 $ (Matrix.fromLists [[2 * x, 
     \]
 
   === Ejemplos:
-  >>> contractTrig (sin(x)**2 * cos(x)**2)
+  >>> trigContract (sin(x)**2 * cos(x)**2)
   -cos(4*x)/8+1/8
 
-  >>> contractTrig (cos(x)**4)
+  >>> trigContract (cos(x)**4)
   cos(2*x)/2+cos(4*x)/8+3/8
   
-  >>> contractTrig (sin(x)**2+cos(x)**2)
+  >>> trigContract (sin(x)**2+cos(x)**2)
   1
   
-  >>> contractTrig ((cos(x) + sin(x))**4 + (cos(x) - sin(x))**4 + cos(4*x) - 3)
+  >>> trigContract ((cos(x) + sin(x))**4 + (cos(x) - sin(x))**4 + cos(4*x) - 3)
   0
   
-  >>> contractTrig (sin(x) + sin(y) - 2*sin(x/2 + y/2)*cos(x/2 - y/2))
+  >>> trigContract (sin(x) + sin(y) - 2*sin(x/2 + y/2)*cos(x/2 - y/2))
   0
 -}
-contractTrig :: Expr -> Expr
-contractTrig = contractTrig' . mapStructure contractTrig . contractTrig'
+trigContract :: Expr -> Expr
+trigContract = trigContract' . mapStructure trigContract . trigContract'
   where
-    contractTrig' v@(Pow _ _) = contractTrigRules $ Algebraic.expandMainOp v
-    contractTrig' v@(Mul _) = contractTrigRules $ Algebraic.expandMainOp v
-    contractTrig' v = v
+    trigContract' v@(Pow _ _) = contractTrigRules $ Algebraic.expandMainOp v
+    trigContract' v@(Mul _) = contractTrigRules $ Algebraic.expandMainOp v
+    trigContract' v = v
 
 contractTrigRules :: Expr -> Expr
 contractTrigRules v@(Pow _ _) = contractTrigPower v
@@ -302,6 +302,6 @@ trigSimplify:: Expr -> Expr
 trigSimplify x = let
                   x1 = rationalize x
                   x2 = rationalMap trigExpand x1
-                  x3 = rationalMap contractTrig x2
+                  x3 = rationalMap trigContract x2
                  in
                   minimumBy (compare `on` trigMeasure) [x, x1, x2, x3]

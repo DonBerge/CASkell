@@ -231,7 +231,7 @@ sin(x)**2 + cos(x)**2 -- la expresión no cambia
 Aun asi, muchas de estas simplificaciones pueden ser aplicadas usando los modulos especializados para simplificación.
 
 ```haskell
-simplifyTrig (sin(x)**2 + cos(x)**2) ==> 1
+trigSimplify (sin(x)**2 + cos(x)**2) ==> 1
 expExpand (1/(exp(2*x) - exp(x)**2)) ==> Undefined: division por 0
 cancel ((x+1)**3 / (2*x**2+4*x+2)) ==> x/2 + 1/2
 ```
@@ -355,7 +355,7 @@ A su vez, todos los modulos(salvo los de expresiones algebraicas) contienen 3 fu
 
 - Función de contración: Intenta hacer las expresiones mas pequeñas:
     ```haskell
-    contractTrig (2*sin(x)*cos(x)) = sin(2*x) -- Contración trigonometrica
+    trigContract (2*sin(x)*cos(x)) = sin(2*x) -- Contración trigonometrica
     expContract (exp(2) * exp(5)) = exp(5) -- Contración de exponenciales
     ```
 
@@ -383,7 +383,7 @@ expExpand 0
 | Área de simplificación | Función de expansión |Función de contración | Función de simplificación | Modulo/s |
 |------------------------|----------------------|----------------------|------------------------|------------------------|
 | Algebraica             | `expand`             | No existe            | `cancel`               | `Simplification.Algebraic` y `Simplification.Rationalize` |
-| Trigonométrica         | `trigExpand`         | `contractTrig`       | `simplifyTrig`         | `Simplification.Trigonometric` |
+| Trigonométrica         | `trigExpand`         | `trigContract`       | `trigSimplify`         | `Simplification.Trigonometric` |
 | Exponencial            | `expExpand`          | `expContract`        | `expSimplify`          | `Simplification.Exponential` |
 | Logarítmica            | `logExpand`          | `logContract`        | `logSimplify`          | `Simplification.Logarithm` |
 
