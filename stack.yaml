@@ -10,14 +10,14 @@
 #
 # snapshot: lts-22.28
 # snapshot: nightly-2024-07-05
-# snapshot: ghc-9.6.6
+snapshot: ghc-8.10.7
 #
 # The location of a snapshot can be provided as a file or url. Stack assumes
 # a snapshot provided as a file might change, whereas a url resource does not.
 #
 # snapshot: ./custom-snapshot.yaml
 # snapshot: https://example.com/snapshots/2024-01-01.yaml
-snapshot: nightly-2025-02-16
+#snapshot: nightly-2025-02-16
   # url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/23/8.yaml
 
 # User packages to be built.
@@ -36,6 +36,30 @@ packages:
 # forks / in-progress versions pinned to a git hash. For example:
 #
 extra-deps:
+- doctest-0.23.0@sha256:820c67f6fb8ab3a0d4c598eacfb566e287354693176d145d474e96f0891c3ed9,8996
+- exact-combinatorics-0.2.0.11@sha256:72debe85446f483d4e4484cff95286632ce25ca7bb2869574ef6af72a02d3040,1972
+- matrix-0.3.6.3@sha256:4564a4702abc3824c038bb5ae0e34ca889fc7855f2d16de0b3c041a90154cdc8,1942
+- prettyprinter-1.7.1@sha256:9c43c9d8c3cd9f445596e5a2379574bba87f935a4d1fa41b5407ee3cf4edc743,6987
+- code-page-0.2.1@sha256:fe596b0f421abd2894fdb7049b3d76230eb1de6e04e9f635e2695dd55ded856e,2427
+- ghc-paths-0.1.0.12@sha256:6214f13c955993eb716c594b166c17914391c66da375f2826ae397bf82443847,699
+- loop-0.3.0@sha256:bcc65428e53e9325523fdb80af3c04750548d8ee3f9ad6841272ca679f331bf2,2485
+- primitive-0.9.0.0@sha256:de20bf4eff1f972088854c8efda6eaca2d3147aff62232c3707f059152638759,3203
+- semigroups-0.20@sha256:925341e6f7eb104cb490bef06eab93bb7995c7c67c51ee938185a2ddefa7aaf2,6333
+- syb-0.7.2.4@sha256:936d5a92084ad9d88c5a9dd2e622deab57ce48ce85be93e6273b3f8eb64c12ca,3872
+- temporary-1.3@sha256:3a66c136f700dbf42f3c5000ca93e80b26dead51e54322c83272b236c1ec8ef1,1485
+- vector-0.13.2.0@sha256:b736a57b73520d2acf4865e3e2b40030d69782f35f870e376dc717ee2508d81f,8804
+- data-array-byte-0.1.0.1@sha256:3a4040018d8f90beef81ecd0ba37f266a9aaad3e902dd790f09056f892ba22fb,1989
+- random-1.3.0@sha256:e5b7016e43a8f4822ebcf8cacaaa737beb62d370b988b5c69e95105d9f0fd582,6004
+- tasty-1.5.3@sha256:67a8d6a6cc97d28403d79651fea768414f26cdce846c4617551ad1a96d7132ae,2816
+- vector-stream-0.1.0.1@sha256:5ac96695212a45ae7dc16d8031dbf5311da53e052c35f7ad4a8e2db7fafb651e,1642
+- ansi-terminal-1.1.2@sha256:8e669f090aa3b9a62ef78f687dda12a19231ee163d2084522464036980a322ea,2758
+- optparse-applicative-0.18.1.0@sha256:f30973861ac7e7ebff05ff8c7c3d1e4d283a1f3850e1cc14106b0693ec1b6d82,5289
+- splitmix-0.1.1@sha256:8f92088f1c51c8d4569279a07565f8aa6b534a6735615b2295d2961dec8f1783,6225
+- tagged-0.8.9@sha256:6aad7d2fd594bd51834450d97850b9959305951993ea739fa2bbc18b55d8767d,2123
+- ansi-terminal-types-1.1@sha256:135f6a381afa19d53d0a3fe40b6dd47e6666c538b09e4300fbb1438759df3248,1462
+- colour-2.3.6@sha256:ebdcbf15023958838a527e381ab3c3b1e99ed12d1b25efeb7feaa4ad8c37664a,2378
+- prettyprinter-ansi-terminal-1.1.3@sha256:b00f727b964cf13adff7acf575a71fa7e405f5240aff50b07f10df76ab89f8d3,2574
+- transformers-compat-0.7.2@sha256:044fb9955f63ee138fcebedfdcbe54afe741f2d5892a2d0bdf3a8052bd342643,5601
 # - acme-missiles-0.3
 # - git: https://github.com/commercialhaskell/stack.git
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a

@@ -9,8 +9,9 @@ open-docs:
 	cabal haddock --haddock-internal --open
 
 setup:
-	stack setup
-	stack install
+	$(STACK) setup
+	$(STACK) install
+	$(STACK) install doctest
 
 test:
 	cabal repl --with-compiler=doctest
