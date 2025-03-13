@@ -19,4 +19,4 @@ build:
 	$(STACK) build
 
 repl: 
-	$(STACK) repl
+	$(STACK) exec -- ghci

@@ -97,6 +97,7 @@ prettyTerm u
 prettyFactor :: Expr -> Doc ann
 prettyFactor (Sqrt x) = pretty "√" <> prettyBase x
 prettyFactor (Pow x y) = prettyBase x <> pretty "^" <> prettyBase y -- El exponente se imprime usando 'prettyBase' para desambiguar expresiones como x**y**z
+prettyFactor (Exp 1) = pretty "e"
 prettyFactor (Exp x) = pretty "e" <> pretty "^" <> prettyBase x
 prettyFactor u = prettyBase u
 

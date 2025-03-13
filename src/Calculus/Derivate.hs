@@ -6,11 +6,15 @@
 -- Description : Proporciona funcionalidad para calcular la derivada de expresiones matemáticas.
 --
 -- Este módulo define funciones para calcular la derivada de expresiones matemáticas con respecto a una variable dada. Soporta la diferenciación de operaciones aritméticas básicas, funciones trigonométricas, funciones hiperbólicas, funciones exponenciales y logarítmicas, y también maneja la diferenciación de integrales y funciones desconocidas devolviendo derivadas no evaluadas.
-module Calculus.Derivate where
+module Calculus.Derivate (
+  derivate,
+  substitute,
+  makeUnevaluatedDerivative
+) where
 
 import Expr
 
-import Calculus.Utils (notAVariable)
+import Calculus.Utils (notAVariable, substitute)
 
 -- $setup
 -- >>> let x = symbol "x"
@@ -19,10 +23,6 @@ import Calculus.Utils (notAVariable)
 -- >>> let u = symbol "u"
 -- >>> let f = function "f"
 -- >>> let g = function "g"
-
--- * Patron de derivada
-pattern Derivative :: Expr -> Expr -> Expr
-pattern Derivative u x <- Fun "Derivate" (u :| [x]) --(matchAnyarityFun "Derivative" -> Just (u :| [x]))
 
 -- |
 --  Construye una derivada sin evaluar
