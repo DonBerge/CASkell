@@ -1,4 +1,3 @@
-{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 {-|
@@ -229,7 +228,7 @@ separateSinCos u
 --   Contraccion de productos de funciones trigonometricas.
 contractTrigProduct :: TwoList Expr -> Expr
 contractTrigProduct (a :|| b :| [])
-  | Pow _ _ <- a = contractTrigRules $ (contractTrigPower a) * b
+  | Pow _ _ <- a = contractTrigRules $ contractTrigPower a * b
   | Pow _ _ <- b = contractTrigRules $ a * contractTrigPower b
   | otherwise = case (a, b) of -- a y b son funciones trigonometricas
       (Sin p, Sin q) -> cos (p - q) / 2 - cos (p + q) / 2
@@ -254,18 +253,18 @@ contractTrigPower a@(MonomialTerm u n) =
     contractCosPower :: Integer -> Expr -> Expr
     contractCosPower n x
       | n < 0 = cos x ** fromInteger n
-      | even n = (exprBinom n (n `div` 2)) / 2 ^ n + 2 ^^ (1 - n) * sum [makeSumExpr j | j <- [0 .. (n `div` 2 - 1)]]
+      | even n = exprBinom n (n `div` 2) / 2 ^ n + 2 ^^ (1 - n) * sum [makeSumExpr j | j <- [0 .. (n `div` 2 - 1)]]
       | otherwise = 2 ^^ (1 - n) * sum [makeSumExpr j | j <- [0 .. n `div` 2]]
       where
         makeSumExpr j = exprBinom n j * cos (fromInteger (n - 2 * j) * x)
 
     contractSinPower :: Integer -> Expr -> Expr
     contractSinPower n x
-      | n < 0 = (sin x) ** (fromInteger n)
+      | n < 0 = sin x ** fromInteger n
       | even n = (-1 / 2) ^ n * exprBinom n (n `div` 2) + (-1) ^ (n `div` 2) * (2 ^^ (1 - n)) * sum [makeSumExpr cos j | j <- [0 .. (n `div` 2 - 1)]]
       | otherwise = (-1) ^ ((n - 1) `div` 2) * 2 ^^ (1 - n) * sum [makeSumExpr sin j | j <- [0 .. n `div` 2]]
       where
-        makeSumExpr f j = (-1) ^ j * exprBinom n j * (f ((fromInteger (n - 2 * j)) * x))
+        makeSumExpr f j = (-1) ^ j * exprBinom n j * f (fromInteger (n - 2 * j) * x)
 contractTrigPower a = a
 
 -- * Simplififcación de funciones trigonometricas
@@ -279,7 +278,7 @@ trigMeasure x = 1 + sum (map trigMeasure (operands x))
 
 -- | Mapea una funcion al numerador y al denominador de una expresión
 rationalMap :: (Expr -> Expr) -> Expr -> Expr
-rationalMap f (Div n d) = (f n) / (f d)
+rationalMap f (Div n d) = f n / f d
 rationalMap f x = f x
 
 {-|

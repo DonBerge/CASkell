@@ -1,5 +1,3 @@
-{-# LANGUAGE ViewPatterns #-}
-
 {-|
     Module      : Simplification.Rationalize
     Description : Módulo que racionaliza y simplifica expresiones racionales.
@@ -37,7 +35,7 @@ import qualified Simplification.Algebraic as Algebraic
 
 -}
 rationalize :: Expr -> Expr
-rationalize (Pow x y) = (rationalize x) ** y
+rationalize (Pow x y) = rationalize x ** y
 rationalize u@(Mul _) = mapStructure rationalize u
 rationalize (Add xs) = foldr (rationalizeSum . rationalize) 0 xs
 rationalize u = u
@@ -53,7 +51,7 @@ rationalizeSum u v = let
                       in
                         if r == 1 && s == 1
                             then u + v
-                            else (rationalizeSum (m*s) (n*r)) / (r*s)
+                            else rationalizeSum (m*s) (n*r) / (r*s)
 
 {-|
   'cancel' comvierte una expresión en su forma racional canonica \(\frac{p}{q}\) donde 
@@ -113,7 +111,7 @@ cancelNumbers n d = let
                         -- Obtener el el gcd de los numeradores y el lcm de los denominadores
                         (n',d') = foldr (\x -> bimap (gcd (Number.numerator x)) (lcm (Number.denominator x))) (0,1) c
                         c' = fromInteger n' / fromInteger d'
-                     in 
+                     in
                         (n / c', d / c')
 
 -- | Cancela signos de manera que el numerador y el denominador tengan signo positivo
@@ -124,7 +122,7 @@ cancelSign n d v = let
                         negd = signum mlcm == -1
                      in if negd
                             then (-n) / (-d)
-                            else n / d 
+                            else n / d
 cancelNumberAndSign :: Expr -> Expr -> [Expr] -> Expr
 cancelNumberAndSign n d v = let
                                 (n',d') = cancelNumbers n d

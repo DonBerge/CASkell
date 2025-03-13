@@ -88,11 +88,11 @@ logContract (mapStructure logContract -> v)
         isLog _ = False
 
         contractRules (Add xs) = let (a,b) = foldl combineSum (1,0) xs in log a + b
-        contractRules (Mul xs) = 
+        contractRules (Mul xs) =
             case partition isLog xs of
                 ([],factors) -> product factors
-                ([Log x], factors) -> log (x**(product factors))
-                (((Log y):ys), factors) -> foldl1 combinelogs ((log (y**(product factors))) : ys)
+                ([Log x], factors) -> log (x**product factors)
+                ((Log y):ys, factors) -> foldl1 combinelogs (log (y**product factors) : ys)
                 _ -> error "Este caso nunca se va a dar"
         contractRules v' = log v'
 
@@ -111,5 +111,5 @@ logSimplify u = let
                     u' = rationalize u
                     n = logContract $ numerator u'
                     d = logContract $ denominator u'
-                in 
+                in
                     n/d

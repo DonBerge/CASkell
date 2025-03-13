@@ -111,7 +111,7 @@ expExpand (Algebraic.expandMainOp . mapStructure expExpand -> v) = case v of
   where
     expandRules (Algebraic.expandMainOp -> v') = case v' of
       Add us -> product $ fmap expandRules us -- Propiedad de expansión para sumas
-      Mul _ -> let (a, b) = separateIntegerTerms v' in (exp b) ** a -- Propiedad de expansión para productos
+      Mul _ -> let (a, b) = separateIntegerTerms v' in exp b ** a -- Propiedad de expansión para productos
       _ -> exp v' -- Si no es una suma o producto, no se puede expandir
 
 -- * Contracción de exponenciales
@@ -145,7 +145,7 @@ expContract(mapStructure expContract-> v)
         Pow b s -> case b of
                     Exp b' -> let p = b'*s in if mulOrPow p then exp(contractRules p) else exp p
                     _ -> v'
-        Mul vs -> let (p,s) = foldl combineMul (1,0) vs in (exp s) * p
+        Mul vs -> let (p,s) = foldl combineMul (1,0) vs in exp s * p
         Add vs -> foldl combineSum 0 vs
         _ -> v'
 

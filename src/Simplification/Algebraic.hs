@@ -1,4 +1,3 @@
-{-# LANGUAGE PatternGuards #-}
 {-# OPTIONS_GHC -Wno-type-defaults #-}
 
 {-|
@@ -70,7 +69,7 @@ expandMainOp (Mul xs) = foldr1 expandProduct xs
 expandMainOp (Pow b (Number f)) = let
                                     (fl, m) = properFraction f
                                   in 
-                                    expandProduct (expandPower b fl) (b ** (fromNumber m))
+                                    expandProduct (expandPower b fl) (b ** fromNumber m)
 expandMainOp u = u
 
 -- | Expansion utilizando la propiedad distributiva
@@ -90,8 +89,8 @@ expandPower (Add (f :|| rs)) n = let
                                  in
                                     sum [expandProduct (cf k) (expandPower rs' (n-k)) | k <- [0..n]]
     where
-        cf k = (fromInteger (choose n k)) * f^k
-expandPower u n = u ** (fromInteger n)
+        cf k = fromInteger (choose n k) * f^k
+expandPower u n = u ** fromInteger n
 
 -- | Expande el denominador de una expresion
 expandFraction :: Expr -> Expr
@@ -100,4 +99,4 @@ expandFraction x = let
                     d = denominator x
                    in if d == 1
                     then x
-                    else n / (expand d)
+                    else n / expand d
