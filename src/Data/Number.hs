@@ -41,8 +41,8 @@ printAsFraction x = d/=1 && dn <= maxDigits && dd <= maxDigits
     where
         n = R.numerator $ fromNumber x
         d = R.denominator $ fromNumber x
-        dn = digitCount $ n
-        dd = digitCount $ d
+        dn = digitCount n
+        dd = digitCount d
 
 instance Show Number where
 -- Mostrar un numero racional como fraccion si tiene pocos digitos, sino mostrarlo como un double
@@ -81,7 +81,7 @@ lift f =  Number . toRational . f . toDouble
 instance Floating Number where
     pi = Number $ toRational (pi :: Double)
 
-    (**) x = lift ((**) (toDouble x))
+    (**) x = lift (toDouble x **)
 
     exp = lift exp
     log = lift log

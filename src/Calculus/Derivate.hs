@@ -1,6 +1,3 @@
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE PatternSynonyms #-}
-
 -- |
 -- Module      : Calculus.Derivate
 -- Description : Proporciona funcionalidad para calcular la derivada de expresiones matemáticas.

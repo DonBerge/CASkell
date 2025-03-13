@@ -1,4 +1,3 @@
-{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module Calculus.Utils where

@@ -1,7 +1,5 @@
 -- permite pasar funciones polimorficas como argumento
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ViewPatterns #-}
-
 -- |
 -- Module      : Evaluate.Numeric
 -- Description : Evaluación de expresiones numéricas.
@@ -54,7 +52,7 @@ deleteWithKey x ((y, z) : xs)
 --  >>> eval [(x,pi)] (2*sin(x/4))
 --  1.414213562373095
 eval :: Context -> Expr -> Expr
-eval _ (Pi) = fromNumber pi
+eval _ Pi = fromNumber pi
 eval ctx u@(Symbol _) = maybe u fromNumber $ lookup u ctx
 eval ctx (Derivative u x) = makeUnevaluatedDerivative (eval (deleteWithKey x ctx) u) x -- no evaluar la variable de derivacion
 eval ctx (Integral u x) = makeUnevaluatedIntegral (eval (deleteWithKey x ctx) u) x -- no evaluar la variable de integracion

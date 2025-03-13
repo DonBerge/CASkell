@@ -1,7 +1,4 @@
-{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
-{-# LANGUAGE PatternSynonyms #-}
-
 -- |
 -- Module      : Calculus.Integrate
 -- Description : Proporciona funcionalidad para calcular la integral de expresiones matemáticas.
@@ -142,10 +139,10 @@ separateFactors u x
 -}
 linearProperties :: Expr -> Expr -> Expr
 linearProperties u@(Mul _) x = do
-                                let (free,dependent) = separateFactors u x 
+                                let (free,dependent) = separateFactors u x
                                 if free == 1
                                     then undefinedExpr "No se puede aplicar linealidad de la integral"
-                                    else free * (integrate dependent x)
+                                    else free * integrate dependent x
 linearProperties u@(Add _) x = mapStructure (`integrate` x) u
 linearProperties _ _ = undefinedExpr "No se puede aplicar linealidad de la integral"
 
@@ -188,7 +185,7 @@ substitutionMethod f x = foldr ((<|>) . makeSubstitution) failSubstitution $ tri
             where
                 getIntegrationVariable' x = let
                                                 _x = '_' : x
-                                                symbol_x  = symbol $ _x
+                                                symbol_x  = symbol _x
                                             in if u `freeOf` symbol_x
                                                 then symbol_x
                                                 else getIntegrationVariable' _x
@@ -197,7 +194,7 @@ substitutionMethod f x = foldr ((<|>) . makeSubstitution) failSubstitution $ tri
         --makeSubstitution = undefined
         makeSubstitution g = if g/=x && not (g `freeOf` x)
                                 then let
-                                        f' = f / (derivate g x)
+                                        f' = f / derivate g x
                                         v = getIntegrationVariable f' x
                                         u = substitute f' g v
                                      in if u `freeOf` x
@@ -278,4 +275,4 @@ definiteIntegral u x a b = let
                             u' = integrate u x
                            in case u' of
                                 Integral _ _ -> makeUnevaluatedDefiniteIntegral u x a b
-                                _ -> (substitute u' x b) - (substitute u' x a)
+                                _ -> substitute u' x b - substitute u' x a
