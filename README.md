@@ -531,6 +531,7 @@ exp(x)+exp(y) -- se muestra como e^x+e^y
 La estructura del proyecto es la siguiente:
 ```
 .
+|-- imgs                -- Imagenes usadas en el informe
 |-- src
 |   |-- Calculus
 |   |   |-- Derivate.hs -- Derivación de expresiones
@@ -562,6 +563,12 @@ La estructura del proyecto es la siguiente:
 |   |   |-- Trigonometric.hs  -- Simplificación de funciones trigonométricas
 |-- CASkell.cabal
 |-- README.md
+|-- .gitignore
+|-- stack-yaml
+|-- stack.yaml.lock
+|-- makefile
+|-- README.md
+|-- Informe.pdf
 ```
 
 ## 5. Decisiones de diseño
