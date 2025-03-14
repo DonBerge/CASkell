@@ -444,7 +444,7 @@ simplifyFun (Exp x) = do
 simplifyFun (Log (Number 1)) = return $ Number 0
 simplifyFun (Log (Exp x)) = return x
 simplifyFun (Log x)
-  | true $ isNegative x = fail "Logaritmo de un número negativo"
+  | false $ isPositive x = fail "Logaritmo de un número no positivo"
   | otherwise = return $ Log x
 
 -- funciones conocidas
