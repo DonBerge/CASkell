@@ -231,6 +231,7 @@ Undefined: división por cero == Undefined: logaritmo de un número negativo
 True -- Todas las expresiones indefinidas, son iguales entre sí
 ```
 
+La siguiente tabla muestra las funciones que se pueden aplicar a las expresiones
 | Función en haskell   | Función matemática     |
 |----------------------| ---------------------- |
 | sin  | seno       |

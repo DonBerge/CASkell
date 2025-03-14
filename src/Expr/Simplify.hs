@@ -387,6 +387,15 @@ handlePeriod cases onOddPi x = do
     _ -> fail "Could not handle period"
 
 simplifyFun :: PExpr -> EvalResult PExpr
+-- Funciones trigonometricas inversas
+simplifyFun (Asin (Sin x)) = return x
+simplifyFun (Acos (Cos x)) = return x
+simplifyFun (Sin (Asin x)) = return x
+simplifyFun (Cos (Acos x)) = return x
+simplifyFun (Tan (Atan x)) = return x
+simplifyFun (Atan (Tan x)) = return x
+
+-- funciones trigonometricas
 simplifyFun (Sin x)
   | mulByNeg x = simplifyNegate x >>= simplifyFun . Sin >>= simplifyNegate
 simplifyFun (Sin x) = handlePeriod cases simplifyNegate x <|> return (Sin x)
@@ -433,6 +442,7 @@ simplifyFun (Exp x) = do
 
 -- logaritmos
 simplifyFun (Log (Number 1)) = return $ Number 0
+simplifyFun (Log (Exp x)) = return x
 simplifyFun (Log x)
   | true $ isNegative x = fail "Logaritmo de un número negativo"
   | otherwise = return $ Log x

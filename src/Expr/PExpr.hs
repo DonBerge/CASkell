@@ -1,5 +1,6 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# OPTIONS_GHC -Wall #-}
+{-# LANGUAGE ViewPatterns #-}
 
 {-|
     Module      : Expr.PExpr
@@ -29,6 +30,7 @@ module PExpr (
     pattern Log,
     pattern Sin,
     pattern Cos,
+    pattern Tan,
     pattern Asin,
     pattern Acos,
     pattern Atan
@@ -190,6 +192,18 @@ pattern Sin x = Fun "sin" [x]
 -- | Patron para la funcion coseno
 pattern Cos :: PExpr -> PExpr
 pattern Cos x = Fun "cos" [x]
+
+
+matchTan :: PExpr -> Maybe PExpr
+matchTan (Mul [Sin x, Pow (Cos y) (Number (-1))])
+    | x == y = Just x
+    | otherwise = Nothing
+matchTan _ = Nothing
+
+pattern Tan :: PExpr -> PExpr
+pattern Tan x <- (matchTan -> Just x)
+    where
+        Tan x = Mul [Sin x, Pow (Cos x) (Number (-1))]
 
 -- | Patron para la funcion arcoseno
 pattern Asin :: PExpr -> PExpr
