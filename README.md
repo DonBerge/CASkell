@@ -231,7 +231,27 @@ Undefined: division por cero == Undefined: logaritmo de un numero negativo
 True -- Todas las expresiones indefinidas, son iguales entre si
 ```
 
-*lista de funciones aceptadas*
+| Funcion en haskell   | Función matematica     |
+|----------------------| ---------------------- |
+| sin  | seno       |
+| cos  | coseno     |
+| tan  | tangente   |
+| sec  | secante    |
+| csc  | cosecante  |
+| cot  | cotangente |
+| exp  | exponencial |
+| log  | logaritmo natural |
+| asin | arcoseno |
+| acos | arcocoseno |
+| atan | arcotangente |
+| sinh | seno hiperbolico |
+| cosh | coseno hiperbolico |
+| tanh | tangente hiperbolica |
+| asinh | arcoseno hiperbolico |
+| acosh | arcocoseno hiperbolico |
+| atanh | arcotangente hiperbolica |
+| sqrt  | raiz cuadrada |
+
 
 #### Autosimplificación
 

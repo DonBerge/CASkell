@@ -1,5 +1,4 @@
 {-# LANGUAGE PatternSynonyms #-}
-{-# OPTIONS_GHC -Wno-noncanonical-monad-instances #-}
 {-# OPTIONS_GHC -Wall #-}
 
 {-|

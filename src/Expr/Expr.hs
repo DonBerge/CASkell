@@ -8,7 +8,9 @@ module Expr (
     -- | Parser de expresiones
     module Expr.Parser,
     -- | PrettyPrint de expresiones
-    module Expr.PrettyPrint
+    module Expr.PrettyPrint,
+    -- | Suposiciones
+    module Assumptions
 ) where
 
 import Expr.ExprType
@@ -20,3 +22,5 @@ import Expr.PolyTools
 import Expr.Parser
 
 import Expr.PrettyPrint
+
+import Assumptions

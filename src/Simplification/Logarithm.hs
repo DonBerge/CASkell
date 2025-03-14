@@ -19,7 +19,6 @@
 module Simplification.Logarithm where
 
 import Expr
-import Assumptions
 import Data.TwoList (partition)
 import Simplification.Rationalize (rationalize)
 
