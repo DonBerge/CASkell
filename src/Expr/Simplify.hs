@@ -25,6 +25,7 @@ module Expr.Simplify
     -- * Autosimplificación de potencias
     simplifyPow,
     simplifyIntPow,
+    simplifySqrt,
     -- * Autosimplificación de productos
     simplifyNegate,
     simplifyProduct,
@@ -135,6 +136,8 @@ simplifyPow (Number 0) w -- SPOW-2
   | true $ isPositive w = return (Number 0) -- SPOW-2.1
   | true (isNegative w ||| isZero w) = fail "Division por cero" -- SPOW-2.2
 simplifyPow (Number 1) _ = return (Number 1) -- SPOW-3
+simplifyPow (Number n) (Number m)
+  | true (isInteger (n**m)) = return $ Number $ n**m -- si el resultado es entero, evaluar en los numeros
 simplifyPow v w
   | true $ isInteger w = simplifyIntPow v w -- SPOW.4
   | otherwise = return (Pow v w) -- SPOW.5
@@ -366,8 +369,9 @@ mulByNeg (Mul ((Number a) : _)) = a < 0
 mulByNeg _ = False
 
 simplifySqrt :: PExpr -> EvalResult PExpr
+simplifySqrt (Number n)
+  | n < 0 = fail "Raiz cuadrada de un número negativo"
 simplifySqrt x = simplifyPow x (Number 0.5)
-
 ----------------
 
 handlePeriod :: (Number -> PExpr -> EvalResult PExpr) -> (PExpr -> EvalResult PExpr) -> PExpr -> EvalResult PExpr

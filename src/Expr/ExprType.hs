@@ -96,13 +96,7 @@ instance Floating Expr where
     asinh x = log(x + sqrt (x ** 2 + 1))
     acosh x = log(x + sqrt (x ** 2 - 1))
     atanh x = log(1+x)/2 - log(1-x)/2
-    sqrt x = do
-                x' <- x
-                case x' of
-                    -- caso especial para numeros, intentar evaluar la raiz cuadrada y si el resultado es un entero, devolverlo
-                    Number a | true (isInteger (sqrt a)) -> return $ Number $ sqrt a
-                    -- sino, simplificar la potencia 
-                    _ -> simplifyPow x' (Number 0.5)
+    sqrt x = x ** 0.5
 
     p ** q =  do
                 p' <- p
