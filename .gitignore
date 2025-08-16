@@ -54,3 +54,7 @@ cabal.project.local~
 
 .stack-work/
 examples/*
+
+*.sh
+*.ghci
+typescript

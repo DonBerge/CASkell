@@ -49,6 +49,7 @@
 --  Esta ultima gramatica es la que se utiliza en el PrettyPrint de las expresiones.
 module Expr.PrettyPrint
   ( pretty,
+    latex
   )
 where
 
@@ -71,7 +72,7 @@ prettyExpression (Undefined e) = pretty "Undefined:" <+> pretty e
 prettyExpression u@(Add us) =
   let vars =  variables u
       (v :|| vs) = sortBy (flip compare `on` multidegree vars) us -- ordenar los monomios segun el multigrado
-   in cat $ prettyTerm v : map addSigns (toList vs)
+   in prettyTerm v <> hcat (map addSigns (toList vs))
   where
     -- Agrega un operador + o - dependiendo del elemento
     addSigns (Neg y) = pretty "-" <> prettyTerm y
@@ -116,3 +117,64 @@ instance Pretty Expr where
 
 instance Show Expr where
   show = show . pretty
+
+-- Latex
+
+latexExpression :: Expr -> [Char]
+latexExpression (Undefined e) = "Undefined: " <>  e
+latexExpression u@(Add us) =
+  let vars =  variables u
+      (v :|| vs) = sortBy (flip compare `on` multidegree vars) us -- ordenar los monomios segun el multigrado
+   in latexTerm v <> concatMap addSigns vs
+  where
+    -- Agrega un operador + o - dependiendo del elemento
+    addSigns (Neg y) = "-" <> latexTerm y
+    addSigns y = "+" <> latexTerm y
+latexExpression u = latexTerm u
+
+latexTerm :: Expr -> [Char]
+latexTerm u@(Exp _) = latexFactor u -- Evita separar denominador y numerador de expresiones como e^(-x) 
+latexTerm u
+  | d == 1 = case u of
+              Neg u -> "-" <> latexMul u
+              _ -> latexMul u
+  | otherwise = "\\frac{" <> latexTerm n <> "}{" <> latexFactor d <> "}"
+  where
+    latexMul (Mul us) = concatWith (surround "*") $ fmap latexFactor us
+    latexMul u = latexFactor u
+
+    surround x l r = l <> x <> r
+
+    concatWith f xs = foldr f mempty xs
+
+    n = numerator u
+    d = denominator u
+
+latexFactor :: Expr -> [Char]
+latexFactor (Sqrt x) = "\\sqrt{" <> latexBase x <> "}"
+latexFactor (Pow x y) = latexBase x <> "^{" <> latexBase y <> "}" -- El exponente se imprime usando 'latexBase' para desambiguar expresiones como x**y**z
+latexFactor (Exp 1) = "e"
+latexFactor (Exp x) = "e" <> "^{" <> latexBase x <> "}"
+latexFactor u = latexBase u
+
+latexBase :: Expr -> [Char]
+latexBase (Number n)
+  | printAsFraction n = "(" <> show n <> ")"
+  | otherwise = show n
+latexBase Pi = "\\pi"
+latexBase (Symbol s) = s
+latexBase u@(Exp _) = "(" <> latexFactor u <> ")"
+-- Derivadas
+latexBase (Derivative u x) = "\\dfrac{d}{d" <> latexBase x <> "}(" <> latexExpression u <> ")"
+-- Integrales
+latexBase (Integral u x) = "\\int (" <> latexExpression u <> ") d" <> latexBase x
+latexBase (DefiniteIntegral u x a b) =
+  "\\int_{" <> latexBase a <> "}^{" <> latexBase b <> "}(" <> latexExpression u <> ") d" <> latexBase x
+latexBase (Fun name us) = "\\operatorname{" <> name <> "}(" <> concatWith (surround ",") (fmap latexExpression us) <> ")"
+  where
+    surround x l r = l <> x <> r
+    concatWith f xs = foldr f mempty xs
+latexBase u = "(" <> latexExpression u <> ")"
+
+latex :: Expr -> [Char]
+latex = latexExpression
