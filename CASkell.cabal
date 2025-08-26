@@ -49,8 +49,20 @@ build-type:         Simple
 extra-doc-files:    README.md
                     README.pdf
 
+synopsis: A small symbolic algebra library written in Haskell.
+
+description: CASkell is a small symbolic algebra library created as a project for an university subject.
+             It provides tools for simplifying algebriac expressions, working with multivariate polynomials, 
+             basic numerical approximations and performing derivation and integration of mathematical expressions.
+             Since it was made as an university project, documentation is in spanish and some operations might be
+             inefficient.
+
 -- Extra source files to be distributed with the package, such as examples, or a tutorial module.
 -- extra-source-files:
+
+source-repository head
+    type: git
+    location: https://github.com/DonBerge/CASkell
 
 common warnings
     ghc-options: -Wall
@@ -90,12 +102,12 @@ library
                       ViewPatterns
 
     -- Other library packages from which modules are imported.
-    build-depends:    base,
-                      matrix,
-                      prettyprinter,
-                      array,
-                      doctest,
-                      exact-combinatorics
+    build-depends:    base >= 4.14 && < 5,
+                      matrix >= 0.3 && < 0.4,
+                      prettyprinter >= 1.7 && < 1.9,
+                      array >= 0.5 && < 0.6,
+                      doctest >= 0.23 && < 0.24,
+                      exact-combinatorics >= 0.2 && < 0.3
 
     -- Directories containing source files.
     hs-source-dirs:   src
